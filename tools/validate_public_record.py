@@ -82,6 +82,8 @@ DISCLOSURE_PATTERNS = (
     ),
 )
 
+MARKDOWN_LINK_RE = re.compile(r"\[[^\]]*\]\(([^()\s]+)\)")
+
 PROHIBITED_CLAIM_TERMS = re.compile(
     r"\b(?:unique|first|secure|tamper-proof|unhackable|certified|compliant|"
     r"production-ready|client-ready|commercially-ready|model-neutral|provider-neutral)\b|"
@@ -579,6 +581,35 @@ def disclosure_violation(path: Path, text: str) -> str | None:
     return None
 
 
+def internal_link_violations(path: Path, text: str) -> list[str]:
+    """Return violations for relative Markdown links that leave the repository
+    or point at files that do not exist. Absolute URLs are out of scope."""
+    violations: list[str] = []
+    if path.suffix.lower() != ".md":
+        return violations
+    for match in MARKDOWN_LINK_RE.finditer(text):
+        raw_target = match.group(1)
+        if raw_target.startswith(("http://", "https://", "mailto:")):
+            continue
+        target = raw_target.split("#", 1)[0]
+        if not target:
+            continue
+        resolved = (ROOT / path).parent / target
+        try:
+            resolved = resolved.resolve()
+            resolved.relative_to(ROOT.resolve())
+        except (OSError, ValueError):
+            violations.append(
+                f"{path.as_posix()}: internal link escapes the repository: {raw_target}"
+            )
+            continue
+        if not resolved.exists():
+            violations.append(
+                f"{path.as_posix()}: broken internal link: {raw_target}"
+            )
+    return violations
+
+
 def validate_public_text() -> None:
     required = {
         "README.md",
@@ -612,6 +643,8 @@ def validate_public_text() -> None:
         violation = disclosure_violation(relative, text)
         if violation is not None:
             fail(f"{relative}: contains forbidden {violation}")
+        for message in internal_link_violations(relative, text):
+            fail(message)
 
 
 def validate_document_links(claim_ids: set[str], evidence_ids: set[str]) -> None:

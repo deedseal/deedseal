@@ -1,0 +1,11 @@
+name: Question
+description: Ask about the documentation, the trust model, or the evidence record.
+labels: []
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like to understand? Referencing a specific document or claim ID helps.
+    validations:
+      required: true
