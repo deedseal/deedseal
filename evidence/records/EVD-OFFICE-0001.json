@@ -1,0 +1,56 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-OFFICE-0001",
+  "component": "OFFICE",
+  "source_snapshot": "OFFICE-2026-08-01-A",
+  "observed_on": "2026-08-01",
+  "kind": "sanitized-internal-verification-summary",
+  "assurance": "internal-ci-attestation",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "canonical-office-acceptance",
+        "result": "35/35 PASS"
+      },
+      {
+        "check": "explicit-hostile-and-negative-probes",
+        "result": "273 cases accounted for"
+      },
+      {
+        "check": "dispatch-integration",
+        "result": "30/30 PASS"
+      },
+      {
+        "check": "run-lifecycle-hostile-probes",
+        "result": "11/11 PASS"
+      },
+      {
+        "check": "evidence-integrity",
+        "result": "8/8 digests and 18/18 JSON artifacts validated; artifact integrity checks passed"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "private",
+    "redactions": [
+      "R-IP",
+      "R-OPS",
+      "R-PRIV",
+      "R-SEC",
+      "R-VULN"
+    ],
+    "omitted": [
+      "private source coordinates and raw CI logs",
+      "host, identity, credential, and transport details",
+      "dispatcher, actuator, schema, and recipe internals",
+      "hostile-probe catalogue and refusal codes"
+    ]
+  },
+  "limitations": [
+    "The counts describe repository acceptance coverage, not production deployment.",
+    "The actuator path was implemented and hermetically validated but was not adopted for production execution at this snapshot.",
+    "No real provider execution through the actuator is claimed by this record.",
+    "This record is an internal verification summary, not an independently reproducible test report."
+  ]
+}

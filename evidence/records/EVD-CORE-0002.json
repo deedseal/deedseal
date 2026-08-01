@@ -1,0 +1,46 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-CORE-0002",
+  "component": "CORE",
+  "source_snapshot": "CORE-2026-08-01-A",
+  "observed_on": "2026-08-01",
+  "kind": "sanitized-controlled-series-summary",
+  "assurance": "internal-ci-attestation",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "controlled-execution-series",
+        "result": "10/10 terminal records accounted for"
+      },
+      {
+        "check": "positive-lifecycles",
+        "result": "8 PASS"
+      },
+      {
+        "check": "designed-negative-lifecycles",
+        "result": "2 designed-negative lifecycles refused before effects"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "private",
+    "redactions": [
+      "R-IP",
+      "R-OPS",
+      "R-PRIV",
+      "R-SEC"
+    ],
+    "omitted": [
+      "raw run artifacts and signatures",
+      "repository and account identities",
+      "paths, prompts, grants, nonces, and acceptance contracts",
+      "negative-probe mechanics"
+    ]
+  },
+  "limitations": [
+    "This is an aggregate of private controlled-execution records, not a public dataset.",
+    "A designed refusal is not counted as a positive cargo PASS.",
+    "The aggregate does not establish semantic correctness, product security, or commercial readiness."
+  ]
+}

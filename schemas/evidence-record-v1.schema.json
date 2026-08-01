@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/deedseal/deedseal/blob/main/schemas/evidence-record-v1.schema.json",
+  "title": "Deedseal public evidence record v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "component",
+    "source_snapshot",
+    "observed_on",
+    "kind",
+    "assurance",
+    "verification",
+    "disclosure",
+    "limitations"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "deedseal.public-evidence-record/v1"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^EVD-[A-Z]+-[0-9]{4}$"
+    },
+    "component": {
+      "enum": [
+        "CORE",
+        "OFFICE",
+        "PUBLIC"
+      ]
+    },
+    "source_snapshot": {
+      "type": "string",
+      "pattern": "^(CORE|OFFICE|PUBLIC)-[0-9]{4}-[0-9]{2}-[0-9]{2}-[A-Z]$"
+    },
+    "observed_on": {
+      "type": "string",
+      "format": "date"
+    },
+    "kind": {
+      "type": "string",
+      "minLength": 1
+    },
+    "assurance": {
+      "enum": [
+        "internal-ci-attestation",
+        "public-attestation",
+        "public-reproducible"
+      ]
+    },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verdict",
+        "observations"
+      ],
+      "properties": {
+        "verdict": {
+          "enum": [
+            "PASS",
+            "BLOCK",
+            "WITHDRAWN"
+          ]
+        },
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "check",
+              "result"
+            ],
+            "properties": {
+              "check": {
+                "type": "string",
+                "minLength": 1
+              },
+              "result": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "disclosure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_visibility",
+        "redactions",
+        "omitted"
+      ],
+      "properties": {
+        "source_visibility": {
+          "enum": [
+            "private",
+            "public"
+          ]
+        },
+        "redactions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "R-SEC",
+              "R-OPS",
+              "R-PRIV",
+              "R-IP",
+              "R-VULN"
+            ]
+          }
+        },
+        "omitted": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  }
+}
+
