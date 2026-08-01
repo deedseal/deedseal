@@ -1,0 +1,2 @@
+# Evidence digests bind exact committed bytes; no platform may rewrite them.
+* -text
