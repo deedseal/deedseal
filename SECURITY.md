@@ -1,18 +1,7 @@
-# Security reporting
+# Security policy
 
-Please do not open a public issue for a suspected vulnerability or include
-private source, credentials, run artifacts, host details, or exploit steps in a
-public discussion.
+Report vulnerabilities through GitHub private vulnerability reporting on this repository. That is the single reporting channel.
 
-Use the repository's
-[private vulnerability reporting](https://github.com/deedseal/deedseal/security/advisories/new)
-channel. If that channel is unavailable, contact the repository owner through
-GitHub before transmitting sensitive material.
+Reports about this documentation and reports about the Deedseal product are both welcome. Deedseal is in active development and not yet generally available; there is no bug bounty at this time.
 
-Include only the minimum information needed to establish the affected public
-claim and impact. Coordinate before sharing raw artifacts or operational detail.
-
-This repository is a public documentation and evidence surface. It does not
-distribute a supported product version, so no public support window or security
-patch service-level commitment is stated here.
-
+We read every good-faith report and will acknowledge yours. We do not promise a fixed response time, and we will not pretend to a triage process larger than the project. If a report concerns something the documentation overclaims, we will correct the documentation.

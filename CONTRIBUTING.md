@@ -1,13 +1,7 @@
-# Contribution policy
+# Contributing
 
-This repository currently serves as an owner-reviewed public engineering
-record. External code and documentation contributions are not being accepted.
+Questions are welcome as GitHub issues.
 
-Factual corrections to public documentation may be proposed through an issue
-once the repository is public. A correction must identify the exact public
-statement and explain the discrepancy without including private source or
-security-sensitive material.
+Pull requests are accepted for corrections, clarity, and typo fixes only. Feature and design proposals cannot be accepted here: the engineering repositories are private, and this repository is documentation.
 
-Report suspected vulnerabilities through [SECURITY.md](SECURITY.md), not through
-an issue or pull request.
-
+This repository operates under the same model as the product: automation and AI tooling may propose changes; only the owner reviews, approves, and merges.

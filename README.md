@@ -1,101 +1,79 @@
 # Deedseal
 
-**Controlled execution and verifiable records for AI coding-agent work.**
+Deny-by-default execution control for AI coding agents on Linux, with a signed, offline-verifiable passport for every run.
 
-[![Public record validation](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml/badge.svg)](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml)
+Deedseal is designed so that what a machine was allowed to do — and what it actually did — can be proven later, offline, without trusting the machine that did it. Deedseal aims to make execution authority explicit and its evidence portable.
 
-Deedseal is the public engineering record for the product developed across the
-private **KBP Core** and **DEV OFFICE** repositories. This repository publishes
-reviewed architecture summaries, bounded engineering claims, and sanitized
-verification records. It is not a source mirror or a product distribution.
+## This repository
 
-> **Status:** active research engineering. No general-availability, security
-> certification, compliance, or commercial-readiness claim is made here.
+This repository is the public documentation for Deedseal. The engineering repositories are private; no product source code is published here.
 
-## Why this exists
+## What Deedseal is
 
-An agent-produced diff says little about the authority under which the agent
-worked. It does not, by itself, establish which repository state was admitted,
-which paths were authorized, what changed, how the result was accepted, or who
-retained approval authority.
+- **Deny-by-default authority.** Every action is matched against explicitly enumerated allow paths; anything unmatched — an unknown action type, an ambiguous scope, a self-approval attempt — is blocked and recorded.
+- **One canonical path.** A signed work grant, checked at a single authorization gate, executed through a single effect broker. There is no second door.
+- **A signed passport for every run.** Each supervised run closes into a single evidence record binding the grant, the execution, and the complete resulting changeset — verifiable offline by anyone holding the verifier.
+- **The owner decides.** Automation and AI tooling implement and propose; approval, merge, and signature stay with one human. Self-approval is rejected outright.
 
-The engineering focus is the complete chain:
+## What Deedseal is not
 
-**owner authorization → controlled execution → admitted commit → verifiable run
-record → owner review**
+- **Not an agent framework.** Deedseal does not run, prompt, or orchestrate agents; it is the authority layer an agent runs under.
+- **Not a sandbox.** Deedseal governs what a run is allowed to change and proves what it did change. To contain hostile code, compose it with a sandbox or a virtual machine (gVisor, Firecracker, or similar).
+- **Not an audit log or a SIEM.** A log is trusted because of where it sits. A run passport carries its own verifiability wherever it travels.
+- **Not a policy linter.** The gate does not advise; it decides, and its default is no.
 
-## System boundary
+## How a permitted action runs
 
-- **KBP Core** is the private controlled-execution and proof layer. It admits a
-  signed run scope, checks effects through a deterministic control path, binds
-  the resulting commit, and produces a RunPassport that can be checked offline.
-- **DEV OFFICE** is the private engineering control plane. It binds task packets
-  to commits and execution profiles, runs workers in isolated work areas,
-  validates their history and scope, and publishes Draft pull requests for
-  owner review.
-- **Deedseal** is a reviewed public projection of that work. It contains only
-  claims and evidence summaries that have passed the publication boundary.
+An agent's requested action reaches the authorization gate. The gate checks it against a signed work grant, issued and signed offline by the owner, which pins the repository state, a short validity window, and the exact set of files the run may change. Anything outside an enumerated allow path is denied and recorded. Permitted work executes in a disposable quarantine under a separate operating-system principal; the result is observed byte for byte, and only the observed bytes are staged, all or nothing. The run then closes into a signed passport.
 
-The conceptual flow and trust boundary are documented in
-[System boundary](docs/system-boundary.md).
+```mermaid
+flowchart LR
+    A["Requested action"] --> G{"Authorization gate"}
+    G -->|"default: no matching grant"| X["Denied and recorded"]
+    G -->|"valid owner-signed grant"| B["Effect broker"]
+    B --> Q["Quarantined execution"]
+    Q --> S["Observation and all-or-nothing staging"]
+    S --> P["Run passport: signed, offline-verifiable"]
+```
 
-## Engineering properties
+## The run passport
 
-The table uses deliberately narrow language. `internally-verified` means that
-the property was checked against a fixed private-source snapshot and successful
-internal acceptance run. It does **not** mean that a public reader can reproduce
-the result from this repository alone.
+A run passport is one JSON record per supervised run, binding what was requested, what was granted, and what actually changed — including the complete changeset of the resulting commit, which must exactly equal the granted file set. It is signed twice on the way through: by a dedicated service key before and after execution, and by the owner as closure.
 
-| Claim | Property | Evidence | Status |
-|---|---|---|---|
-| `CLM-0001` | A run can be admitted by a signed, scope-bound owner grant before controlled effects are accepted. | `EVD-CORE-0001` | `internally-verified` |
-| `CLM-0002` | A current RunPassport binds authorization, custody outcome, execution identity, complete committed changes, artifact hashes, acceptance data, and final owner closure. | `EVD-CORE-0001` | `internally-verified` |
-| `CLM-0003` | The standalone RunPassport verifier needs one passport file and no network, repository checkout, running KBP service, private key, or third-party Python package. | `EVD-CORE-0001` | `internally-verified` |
-| `CLM-0004` | Repository-native dispatch binds immutable task bytes, bounded write scope, an execution-profile digest, and draft-only automation authority to an owner-selected commit. | `EVD-OFFICE-0001` | `internally-verified` |
-| `CLM-0005` | Postflight checks worker history and scope before publication; readiness, approval, and merge remain owner actions. | `EVD-OFFICE-0001` | `internally-verified` |
-| `CLM-0006` | Typed interruptions and recorded failures receive terminal dispositions; retry admits a closed failure set and reclaims prior worker state. | `EVD-OFFICE-0001` | `internally-verified` |
-| `CLM-0007` | An internal 10-entry controlled-execution series records eight positive lifecycles and two designed-negative lifecycles refused before effects. | `EVD-CORE-0002` | `internally-verified` |
+**Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json).
 
-Detailed scope and non-claims are in
-[Engineering properties](docs/engineering-properties.md).
+## Principles
 
-The DEV OFFICE properties above describe an implemented, hermetically validated
-control path. At this snapshot its production actuator was **not adopted**, and
-no real model-provider execution through that actuator is claimed.
+- **Deny by default.** Every allow path is enumerated; the fallthrough is a block.
+- **One path for authority.** All effects go through the gate and the broker — no bypass path, no override channel, no route by which automation can sign.
+- **Machines implement; the owner decides.** AI workers author and propose; approval, merge, and signature stay with one human.
+- **Prefer sealed evidence to inference.** Claims about a run are read from signed records, never from the run's own account of itself.
+- **Verification must not require trusting us.** The verifier is one auditable file with its keys baked in; nothing in the input can substitute a trust anchor.
 
-## Evidence model
+## What Deedseal does not do
 
-The current review candidate is `DS-2026.08.1`. It is not a published snapshot
-until owner review and merge complete the publication boundary.
+Deedseal does not sandbox the workload itself. To run possibly-malicious code, pair it with an appropriate sandbox or virtual machine. Deedseal does not protect against a compromised kernel or a compromised owner key. Kernel-level confinement of the agent process — resource, egress, and filesystem bounds — is an open objective tracked in [docs/status.md](docs/status.md), not a shipped property.
 
-- [`evidence/ledger-v1.json`](evidence/ledger-v1.json) is the machine-readable
-  claim-to-evidence map.
-- [`evidence/records/`](evidence/records/) contains sanitized public records.
-- [`schemas/`](schemas/) defines their public data contracts.
-- `validate-public-record.yml` checks structure, references, hashes, and
-  disclosure rules on every pull request and `main` update.
+## Status
 
-That workflow verifies the **integrity of this publication**, not the private
-product implementation. The current evidence class is internal attestation with
-explicit public limitations; it is not independent certification.
+Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development. The passport format is not frozen, and Deedseal is not yet available for production use. Current workstreams and their state are tracked in [docs/status.md](docs/status.md).
 
-## Deliberate non-claims
+## How Deedseal is built
 
-This repository does not claim:
+The discipline that governs runs also governs the codebase: AI workers implement inside bounded task packets with pinned scope, acceptance is an ordered suite of deterministic checks — about half of them hostile probes that must fail for the right reason — and only the owner merges. The method is documented in [docs/method.md](docs/method.md).
 
-- semantic correctness of agent-produced code;
-- containment of activity outside the documented execution path;
-- model or provider neutrality;
-- product security, formal verification, certification, or compliance;
-- production, client, general-availability, or commercial readiness;
-- benchmark, cost, or speed superiority.
+## FAQ
 
-## Repository guide
+Answers to the obvious questions — "Why not just seccomp?", "How is a passport different from an audit log?", "Can I use it today?" — are in [docs/faq.md](docs/faq.md).
 
-- [System boundary](docs/system-boundary.md)
-- [Engineering properties](docs/engineering-properties.md)
-- [Publication policy](docs/publication-policy.md)
-- [Evidence records](evidence/README.md)
-- [Security reporting](SECURITY.md)
-- [Contribution policy](CONTRIBUTING.md)
-- [Rights and source availability](NOTICE.md)
+## Security
+
+Report vulnerabilities through GitHub private vulnerability reporting on this repository. Details: [SECURITY.md](SECURITY.md).
+
+## Questions and contributions
+
+Questions are welcome as GitHub issues. Pull requests are accepted for corrections and clarity only; feature and design proposals cannot be accepted here, because the engineering repositories are private. This repository operates under the same model as the product: automation may propose; only the owner reviews, approves, and merges. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+Documentation in this repository is licensed under [CC BY 4.0](LICENSE).
