@@ -13,6 +13,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 | Offline verifier | Single-file, standard-library verification against pinned keys | active |
 | Kernel-enforcement objectives | Resource bounds, egress bounds, grant-derived kernel sandboxing of the agent | planned |
 | Unattended dispatch of agent work | Queue-driven execution of bounded task packets | draft — designed, fail-closed, not adopted |
+| Public evidence record | Machine-validated claims, sanitized records, CI-checked disclosure rules | active |
 | Public passport specification | A versioned, published format specification | planned |
 | Public verifier release | A published verifier anyone can run | planned |
 
@@ -26,4 +27,4 @@ Each workstream closes against stated acceptance criteria, not dates. There are 
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
 
-- **2026-08-01** — Initial public documentation.
+- **2026-08-01** — Initial public documentation and machine-validated evidence record (snapshot `DS-2026.08.1`).

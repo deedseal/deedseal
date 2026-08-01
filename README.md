@@ -42,6 +42,24 @@ A run passport is one JSON record per supervised run, binding what was requested
 
 **Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json).
 
+## Verified claims
+
+[![Public record validation](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml/badge.svg)](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml)
+
+Beyond documentation, this repository maintains a machine-validated public record: bounded claims tied to a dated snapshot, each backed by a sanitized evidence record, with statuses that say exactly what a public reader can and cannot reproduce. Structure, cross-references, artifact digests, and disclosure rules are checked by CI on every change. `internally-verified` means the property was checked against a fixed private-source snapshot; it is evidence of internal verification, not independent certification.
+
+| Claim | Statement | Evidence | Status |
+|---|---|---|---|
+| `CLM-0001` | A run can be admitted by a signed, scope-bound owner grant before controlled effects are accepted. | `EVD-CORE-0001` | `internally-verified` |
+| `CLM-0002` | A current run passport binds authorization, custody outcome, execution identity, complete committed changes, artifact hashes, acceptance data, and final owner closure. | `EVD-CORE-0001` | `internally-verified` |
+| `CLM-0003` | The standalone run-passport verifier needs one passport file and no network, repository checkout, running service, private key, or third-party Python package. | `EVD-CORE-0001` | `internally-verified` |
+| `CLM-0004` | Repository-native dispatch binds immutable task bytes, bounded write scope, an execution-profile digest, and draft-only automation authority to an owner-selected commit. | `EVD-OFFICE-0001` | `internally-verified` |
+| `CLM-0005` | Postflight checks worker history and scope before publication; readiness, approval, and merge remain owner actions. | `EVD-OFFICE-0001` | `internally-verified` |
+| `CLM-0006` | Typed interruptions and recorded failures receive terminal dispositions; retry admits a closed failure set and reclaims prior worker state. | `EVD-OFFICE-0001` | `internally-verified` |
+| `CLM-0007` | An internal 10-entry controlled-execution series records eight positive lifecycles and two designed-negative lifecycles refused before effects. | `EVD-CORE-0002` | `internally-verified` |
+
+Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineering-properties.md). Evidence model and what the hashes prove: [evidence/README.md](evidence/README.md). What may be published at all: [docs/publication-policy.md](docs/publication-policy.md).
+
 ## Principles
 
 - **Deny by default.** Every allow path is enumerated; the fallthrough is a block.
@@ -76,4 +94,4 @@ Questions are welcome as GitHub issues. Pull requests are accepted for correctio
 
 ## License
 
-Documentation in this repository is licensed under [CC BY 4.0](LICENSE).
+Documentation in this repository is licensed under [CC BY 4.0](LICENSE). The underlying product source is private and not covered by that license; see [NOTICE.md](NOTICE.md).

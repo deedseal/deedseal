@@ -66,4 +66,4 @@ flowchart LR
 
 Zones ordered least-trusted to most-trusted. Everything the agent produces — code, files, reports, claims of success — sits in the least-trusted zone until it has passed the gate and been observed. The owner's signing key never enters the host path that runs agents.
 
-For the threat model behind these boundaries, see [trust-model.md](trust-model.md).
+For the threat model behind these boundaries, see [trust-model.md](trust-model.md). For the engineering lifecycle around this runtime — dispatch, isolated workers, draft-only publication, owner review — see [system-boundary.md](system-boundary.md).

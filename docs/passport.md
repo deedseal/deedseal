@@ -55,3 +55,5 @@ A passport that does not verify is treated as no passport at all — deny by def
 ## Format status
 
 The passport format is not frozen. The structure described here and the [synthetic example](../examples/passport.example.json) are illustrative. A versioned public specification of the passport format is a named workstream in [status.md](status.md).
+
+The passport-binding and offline-verification properties described here are registered as claims `CLM-0002` and `CLM-0003` in the [public evidence record](engineering-properties.md), with their evidence class and limitations stated there.
