@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: CC-BY-4.0
 """Validate the Deedseal public claim and evidence record without dependencies."""
 
 from __future__ import annotations
@@ -72,6 +73,12 @@ DISCLOSURE_PATTERNS = (
     (
         re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE),
         "email address",
+    ),
+    # The public record is English-only by policy. The range is assembled from
+    # code points so this file does not itself contain the characters it bans.
+    (
+        re.compile("[" + chr(0x0400) + "-" + chr(0x04FF) + "]"),
+        "non-English (Cyrillic) text",
     ),
 )
 

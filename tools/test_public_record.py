@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: CC-BY-4.0
 """Regression tests for the public publication gate."""
 
 from __future__ import annotations
@@ -46,6 +47,7 @@ class PublicRecordGateTests(unittest.TestCase):
             "gh" + "p_" + "A" * 30,
             "a" * 40,
             "person" + "@" + "example.invalid",
+            "te" + chr(0x0445) + chr(0x0442) + "st",
         )
         for text in samples:
             with self.subTest(text=text[:12]):
