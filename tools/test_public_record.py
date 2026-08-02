@@ -55,6 +55,23 @@ class PublicRecordGateTests(unittest.TestCase):
                     gate.disclosure_violation(Path("fixture.txt"), text)
                 )
 
+    def test_public_commit_ids_are_scoped_to_published_passports(self) -> None:
+        commit_id = "a" * 40
+        self.assertIsNone(
+            gate.disclosure_violation(
+                Path("examples/verified/run-passport.json"),
+                '{"commit_sha": "' + commit_id + '"}',
+            )
+        )
+        self.assertEqual(
+            gate.disclosure_violation(Path("README.md"), commit_id),
+            "private commit identifier",
+        )
+        self.assertEqual(
+            gate.disclosure_violation(Path("docs/verify.md"), commit_id),
+            "private commit identifier",
+        )
+
     def test_internal_links_are_checked(self) -> None:
         broken = gate.internal_link_violations(
             Path("docs/fixture.md"), "See [the missing page](no-such-file.md)."

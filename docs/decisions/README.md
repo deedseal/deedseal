@@ -9,3 +9,4 @@ Significant decisions about this public repository are recorded here, one file p
 | [0003](0003-english-only-enforced.md) | Public text is English-only, enforced by the validation gate | accepted |
 | [0004](0004-cc-by-content-license.md) | Repository content is CC BY 4.0; product source stays proprietary | accepted |
 | [0005](0005-minimal-dependency-surface.md) | Minimal dependency surface: standard-library tooling, pinned actions | accepted |
+| [0006](0006-publish-the-verifier-under-apache-2.md) | Publish the offline verifier under Apache-2.0 | accepted |

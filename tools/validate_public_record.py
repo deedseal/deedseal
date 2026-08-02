@@ -57,6 +57,11 @@ GITHUB_REPOSITORY_URL_RE = re.compile(
 )
 PUBLIC_GITHUB_PREFIX = "https://github.com/deedseal/deedseal"
 
+# Published run passports bind commit identifiers of the public demonstration
+# repository. Those identifiers are public by construction, so the commit-shaped
+# rule is scoped out for exactly this directory and nowhere else.
+PUBLIC_COMMIT_ID_PREFIX = "examples/verified/"
+
 # Assemble credential-shaped prefixes without embedding a live-looking token in
 # the validator source. The public scan includes this file and its tests.
 _CREDENTIAL_PREFIXES = ("gh" + "p_", "github_" + "pat_", "s" + "k-")
@@ -576,6 +581,8 @@ def disclosure_violation(path: Path, text: str) -> str | None:
             path.as_posix() == ".github/workflows/validate-public-record.yml"
             and f"actions/checkout@{match.group(0)}" in line
         ):
+            continue
+        if path.as_posix().startswith(PUBLIC_COMMIT_ID_PREFIX):
             continue
         return "private commit identifier"
     return None
