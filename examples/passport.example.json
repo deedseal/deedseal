@@ -1,0 +1,54 @@
+{
+  "_notice": "SYNTHETIC EXAMPLE. Field names are illustrative and do not represent a frozen format. This file was not produced by a real run. Every value below is an obvious placeholder.",
+  "passport_version": "example",
+  "grant": {
+    "grant_id": "grant-0000-example",
+    "issued_by": "owner",
+    "repository_head": "sha256:<pinned-head-digest-omitted>",
+    "valid_from": "2001-01-01T00:00:00Z",
+    "valid_until": "2001-01-01T00:30:00Z",
+    "allowed_files": [
+      "src/example_module.py",
+      "docs/example.md"
+    ],
+    "task_prompt_digest": "sha256:<digest-of-exact-prompt-text-omitted>",
+    "owner_signature": "ed25519:<grant-signature-omitted>"
+  },
+  "custody": {
+    "authorized_record": {
+      "status": "AUTHORIZED",
+      "recorded_before_any_effect": true,
+      "service_signature": "ed25519:<service-signature-omitted>"
+    },
+    "outcome_record": {
+      "status": "OUTCOME_SUCCESS",
+      "service_signature": "ed25519:<service-signature-omitted>"
+    }
+  },
+  "observation": {
+    "observed_files": [
+      {
+        "path": "src/example_module.py",
+        "before": "sha256:<digest-omitted>",
+        "after": "sha256:<digest-omitted>"
+      },
+      {
+        "path": "docs/example.md",
+        "before": null,
+        "after": "sha256:<digest-omitted>"
+      }
+    ],
+    "staging": "all-or-nothing"
+  },
+  "changeset": {
+    "commit": "git:<commit-digest-omitted>",
+    "changed_paths": [
+      "src/example_module.py",
+      "docs/example.md"
+    ],
+    "equals_allowed_files": true
+  },
+  "closure": {
+    "owner_signature": "ed25519:<closure-signature-omitted>"
+  }
+}
