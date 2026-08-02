@@ -16,6 +16,8 @@ Acceptance is a single canonical entrypoint that runs an exact, ordered list of 
 
 Roughly half of the checks are hostile negative probes. They mutate temporary copies of the repository to weaken a setting and assert that the check rejects it; they feed adversarial inputs — malformed records, path traversal, digest mismatches, credential-shaped environment names — and assert the precise, stable refusal code, not merely any failure. Gates are proven to reject, not assumed to. Known-open gaps are committed as passing tests that must break when the gap closes, so closing a gap is a visible event.
 
+For foundational formats, test vectors are committed before the code that must satisfy them, so an implementation bug cannot quietly become the reference behavior.
+
 ## Asymmetric authority
 
 AI workers author branches and open draft pull requests — only drafts, enforced in code. A single human owner alone marks work ready, approves, and merges. Passing checks are evidence, not approval. Pull-request eligibility is delegated to GitHub-native enforcement — one ruleset, one required check, no bypass actors — and that enforcement was probed empirically: a deliberately broken commit producing a recorded failure, then a valid commit producing a recorded success, with the failure left visible in history.
@@ -23,6 +25,8 @@ AI workers author branches and open draft pull requests — only drafts, enforce
 ## Negative results are first-class
 
 A refusal is a result. Designed refusals — validly signed grants that the system correctly declined before any effect — are closed with signed, offline-verifiable negative records, and they count as successful proofs of refusal. The record of what the system would not do is part of the evidence, not an embarrassment to be cleaned up.
+
+Status itself follows the same rule: an engineering objective counts as closed only when a bound implementation fact and a passing hostile probe both verify. A status cannot be claimed in prose.
 
 ## Scope of this document
 

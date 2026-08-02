@@ -44,6 +44,8 @@ The control plane owns the work lifecycle around the execution layer:
 5. publish a draft pull request and observe required checks;
 6. leave readiness, approval, and merge to the owner.
 
+The worker itself holds no repository credential. Publish authority activates only after independent postflight verification passes, and it extends to opening a draft pull request — nothing further.
+
 At `DS-2026.08.1`, this dispatch path is an implemented and hermetically tested engineering capability. Production adoption remains pending, and this document does not claim a real model-provider run through that path.
 
 Durable repository state is authoritative. Chat, model memory, transient terminal sessions, and uncommitted work are not completion records.
