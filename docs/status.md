@@ -31,5 +31,5 @@ Each workstream closes against acceptance criteria, not dates. There are no cale
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
 
-- **2026-08-02** — Decision 0006 accepted (publish the offline verifier under Apache-2.0); demonstration target added at `demo/`; brand assets published as source; publication gate hardened (required-file set, SPDX policy, README-to-ledger equality, scoped disclosure rules).
+- **2026-08-02** — Repository made public; snapshot `DS-2026.08.1` recorded as published and enforced on the default branch. Decision 0006 accepted (publish the offline verifier under Apache-2.0); demonstration target added at `demo/`; brand assets published as source; publication gate hardened (required-file set, SPDX policy, README-to-ledger equality, scoped disclosure rules).
 - **2026-08-01** — Initial public documentation and machine-validated evidence record (snapshot `DS-2026.08.1`).
