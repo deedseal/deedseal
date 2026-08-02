@@ -47,6 +47,10 @@ jobs:
       - name: Run the demonstration target's contract tests
         run: ${{ matrix.python }} demo/tests/test_demo_contract.py
 
+      - name: Require a published snapshot on the default branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: ${{ matrix.python }} tools/validate_public_record.py --require-published
+
   gate:
     name: Publication gate
     needs: validate
