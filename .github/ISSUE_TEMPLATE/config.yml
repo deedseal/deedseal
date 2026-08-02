@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a vulnerability
+    url: https://github.com/deedseal/deedseal/security/advisories/new
+    about: Use private vulnerability reporting, never a public issue.

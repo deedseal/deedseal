@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: CC-BY-4.0
 """Regression tests for the public publication gate."""
 
 from __future__ import annotations
@@ -46,12 +47,30 @@ class PublicRecordGateTests(unittest.TestCase):
             "gh" + "p_" + "A" * 30,
             "a" * 40,
             "person" + "@" + "example.invalid",
+            "te" + chr(0x0445) + chr(0x0442) + "st",
         )
         for text in samples:
             with self.subTest(text=text[:12]):
                 self.assertIsNotNone(
                     gate.disclosure_violation(Path("fixture.txt"), text)
                 )
+
+    def test_internal_links_are_checked(self) -> None:
+        broken = gate.internal_link_violations(
+            Path("docs/fixture.md"), "See [the missing page](no-such-file.md)."
+        )
+        self.assertEqual(len(broken), 1)
+        self.assertIn("broken internal link", broken[0])
+        escaping = gate.internal_link_violations(
+            Path("docs/fixture.md"), "See [outside](../../outside.md)."
+        )
+        self.assertEqual(len(escaping), 1)
+        self.assertIn("escapes the repository", escaping[0])
+        clean = gate.internal_link_violations(
+            Path("docs/fixture.md"),
+            "See [status](status.md) and [the site](https://github.com/deedseal/deedseal).",
+        )
+        self.assertEqual(clean, [])
 
     def test_scan_includes_gate_and_workflow(self) -> None:
         paths = {path.relative_to(gate.ROOT).as_posix() for path in gate.all_public_files()}

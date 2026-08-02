@@ -1,0 +1,26 @@
+name: Correction
+description: A public statement in this repository is wrong, unclear, or overclaims.
+labels: []
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Where
+      description: File and section (for example, docs/passport.md, "Offline verification").
+      placeholder: README.md, "What Deedseal is not"
+    validations:
+      required: true
+  - type: textarea
+    id: statement
+    attributes:
+      label: The exact statement
+      description: Quote the sentence or claim as it currently reads.
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong with it
+      description: Explain the discrepancy. Do not include private source, identities, or security-sensitive material — for vulnerabilities use private vulnerability reporting instead.
+    validations:
+      required: true

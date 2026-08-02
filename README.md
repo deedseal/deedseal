@@ -78,7 +78,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 
 ## How Deedseal is built
 
-The discipline that governs runs also governs the codebase: AI workers implement inside bounded task packets with pinned scope, acceptance is an ordered suite of deterministic checks — about half of them hostile probes that must fail for the right reason — and only the owner merges. The method is documented in [docs/method.md](docs/method.md).
+The discipline that governs runs also governs the codebase: AI workers implement inside bounded task packets with pinned scope, acceptance is an ordered suite of deterministic checks — about half of them hostile probes that must fail for the right reason — and only the owner merges. The method is documented in [docs/method.md](docs/method.md). Significant decisions about this public repository are recorded in [docs/decisions/](docs/decisions/README.md).
 
 ## FAQ
 
