@@ -24,6 +24,10 @@ changed together, it does not independently anchor immutability. It also does
 not reveal or prove private source contents and is not presented as independent
 certification.
 
+## Published artifacts
+
+`examples/verified/` is the reserved location for published run passports and their byte-tampered twins. It is empty today. Because a passport binds commit identifiers of this repository, the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
+
 ## Layout
 
 - [`ledger-v1.json`](ledger-v1.json) maps claims to evidence.

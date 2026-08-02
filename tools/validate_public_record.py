@@ -38,6 +38,10 @@ CLAIM_ASSURANCE = {
     "internally-verified": ASSURANCE_LEVELS,
     "public-attested": {"public-attestation", "public-reproducible"},
     "public-reproducible": {"public-reproducible"},
+    # A claim that is not yet an engineering result may cite no evidence at all.
+    "experimental": set(),
+    "design-target": set(),
+    "withdrawn": set(),
 }
 COMPONENTS = {"CORE", "OFFICE", "PUBLIC"}
 REDACTION_CODES = {"R-SEC", "R-OPS", "R-PRIV", "R-IP", "R-VULN"}
@@ -55,7 +59,9 @@ GITHUB_REPOSITORY_URL_RE = re.compile(
     r"https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+[^\s)`'\"]*",
     re.IGNORECASE,
 )
-PUBLIC_GITHUB_PREFIX = "https://github.com/deedseal/deedseal"
+PUBLIC_GITHUB_URL_RE = re.compile(
+    r"^https://github\.com/deedseal/deedseal(?:[/#?]|$)"
+)
 
 # Published run passports bind commit identifiers of the public demonstration
 # repository. Those identifiers are public by construction, so the commit-shaped
@@ -82,12 +88,27 @@ DISCLOSURE_PATTERNS = (
     # The public record is English-only by policy. The range is assembled from
     # code points so this file does not itself contain the characters it bans.
     (
-        re.compile("[" + chr(0x0400) + "-" + chr(0x04FF) + "]"),
+        re.compile(
+            "["
+            + chr(0x0400) + "-" + chr(0x052F)      # Cyrillic, Cyrillic Supplement
+            + chr(0x1C80) + "-" + chr(0x1C8F)      # Cyrillic Extended-C
+            + chr(0x2DE0) + "-" + chr(0x2DFF)      # Cyrillic Extended-A
+            + chr(0xA640) + "-" + chr(0xA69F)      # Cyrillic Extended-B
+            + "]"
+        ),
         "non-English (Cyrillic) text",
     ),
 )
 
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]*\]\(([^()\s]+)\)")
+
+README_CLAIM_ROW_RE = re.compile(
+    r"^\|\s*`(CLM-[0-9]{4})`\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*`([a-z-]+)`\s*\|\s*$",
+    re.MULTILINE,
+)
+
+SPDX_RE = re.compile(r"SPDX-License-Identifier:\s*(\S+)")
+ALLOWED_SPDX = {"CC-BY-4.0", "Apache-2.0"}
 
 PROHIBITED_CLAIM_TERMS = re.compile(
     r"\b(?:unique|first|secure|tamper-proof|unhackable|certified|compliant|"
@@ -156,6 +177,13 @@ SUPPORTED_SCHEMA_KEYS = {
 
 class ValidationError(RuntimeError):
     pass
+
+
+if sys.version_info < (3, 9):  # pragma: no cover - guard for old interpreters
+    raise SystemExit(
+        "the publication gate requires Python 3.9 or newer; "
+        f"this interpreter is {sys.version.split()[0]}"
+    )
 
 
 def fail(message: str) -> None:
@@ -566,7 +594,7 @@ def all_public_files() -> list[Path]:
 
 def disclosure_violation(path: Path, text: str) -> str | None:
     for match in GITHUB_REPOSITORY_URL_RE.finditer(text):
-        if not match.group(0).startswith(PUBLIC_GITHUB_PREFIX):
+        if PUBLIC_GITHUB_URL_RE.match(match.group(0)) is None:
             return "non-public GitHub repository URL"
     for pattern, label in DISCLOSURE_PATTERNS:
         if pattern.search(text):
@@ -617,30 +645,48 @@ def internal_link_violations(path: Path, text: str) -> list[str]:
     return violations
 
 
+REQUIRED_PUBLIC_FILES = {
+    "README.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "NOTICE.md",
+    "LICENSE",
+    ".gitattributes",
+    "docs/architecture.md",
+    "docs/trust-model.md",
+    "docs/passport.md",
+    "docs/method.md",
+    "docs/faq.md",
+    "docs/status.md",
+    "docs/system-boundary.md",
+    "docs/engineering-properties.md",
+    "docs/publication-policy.md",
+    "docs/decisions/README.md",
+    "examples/passport.example.json",
+    "demo/README.md",
+    "demo/tests/test_demo_contract.py",
+    "assets/README.md",
+    "evidence/README.md",
+    "evidence/ledger-v1.json",
+    "schemas/evidence-ledger-v1.schema.json",
+    "schemas/evidence-record-v1.schema.json",
+    "tools/validate_public_record.py",
+    "tools/test_public_record.py",
+    ".github/workflows/validate-public-record.yml",
+    ".github/pull_request_template.md",
+    ".github/dependabot.yml",
+    ".github/ISSUE_TEMPLATE/config.yml",
+}
+
+
 def validate_public_text() -> None:
-    required = {
-        "README.md",
-        "SECURITY.md",
-        "CONTRIBUTING.md",
-        "NOTICE.md",
-        "docs/system-boundary.md",
-        "docs/engineering-properties.md",
-        "docs/publication-policy.md",
-        "evidence/README.md",
-        "evidence/ledger-v1.json",
-        "schemas/evidence-ledger-v1.schema.json",
-        "schemas/evidence-record-v1.schema.json",
-        "tools/validate_public_record.py",
-        "tools/test_public_record.py",
-        ".github/workflows/validate-public-record.yml",
-        ".github/pull_request_template.md",
-    }
-    observed = {path.relative_to(ROOT).as_posix() for path in all_public_files()}
-    missing = required - observed
+    public_files = all_public_files()
+    observed = {path.relative_to(ROOT).as_posix() for path in public_files}
+    missing = REQUIRED_PUBLIC_FILES - observed
     if missing:
         fail(f"required public files missing: {sorted(missing)}")
 
-    for path in all_public_files():
+    for path in public_files:
         relative = path.relative_to(ROOT)
         raw = guarded_bytes(path)
         try:
@@ -652,14 +698,59 @@ def validate_public_text() -> None:
             fail(f"{relative}: contains forbidden {violation}")
         for message in internal_link_violations(relative, text):
             fail(message)
+        if relative.suffix == ".py":
+            declared = SPDX_RE.search(text)
+            if declared is None:
+                fail(f"{relative}: executable files must declare an SPDX identifier")
+            if declared.group(1) not in ALLOWED_SPDX:
+                fail(
+                    f"{relative}: SPDX identifier {declared.group(1)} is not one of "
+                    f"{sorted(ALLOWED_SPDX)}"
+                )
 
 
-def validate_document_links(claim_ids: set[str], evidence_ids: set[str]) -> None:
+def readme_claim_rows(readme: str) -> dict[str, tuple[str, list[str], str]]:
+    """Parse the README claim table into {claim_id: (statement, evidence_ids, status)}."""
+    rows: dict[str, tuple[str, list[str], str]] = {}
+    for match in README_CLAIM_ROW_RE.finditer(readme):
+        claim_id, statement, evidence_cell, status = match.groups()
+        evidence = [
+            item.strip().strip("`")
+            for item in evidence_cell.split(",")
+            if item.strip()
+        ]
+        rows[claim_id] = (statement.strip(), evidence, status)
+    return rows
+
+
+def validate_document_links(claims: list[dict[str, Any]], evidence_ids: set[str]) -> None:
+    """The README claim table is a restatement of the ledger, so it must match it
+    exactly. A drifted statement or a flipped status is a validation failure."""
     readme = guarded_bytes(ROOT / "README.md").decode("utf-8")
     properties = guarded_bytes(ROOT / "docs/engineering-properties.md").decode("utf-8")
-    for claim_id in sorted(claim_ids):
-        if claim_id not in readme or claim_id not in properties:
-            fail(f"{claim_id}: missing from README or engineering properties")
+    rows = readme_claim_rows(readme)
+
+    for claim in claims:
+        claim_id = claim["id"]
+        if claim_id not in properties:
+            fail(f"{claim_id}: missing from engineering properties")
+        if claim_id not in rows:
+            fail(f"{claim_id}: missing from the README claim table")
+        statement, evidence, status = rows[claim_id]
+        if statement != claim["statement"]:
+            fail(f"{claim_id}: README statement differs from the ledger statement")
+        if status != claim["status"]:
+            fail(
+                f"{claim_id}: README status {status} differs from ledger status "
+                f"{claim['status']}"
+            )
+        if sorted(evidence) != sorted(claim["evidence_ids"]):
+            fail(f"{claim_id}: README evidence identifiers differ from the ledger")
+
+    unknown = set(rows) - {claim["id"] for claim in claims}
+    if unknown:
+        fail(f"README claim table lists unknown claims: {sorted(unknown)}")
+
     for evidence_id in sorted(evidence_ids):
         if evidence_id not in readme:
             fail(f"{evidence_id}: missing from README claim table")
@@ -715,7 +806,7 @@ def validate_repository(*, require_published: bool = False) -> tuple[str, int, i
         item["id"]: validate_record(item, record_schema) for item in evidence
     }
     validate_evidence_graph(claims, evidence_by_id, records_by_id)
-    validate_document_links(set(claim_ids), set(evidence_ids))
+    validate_document_links(claims, set(evidence_ids))
     validate_public_text()
     return snapshot_id, len(claims), len(evidence)
 

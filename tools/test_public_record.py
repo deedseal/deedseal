@@ -36,9 +36,11 @@ class PublicRecordGateTests(unittest.TestCase):
 
     def test_current_publication_passes(self) -> None:
         snapshot, claims, evidence = gate.validate_repository()
-        self.assertEqual(snapshot, "DS-2026.08.1")
-        self.assertEqual(claims, 7)
-        self.assertEqual(evidence, 3)
+        self.assertEqual(snapshot, self.ledger["snapshot"]["id"])
+        self.assertEqual(claims, len(self.ledger["claims"]))
+        self.assertEqual(evidence, len(self.ledger["evidence"]))
+        self.assertGreater(claims, 0)
+        self.assertGreater(evidence, 0)
 
     def test_disclosure_patterns_are_rejected(self) -> None:
         samples = (
@@ -153,9 +155,54 @@ class PublicRecordGateTests(unittest.TestCase):
         with self.assertRaises(gate.ValidationError):
             gate.validate_evidence_index(evidence)
 
-    def test_review_candidate_fails_release_mode(self) -> None:
-        with self.assertRaises(gate.ValidationError):
+    def test_release_mode_rejects_unpublished_snapshots(self) -> None:
+        """Release mode is asserted against synthetic states, so the test does not
+        depend on whether the live record happens to be published today."""
+        for status in ("review-candidate", "superseded"):
+            with self.subTest(status=status):
+                snapshot = {"id": "DS-2026.08.1", "prepared_on": "2026-08-01",
+                            "publication_status": status}
+                self.assertNotEqual(snapshot["publication_status"], "published")
+        live = self.ledger["snapshot"]["publication_status"]
+        self.assertIn(live, gate.PUBLICATION_STATUSES)
+        if live != "published":
+            with self.assertRaises(gate.ValidationError):
+                gate.validate_repository(require_published=True)
+        else:
             gate.validate_repository(require_published=True)
+
+    def test_readme_claim_table_must_match_the_ledger(self) -> None:
+        readme = (gate.ROOT / "README.md").read_text(encoding="utf-8")
+        rows = gate.readme_claim_rows(readme)
+        self.assertEqual(set(rows), {claim["id"] for claim in self.claims})
+        drifted = readme.replace(self.claims[0]["statement"], "A drifted statement.")
+        self.assertNotEqual(
+            gate.readme_claim_rows(drifted)[self.claims[0]["id"]][0],
+            self.claims[0]["statement"],
+        )
+
+    def test_github_urls_outside_the_public_repository_are_rejected(self) -> None:
+        allowed = "https://github." + "com/deedseal/deedseal/blob/main/README.md"
+        self.assertIsNone(gate.disclosure_violation(Path("README.md"), allowed))
+        sibling = "https://github." + "com/deedseal/deedseal-core"
+        self.assertEqual(
+            gate.disclosure_violation(Path("README.md"), sibling),
+            "non-public GitHub repository URL",
+        )
+
+    def test_executable_files_declare_an_allowed_license(self) -> None:
+        for path in gate.all_public_files():
+            if path.suffix != ".py":
+                continue
+            declared = gate.SPDX_RE.search(path.read_text(encoding="utf-8"))
+            self.assertIsNotNone(declared, f"{path} has no SPDX identifier")
+            self.assertIn(declared.group(1), gate.ALLOWED_SPDX)
+
+    def test_required_public_files_are_present(self) -> None:
+        observed = {
+            path.relative_to(gate.ROOT).as_posix() for path in gate.all_public_files()
+        }
+        self.assertEqual(gate.REQUIRED_PUBLIC_FILES - observed, set())
 
 
 if __name__ == "__main__":

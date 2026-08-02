@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+
+# Brand assets are generated from assets/src, never committed.
+*.png

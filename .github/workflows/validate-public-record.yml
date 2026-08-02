@@ -2,6 +2,8 @@ name: Public record validation
 
 on:
   pull_request:
+  merge_group:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -11,7 +13,9 @@ permissions:
 
 concurrency:
   group: public-record-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Only superseded pull-request runs are cancelled; every commit that lands on
+  # main keeps a completed gate result.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
@@ -39,6 +43,9 @@ jobs:
 
       - name: Validate the public record
         run: ${{ matrix.python }} tools/validate_public_record.py
+
+      - name: Run the demonstration target's contract tests
+        run: ${{ matrix.python }} demo/tests/test_demo_contract.py
 
   gate:
     name: Publication gate
