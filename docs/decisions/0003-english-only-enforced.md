@@ -9,7 +9,9 @@ The project operates for an English-speaking market. Mixed-language fragments in
 
 ## Decision
 
-All public text in this repository is English. The validation gate treats Cyrillic characters in any public file as a disclosure violation, the same class as an email address or a private path. The banned character range is assembled from code points so the gate file does not itself contain the characters it bans.
+All public text in this repository is English. The validation gate treats Cyrillic characters in any public file as a disclosure violation, the same class as an email address or a private path; the banned ranges cover the Cyrillic block and its supplements and extensions. The ranges are assembled from code points so the gate file does not itself contain the characters it bans.
+
+The gate is a backstop against the working language leaking in, not a general script filter: text in other non-Latin scripts is not mechanically rejected, and the rule is review plus this record.
 
 ## Consequences
 

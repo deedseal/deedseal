@@ -6,7 +6,9 @@ Deedseal is designed so that what a machine was allowed to do — and what it ac
 
 ## This repository
 
-This repository is the public documentation for Deedseal. The engineering repositories are private; no product source code is published here.
+This repository is the public documentation and machine-validated evidence record for Deedseal. The engineering repositories stay private. The one exception to "no product source here" is the offline run-passport verifier, which is published so that verification does not require trusting us — see [decision 0006](docs/decisions/0006-publish-the-verifier-under-apache-2.md).
+
+In depth: [architecture](docs/architecture.md) (how the pieces fit), [trust model](docs/trust-model.md) (what is assumed, threatened, and out of scope), [system boundary](docs/system-boundary.md) (the engineering lifecycle around a run).
 
 ## What Deedseal is
 
@@ -41,6 +43,8 @@ flowchart LR
 A run passport is one JSON record per supervised run, binding what was requested, what was granted, and what actually changed — including the complete changeset of the resulting commit, which must exactly equal the granted file set. It is signed twice on the way through: by a dedicated service key before and after execution, and by the owner as closure.
 
 **Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json).
+
+**Demonstration.** The verifier is not published yet, so nothing here can be checked by a reader today. A supervised run against [`demo/`](demo/README.md) will publish a real passport, a byte-tampered twin, and the verifier itself, at which point the claims below gain a `public-reproducible` entry. Progress: [docs/status.md](docs/status.md).
 
 ## Verified claims
 
@@ -92,6 +96,10 @@ Report vulnerabilities through GitHub private vulnerability reporting on this re
 
 Questions are welcome as GitHub issues. Pull requests are accepted for corrections and clarity only; feature and design proposals cannot be accepted here, because the engineering repositories are private. This repository operates under the same model as the product: automation may propose; only the owner reviews, approves, and merges. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Brand
+
+The mark, the lockup, and the palette are documented in [assets/README.md](assets/README.md), with generators that reproduce every asset from source.
+
 ## License
 
-Documentation in this repository is licensed under [CC BY 4.0](LICENSE). The underlying product source is private and not covered by that license; see [NOTICE.md](NOTICE.md).
+Documentation in this repository is licensed under [CC BY 4.0](LICENSE); executable files declare their own license with an SPDX identifier. The underlying product source is private and not covered by that license; see [NOTICE.md](NOTICE.md).

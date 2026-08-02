@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CC-BY-4.0
 """Contract tests for the demonstration target.
 
 The seed ships with one passing test. A supervised run extends this file

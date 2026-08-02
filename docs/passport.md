@@ -44,6 +44,8 @@ sequenceDiagram
 
 Note what this diagram does not contain: no network, no running service, no producing host. Verification needs none of them — no git, no repository checkout, no private key.
 
+The verifier is not published yet, so a reader cannot run this today. Publishing it, together with a real passport and a byte-tampered twin, is [decision 0006](decisions/0006-publish-the-verifier-under-apache-2.md) and a tracked workstream in [status.md](status.md).
+
 ## What verification proves — and what it does not
 
 A passing passport proves process and provenance: the run was authorized by the owner before it happened, the effects stayed inside the granted scope, the evidence chain is intact, and nothing was substituted after observation.

@@ -37,6 +37,9 @@ One line, fixed. It is the product's thesis: verification does not ask for belie
 | Rings | `#28323E` | `#6E7883` |
 | Verified point | `#34A873` | `#1A7F55` |
 | Point core (dark field only) | `#60D69C` | — |
+| Rings, standalone mark | `#96A2AD` | — |
+
+The standalone mark lifts its ring value away from the lockup's `#28323E`. At avatar and favicon sizes a ring that quiet disappears; the lockup keeps the quieter value because the wordmark carries the composition there.
 
 The green point is the only color, and it means exactly one thing: proven. Anywhere the identity extends — site, documents, interfaces — this green marks a verified state and nothing else.
 
@@ -55,11 +58,15 @@ Fonts are not vendored here; download them from their upstream repositories.
 
 ## Regenerating
 
+Requires Python 3.9+ and [Pillow](https://pypi.org/project/Pillow/) (`pip install pillow`) — the only place in this repository where a dependency outside the standard library is used, and deliberately not part of the publication gate. The card generator needs two OFL fonts on disk, named exactly `BricolageGrotesque-Bold.ttf` and `GeistMono-Regular.ttf`; download them from the specimen pages linked above.
+
+Run from the repository root, writing outside the tree (rendered images are not committed; `*.png` is ignored):
+
 ```
-python3 src/build_card.py --fonts <dir-with-ttf> --out card-dark.png
-python3 src/build_card.py --fonts <dir-with-ttf> --light --out card-light.png
-python3 src/build_mark.py --size 500 --out avatar-500.png
-python3 src/build_mark.py --size 32 --out favicon-32.png
+python3 assets/src/build_card.py --fonts <dir-with-ttf> --out /tmp/card-dark.png
+python3 assets/src/build_card.py --fonts <dir-with-ttf> --light --out /tmp/card-light.png
+python3 assets/src/build_mark.py --size 500 --out /tmp/avatar-500.png
+python3 assets/src/build_mark.py --size 32 --out /tmp/favicon-32.png
 ```
 
 Rendered artifacts are deterministic up to the font rasterizer version. Where each artifact goes:
