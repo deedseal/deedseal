@@ -6,6 +6,21 @@ Deedseal is designed so that what a machine was allowed to do — and what it ac
 
 In plain terms: before an AI coding agent runs, the owner signs a permission slip naming exactly which files it may change. The kernel holds that boundary while the agent works. Afterwards, a signed passport records what was permitted and what happened — and anyone can check that passport on their own machine, offline, without asking us.
 
+## Verify it yourself
+
+A real run passport, a twin of it with exactly one byte changed, and the offline verifier are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Pick the path that fits you:
+
+- **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break.
+- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again.
+- **Terminal**, offline, standard Python only:
+
+```
+python3 tools/verify_run_passport.py examples/verified/run-passport.json
+python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
+```
+
+What a PASS proves, what it does not, and how to check the changed file's bytes against the passport's signed digests: [docs/verify.md](docs/verify.md).
+
 ## This repository
 
 This repository is the public documentation and machine-validated evidence record for Deedseal. The engineering repositories stay private. The one exception to "no product source here" is the offline run-passport verifier, which is published so that verification does not require trusting us — see [decision 0006](docs/decisions/0006-publish-the-verifier-under-apache-2.md).
@@ -50,22 +65,7 @@ flowchart LR
 
 A run passport is one JSON record per supervised run, binding what was requested, what was granted, and what actually changed — including the complete changeset of the resulting commit, which must exactly equal the granted file set. It is signed twice on the way through: by a dedicated service key before and after execution, and by the owner as closure.
 
-**Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json).
-
-## Verify it yourself
-
-A real run passport, a twin of it with exactly one byte changed, and the offline verifier are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Pick the path that fits you:
-
-- **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break.
-- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again.
-- **Terminal**, offline, standard Python only:
-
-```
-python3 tools/verify_run_passport.py examples/verified/run-passport.json
-python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
-```
-
-What a PASS proves, what it does not, and how to check the changed file's bytes against the passport's signed digests: [docs/verify.md](docs/verify.md).
+**Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json). To run the checks yourself, see [Verify it yourself](#verify-it-yourself) above.
 
 ## Verified claims
 
