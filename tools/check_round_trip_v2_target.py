@@ -3,8 +3,8 @@
 """Validate the byte-frozen seed or result of the public Evidence 2 target.
 
 The controlled run is allowed to move this file from the seed bytes to exactly
-the result bytes. Both states are valid before the Evidence 2 certificate is
-published; every other state is a failure.
+the result bytes. The result is the published state; every other state is a
+failure.
 """
 
 from __future__ import annotations
