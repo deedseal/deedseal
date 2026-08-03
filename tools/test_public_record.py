@@ -8,6 +8,7 @@ import copy
 import hashlib
 import sys
 import unittest
+from datetime import date, timedelta
 from pathlib import Path
 
 
@@ -172,6 +173,20 @@ class PublicRecordGateTests(unittest.TestCase):
         else:
             gate.validate_repository(require_published=True)
 
+    def test_snapshot_cannot_predate_observations(self) -> None:
+        prepared = date.fromisoformat(self.ledger["snapshot"]["prepared_on"])
+        observed = [
+            date.fromisoformat(item["observed_on"])
+            for item in (*self.claims, *self.evidence)
+        ]
+        self.assertLessEqual(max(observed), prepared)
+        with self.assertRaises(gate.ValidationError):
+            gate.validate_snapshot_dates(
+                (max(observed) - timedelta(days=1)).isoformat(),
+                self.claims,
+                self.evidence,
+            )
+
     def test_readme_claim_table_must_match_the_ledger(self) -> None:
         readme = (gate.ROOT / "README.md").read_text(encoding="utf-8")
         rows = gate.readme_claim_rows(readme)
@@ -289,4 +304,3 @@ class PublicRecordGateTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
-

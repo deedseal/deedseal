@@ -13,8 +13,9 @@ source or operational detail.
 - `public-reproducible` — public source and artifacts are sufficient to repeat
   the check.
 
-The `DS-2026.08.1` snapshot contains both internal attestations and one
-public-reproducible record: the published passport demonstration.
+The `DS-2026.08.1` snapshot was finalized on 2026-08-03. It contains both
+internal attestations and one public-reproducible record: the published passport
+demonstration.
 
 ## What the hashes prove
 

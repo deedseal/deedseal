@@ -41,9 +41,10 @@ third-party Python package.
 directory and evaluate the whole supported envelope using the Python standard
 library and pinned public trust anchors.
 
-**Boundary.** The current verifier source is private. This public repository
-records the verified property but does not yet make the verifier publicly
-reproducible.
+**Boundary.** This claim was first observed against a private-source snapshot.
+The verifier has since been published under Apache-2.0; public reproducibility
+of the published verifier and passport demonstration is tracked separately by
+`CLM-0008`.
 
 ## `CLM-0004` — commit-pinned dispatch
 
