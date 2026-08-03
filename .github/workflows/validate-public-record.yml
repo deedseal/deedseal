@@ -44,7 +44,10 @@ jobs:
       - name: Validate the public record
         run: ${{ matrix.python }} tools/validate_public_record.py
 
-      - name: Run the demonstration target's contract tests
+      - name: Validate the Evidence 2 target contract
+        run: ${{ matrix.python }} tools/check_round_trip_v2_target.py
+
+      - name: Run the existing demonstration target's contract tests
         run: ${{ matrix.python }} demo/tests/test_demo_contract.py
 
       # The published demonstration is re-proven on every change, never asserted:
