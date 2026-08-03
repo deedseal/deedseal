@@ -103,6 +103,22 @@
       "limitations": [
         "The public record is an aggregate; raw run artifacts are not distributed."
       ]
+    },
+    {
+      "id": "CLM-0008",
+      "statement": "A published run passport verifies PASS with the published offline verifier, and a one-byte tampered copy verifies BLOCK, using only this repository's files and a Python interpreter.",
+      "component": "CORE",
+      "status": "public-reproducible",
+      "observed_on": "2026-08-02",
+      "scope": "DS-2026.08.1",
+      "evidence_ids": [
+        "EVD-CORE-0003"
+      ],
+      "limitations": [
+        "The verdict attests integrity and provenance of the recorded run against the trust anchors pinned in the published verifier; it does not attest semantic quality of the change the run produced.",
+        "The demonstration covers one supervised run and one designed tamper case; it is not a general statement about product behavior or availability.",
+        "Reproducing the verdict does not reproduce the run; producing new passports requires the private system and its signing keys."
+      ]
     }
   ],
   "evidence": [
@@ -167,6 +183,23 @@
       ],
       "limitations": [
         "Acceptance coverage is not production deployment evidence."
+      ]
+    },
+    {
+      "id": "EVD-CORE-0003",
+      "component": "CORE",
+      "kind": "published-verification-artifact",
+      "assurance": "public-reproducible",
+      "observed_on": "2026-08-02",
+      "source_snapshot": "CORE-2026-08-02-B",
+      "artifact": {
+        "path": "evidence/records/EVD-CORE-0003.json",
+        "sha256": "36d0bc7ec4512ca522a0a65a341d880cd9891f75afc4a6bb1e3143843638450b"
+      },
+      "redactions": [],
+      "limitations": [
+        "The private source of the system that produced the run is identified only by its opaque snapshot identifier.",
+        "Public reproducibility applies to checking the published passport and its tampered twin, not to producing new passports."
       ]
     }
   ]

@@ -26,7 +26,7 @@ certification.
 
 ## Published artifacts
 
-`examples/verified/` is the reserved location for published run passports and their byte-tampered twins. It is empty today. Because a passport binds commit identifiers of this repository, the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
+`examples/verified/` holds the published run passport, its byte-tampered twin, and the exact pre-run and post-run bytes of the file the run changed. Because a passport binds commit identifiers of this repository, the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
 
 ## Layout
 

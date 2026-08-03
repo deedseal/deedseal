@@ -1,0 +1,69 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-CORE-0003",
+  "component": "CORE",
+  "source_snapshot": "CORE-2026-08-02-B",
+  "observed_on": "2026-08-02",
+  "kind": "published-verification-artifact",
+  "assurance": "public-reproducible",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "published-passport-digest",
+        "result": "sha256 044ada540b894c1e891c75efe824f2d1c7f2ea5fa193f0de0b574adec4c54678"
+      },
+      {
+        "check": "published-passport-verdict",
+        "result": "PASS, exit code 0"
+      },
+      {
+        "check": "tampered-twin-digest",
+        "result": "sha256 afdb416dfbe34505ef130f47be33982ddd7faa4447caff1fac6f3ab3f398893e"
+      },
+      {
+        "check": "tampered-twin-verdict",
+        "result": "BLOCK block_owner_authorization_signature_invalid, exit code 1"
+      },
+      {
+        "check": "twin-byte-distance",
+        "result": "same length; exactly 1 differing byte at offset 1020"
+      },
+      {
+        "check": "committed-bytes-match-signed-digest",
+        "result": "sha256 of the published post-run file equals the passport's signed committed_file_hashes entry"
+      },
+      {
+        "check": "seed-differs-from-result",
+        "result": "published pre-run and post-run bytes differ; the run made a genuine edit"
+      },
+      {
+        "check": "applied-kernel-boundary-recorded",
+        "result": "10 write-class rights denied by default; 1 grant-derived rule over the single granted file; 1 recorded non-grant runtime-scratch class"
+      },
+      {
+        "check": "adversarial-mutations-refused",
+        "result": "12/12 BLOCK, including changed committed digest, widened allowed_files, forged custody status, removed boundary rule, widened scratch rights, stripped closure signature, swapped key id, unknown field, changed commit identity, whitespace-only reserialization, and duplicate JSON key"
+      },
+      {
+        "check": "continuous-integration-reproduction",
+        "result": "the published check runs on ubuntu, windows, and macos on every change to this repository"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "public",
+    "redactions": [],
+    "omitted": [
+      "the private system that produced the run, and its signing keys",
+      "the agent's captured output, which the signed record carries only as digests",
+      "implementation detail of the controlled-execution path"
+    ]
+  },
+  "limitations": [
+    "The verdicts are reproducible from this repository; the run that produced the passport is not. New passports require the private system and its signing keys.",
+    "A PASS attests authorization, bounded scope, applied boundary, and committed-byte provenance for one run. It does not attest the semantic quality of the change.",
+    "The published verifier admits only the published passport envelope. Internal formats predating publication are verified by tooling that is not published.",
+    "Signing-key secrecy is a trusted prerequisite. An attacker holding the private keys could mint records the published verifier would accept."
+  ]
+}

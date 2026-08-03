@@ -47,6 +47,14 @@ jobs:
       - name: Run the demonstration target's contract tests
         run: ${{ matrix.python }} demo/tests/test_demo_contract.py
 
+      # The published demonstration is re-proven on every change, never asserted:
+      # the verifier must accept the real passport, refuse its twin, and the twin
+      # must differ by exactly one byte. The checks live in a committed script
+      # rather than inline in this file, so a reader runs the identical command
+      # locally and CI has no assertion of its own to get wrong.
+      - name: Re-prove the published demonstration
+        run: ${{ matrix.python }} tools/check_demonstration.py
+
       - name: Require a published snapshot on the default branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ${{ matrix.python }} tools/validate_public_record.py --require-published
