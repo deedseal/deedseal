@@ -116,3 +116,21 @@ passport requires the private system and its signing keys, and signing-key
 secrecy remains a trusted prerequisite. A PASS attests authorization, bounded
 scope, applied boundary, and committed-byte provenance for one run — never the
 semantic quality of the change, and never anything about runs it does not bind.
+
+## `CLM-0009` — a second exact-byte controlled result
+
+**Statement.** A second controlled run produced the precommitted target bytes,
+proved staged-to-materialized equality, and published those exact result bytes
+in this repository.
+
+**Meaning.** Before execution, the public target had one accepted seed state and
+one accepted result state. The controlled run moved the target to the result,
+the staged and materialized digests matched, and the named test was absent from
+the seed and present exactly once in both result views. The merged public target
+has the same precommitted result digest, and its contract runs in continuous
+integration on Ubuntu, Windows, and macOS.
+
+**Boundary.** The run evidence remains private and is published only as a
+sanitized internal attestation. This record is not a signed commit-bound
+passport and does not make the second run publicly reproducible. It proves
+exact-byte result presence, not semantic quality.

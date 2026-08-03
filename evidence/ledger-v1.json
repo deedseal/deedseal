@@ -119,6 +119,21 @@
         "The demonstration covers one supervised run and one designed tamper case; it is not a general statement about product behavior or availability.",
         "Reproducing the verdict does not reproduce the run; producing new passports requires the private system and its signing keys."
       ]
+    },
+    {
+      "id": "CLM-0009",
+      "statement": "A second controlled run produced the precommitted target bytes, proved staged-to-materialized equality, and published those exact result bytes in this repository.",
+      "component": "CORE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-03",
+      "scope": "DS-2026.08.1",
+      "evidence_ids": [
+        "EVD-CORE-0004"
+      ],
+      "limitations": [
+        "The underlying grant and custody record remain private; the public record is a sanitized internal attestation, not a publicly reproducible run.",
+        "The second run does not yet have a signed commit-bound passport."
+      ]
     }
   ],
   "evidence": [
@@ -200,6 +215,28 @@
       "limitations": [
         "The private source of the system that produced the run is identified only by its opaque snapshot identifier.",
         "Public reproducibility applies to checking the published passport and its tampered twin, not to producing new passports."
+      ]
+    },
+    {
+      "id": "EVD-CORE-0004",
+      "component": "CORE",
+      "kind": "sanitized-external-public-cargo-run-summary",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-03",
+      "source_snapshot": "CORE-2026-08-03-A",
+      "artifact": {
+        "path": "evidence/records/EVD-CORE-0004.json",
+        "sha256": "589034a82fb061b3737a9326b78d34174f1f90d308e9d8b90f5ed8dc0a0e03af"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC"
+      ],
+      "limitations": [
+        "The controlled run and its private evidence are summarized, not published.",
+        "This record is not a signed commit-bound passport."
       ]
     }
   ]

@@ -1,0 +1,57 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-CORE-0004",
+  "component": "CORE",
+  "source_snapshot": "CORE-2026-08-03-A",
+  "observed_on": "2026-08-03",
+  "kind": "sanitized-external-public-cargo-run-summary",
+  "assurance": "internal-ci-attestation",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "owner-run-verdict",
+        "result": "PASS"
+      },
+      {
+        "check": "precommitted-result-digest",
+        "result": "sha256 49250d96386fc0271d3383d8f4b0986a8b40c458953826074df109a247a7722a"
+      },
+      {
+        "check": "stage-materialize-equality",
+        "result": "the staged and materialized target bytes were equal"
+      },
+      {
+        "check": "abstract-syntax-binding",
+        "result": "the named test was absent from the seed and present exactly once in both staged and materialized source"
+      },
+      {
+        "check": "public-result-presence",
+        "result": "the published target bytes equal the precommitted result digest"
+      },
+      {
+        "check": "cross-platform-publication-gate",
+        "result": "PASS on Ubuntu, Windows, and macOS"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "private",
+    "redactions": [
+      "R-IP",
+      "R-OPS",
+      "R-PRIV",
+      "R-SEC"
+    ],
+    "omitted": [
+      "private engine source and implementation detail",
+      "raw owner grant, custody record, model prompt, execution identity, and host data",
+      "private signing keys and operational topology"
+    ]
+  },
+  "limitations": [
+    "The controlled run is summarized, not publicly reproducible; its private grant and custody record are not distributed.",
+    "This record does not create a signed commit-bound passport for the second run. The separately published passport demonstration remains the public-reproducible proof surface.",
+    "Matching the published target bytes proves result presence, not the semantic quality of the change."
+  ]
+}

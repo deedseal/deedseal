@@ -77,6 +77,7 @@ Beyond documentation, this repository maintains a machine-validated public recor
 | `CLM-0006` | Typed interruptions and recorded failures receive terminal dispositions; retry admits a closed failure set and reclaims prior worker state. | `EVD-OFFICE-0001` | `internally-verified` |
 | `CLM-0007` | An internal 10-entry controlled-execution series records eight positive lifecycles and two designed-negative lifecycles refused before effects. | `EVD-CORE-0002` | `internally-verified` |
 | `CLM-0008` | A published run passport verifies PASS with the published offline verifier, and a one-byte tampered copy verifies BLOCK, using only this repository's files and a Python interpreter. | `EVD-CORE-0003` | `public-reproducible` |
+| `CLM-0009` | A second controlled run produced the precommitted target bytes, proved staged-to-materialized equality, and published those exact result bytes in this repository. | `EVD-CORE-0004` | `internally-verified` |
 
 Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineering-properties.md). Evidence model and what the hashes prove: [evidence/README.md](evidence/README.md). What may be published at all: [docs/publication-policy.md](docs/publication-policy.md).
 
