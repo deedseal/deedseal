@@ -58,6 +58,17 @@ jobs:
       - name: Re-prove the published demonstration
         run: ${{ matrix.python }} tools/check_demonstration.py
 
+      # The count is the honest measure of this repository's evidence: it rises
+      # only when another run's passport verifies, never when prose changes.
+      - name: Count verified runs
+        run: ${{ matrix.python }} tools/check_runs.py
+
+      # Every derived file -- the README claim table, the run index, and every
+      # ledger digest -- is regenerated in memory and compared to the tree, so a
+      # hand-edited claim row or a stale digest fails here rather than shipping.
+      - name: Refuse hand-edited derived files
+        run: ${{ matrix.python }} tools/build_publication.py check
+
       - name: Require a published snapshot on the default branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ${{ matrix.python }} tools/validate_public_record.py --require-published

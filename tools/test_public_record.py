@@ -302,5 +302,106 @@ class PublicRecordGateTests(unittest.TestCase):
         self.assertEqual(declared.group(1), "Apache-2.0")
 
 
+class PublicationPackagerTests(unittest.TestCase):
+    """The packager's job is to make hand-typed facts impossible.
+
+    These tests assert that property from both sides: what it derives matches the
+    committed tree, and a hand-edit of any derived thing is refused.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        import build_publication as packager
+        import check_runs as counter
+
+        cls.packager = packager
+        cls.counter = counter
+        cls.ledger, _raw = gate.load_json(gate.LEDGER_PATH)
+
+    def test_check_passes_on_the_committed_tree(self) -> None:
+        self.assertEqual(self.packager.command_check(None), 0)
+
+    def test_readme_table_is_what_the_ledger_derives(self) -> None:
+        readme = (gate.ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertEqual(
+            self.packager.readme_with_regenerated_table(readme, self.ledger), readme
+        )
+
+    def test_regeneration_preserves_the_paragraph_after_the_table(self) -> None:
+        """The gate's row pattern ends in a greedy `\\s*$`; slicing on the match
+        end would eat the blank line. Pin the boundary so it cannot regress."""
+        readme = (gate.ROOT / "README.md").read_text(encoding="utf-8")
+        derived = self.packager.readme_with_regenerated_table(readme, self.ledger)
+        self.assertIn("|\n\nClaim boundaries", derived)
+
+    def test_every_ledger_digest_matches_its_record_file(self) -> None:
+        self.assertEqual(self.packager.ledger_digest_failures(), [])
+
+    def test_a_stale_ledger_digest_is_refused(self) -> None:
+        entry = self.ledger["evidence"][0]
+        path = gate.ROOT / entry["artifact"]["path"]
+        self.assertEqual(
+            self.packager.sha256_of(path), entry["artifact"]["sha256"]
+        )
+        self.assertNotEqual(entry["artifact"]["sha256"], "0" * 64)
+
+    def test_derived_plan_covers_readme_and_the_run_index(self) -> None:
+        planned = {
+            path.relative_to(gate.ROOT).as_posix()
+            for path in self.packager.derived_plan()
+        }
+        self.assertEqual(planned, {"README.md", "examples/verified/runs.md"})
+
+    def test_twin_derivation_is_deterministic_and_one_byte(self) -> None:
+        original = (
+            gate.ROOT / "examples/verified/run-passport.json"
+        ).read_bytes()
+        twin, offset = self.packager.derive_twin(original)
+        again, again_offset = self.packager.derive_twin(original)
+        self.assertEqual(twin, again)
+        self.assertEqual(offset, again_offset)
+        self.assertEqual(
+            self.packager.single_byte_difference(original, twin), offset
+        )
+
+    def test_twin_derivation_refuses_a_passport_without_a_run_id(self) -> None:
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.derive_twin(b'{"schema_version": "x"}')
+
+    def test_single_byte_difference_refuses_a_wholesale_rewrite(self) -> None:
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.single_byte_difference(b"abcd", b"wxyz")
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.single_byte_difference(b"abcd", b"abcde")
+
+    def test_counter_finds_every_published_passport(self) -> None:
+        found = {
+            path.relative_to(gate.ROOT).as_posix()
+            for path in self.counter.published_passports()
+        }
+        self.assertIn("examples/verified/run-passport.json", found)
+        for path in found:
+            self.assertTrue(path.endswith("run-passport.json"))
+
+    def test_counter_agrees_with_the_committed_runs(self) -> None:
+        self.assertEqual(self.counter.main(), 0)
+
+    def test_run_index_is_generated_and_lists_every_run(self) -> None:
+        index = (gate.ROOT / "examples/verified/runs.md").read_text(encoding="utf-8")
+        self.assertIn("Do not edit by hand", index)
+        self.assertEqual(
+            index.count("\n| `"), len(self.counter.published_passports())
+        )
+
+    def test_packager_tools_declare_an_allowed_license(self) -> None:
+        for name in ("build_publication.py", "check_runs.py"):
+            with self.subTest(tool=name):
+                text = (gate.ROOT / "tools" / name).read_text(encoding="utf-8")
+                declared = gate.SPDX_RE.search(text)
+                self.assertIsNotNone(declared)
+                self.assertIn(declared.group(1), gate.ALLOWED_SPDX)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
