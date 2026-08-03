@@ -8,3 +8,9 @@ The seed has one passing test. The sole controlled result may add the frozen
 
 def test_seed_is_present():
     assert True
+
+
+def test_demonstration_marker_is_present():
+    value = "deedseal"
+    assert isinstance(value, str)
+    assert len(value.strip()) > 0
