@@ -42,7 +42,7 @@ Trusted computing bases are unavoidable; Deedseal's goal is to keep the list sho
 - the owner's custody of the signing key;
 - the host that runs the authority service.
 
-Kernel-level sandboxing of the agent process — resource bounds, egress bounds, grant-derived filesystem confinement — is an open objective tracked in [status.md](status.md). Today's containment of the agent is based on OS privilege separation and quarantine, not on a kernel sandbox.
+Today's containment of the agent is based on OS privilege separation, quarantine, and a grant-derived kernel write boundary recorded in the passport and checked by the published verifier. Resource and egress bounds are open objectives tracked in [status.md](status.md).
 
 ## Out of scope
 
@@ -52,7 +52,7 @@ Kernel-level sandboxing of the agent process — resource bounds, egress bounds,
 
 ## Skeptic's questions
 
-**Is this just seccomp or AppArmor with extra steps?** No. Kernel mechanisms confine what a process may do while it runs; Deedseal governs what a run is allowed to change, and leaves portable signed evidence of what it did change. They answer different questions, and they compose — kernel confinement of the agent is itself on Deedseal's status page as an open objective.
+**Is this just seccomp or AppArmor with extra steps?** No. Kernel mechanisms confine what a process may do while it runs; Deedseal governs what a run is allowed to change, and leaves portable signed evidence of what it did change. They answer different questions, and they compose — the published run records grant-derived kernel write confinement; resource and egress bounds remain open objectives.
 
 **Is a run passport just a log entry?** A log is trusted because of where it sits and who ran the collector. A passport carries its own verifiability: it can leave the host, travel anywhere, and still be checked against pinned keys by a third party.
 

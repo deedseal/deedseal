@@ -12,7 +12,7 @@ Describe the public statement, evidence record, or publication-control change.
 ## Disclosure review
 
 - [ ] No private repository URL, internal commit, account identity, host path, or network address.
-- [ ] No raw grant, passport, custody record, prompt, credential, key, nonce, recipe, or internal log.
+- [ ] No raw grant, passport, custody record, prompt, credential, key, nonce, recipe, or internal log — except inside `examples/verified/`, whose contents were disclosed under a separate review.
 - [ ] No attack detail, refusal catalogue, unresolved vulnerability, or operational topology.
 - [ ] Every claim is narrower than its evidence and has an explicit limitation.
 - [ ] Private-source evidence is not described as publicly reproducible or independently certified.

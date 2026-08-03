@@ -6,15 +6,9 @@ Deedseal's visual identity, kept as source. This repository is a text-only publi
 
 A counterseal: two concentric rings with a single luminous green point at the center. The mark carries no letters, so it survives every size. Below 64 pixels the inner ring is dropped and the point goes solid; the outer ring and the point remain.
 
-## What the mark means
+## Meaning
 
-Nothing in the mark is decoration; each element is the product translated into geometry.
-
-- **The dark field is deny-by-default.** By default, nothing is trusted and nothing is permitted; the emptiness is held ground.
-- **The rings are the seal.** A deed becomes a fact when it is sealed; a run becomes a fact when it is closed into a signed passport. The thin engraved rings are the instrument — the gate, the broker, the discipline.
-- **The green point is the PASS verdict.** The verifier answers exactly PASS or BLOCK. The point is the single colored element in the entire identity, and it carries a single meaning: proven. Never decoration, never emphasis, never "success" in general.
-- **The glow is liveness** (the "Signal" treatment). Verification is not an archived note; a passport can be checked right now, offline, by anyone. On light fields the point stays solid — light does not glow on paper.
-- **The position is a countersign.** The mark stands after the name at cap height, where a stamp lands next to a signature.
+The rings refer to a seal, and the center point denotes a `PASS` verdict.
 
 ## The lockup
 
@@ -23,8 +17,6 @@ The wordmark `deedseal`, set in Bricolage Grotesque Bold, lowercase, with slight
 ## Slogan
 
 > Proof over trust.
-
-One line, fixed. It is the product's thesis: verification does not ask for belief.
 
 ## Palette
 
@@ -39,9 +31,7 @@ One line, fixed. It is the product's thesis: verification does not ask for belie
 | Point core (dark field only) | `#60D69C` | — |
 | Rings, standalone mark | `#96A2AD` | — |
 
-The standalone mark lifts its ring value away from the lockup's `#28323E`. At avatar and favicon sizes a ring that quiet disappears; the lockup keeps the quieter value because the wordmark carries the composition there.
-
-The green point is the only color, and it means exactly one thing: proven. Anywhere the identity extends — site, documents, interfaces — this green marks a verified state and nothing else.
+The standalone mark uses `#96A2AD` rings for legibility at avatar and favicon sizes; the lockup uses `#28323E` because the wordmark carries the composition.
 
 ## Typography
 

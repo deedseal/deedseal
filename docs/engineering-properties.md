@@ -128,8 +128,11 @@ in this repository.
 one accepted result state. The controlled run moved the target to the result,
 the staged and materialized digests matched, and the named test was absent from
 the seed and present exactly once in both result views. The merged public target
-has the same precommitted result digest, and its contract runs in continuous
-integration on Ubuntu, Windows, and macOS.
+carried the same precommitted result digest at the time of the record. Continuous
+integration re-runs the target's byte contract on Ubuntu, Windows, and macOS,
+admitting exactly the seed state or the result state; it does not pin which of
+the two is checked in, so a reader who wants the result digest should hash the
+file.
 
 **Boundary.** The run evidence remains private and is published only as a
 sanitized internal attestation. This record is not a signed commit-bound

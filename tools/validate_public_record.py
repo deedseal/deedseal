@@ -63,9 +63,10 @@ PUBLIC_GITHUB_URL_RE = re.compile(
     r"^https://github\.com/deedseal/deedseal(?:[/#?]|$)"
 )
 
-# Published run passports bind commit identifiers of the public demonstration
-# repository. Those identifiers are public by construction, so the commit-shaped
-# rule is scoped out for exactly this directory and nowhere else.
+# Published run passports carry commit identifiers of the private repository
+# the run happened in. They are disclosed deliberately as part of the published
+# record, so the commit-shaped rule is scoped out for exactly this directory
+# and nowhere else.
 PUBLIC_COMMIT_ID_PREFIX = "examples/verified/"
 
 # Assemble credential-shaped prefixes without embedding a live-looking token in
@@ -682,8 +683,10 @@ REQUIRED_PUBLIC_FILES = {
     "examples/verified/target-after",
     "tools/verify_run_passport.py",
     "tools/check_demonstration.py",
+    "tools/check_round_trip_v2_target.py",
     "demo/README.md",
     "demo/tests/test_demo_contract.py",
+    "app/product/demo/test_demonstration_contract.py",
     "assets/README.md",
     "evidence/README.md",
     "evidence/ledger-v1.json",

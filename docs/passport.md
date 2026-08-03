@@ -11,10 +11,11 @@ A run passport is a sealed record of one supervised run: what was requested, wha
 - **The observed changes.** Per-file before and after digests taken from the quarantine observation — the immutable bytes that were actually staged.
 - **The complete changeset.** The resulting commit's full changed-path set, which must exactly equal the granted file set, with per-file hashes. A passport cannot present a flattering subset of what happened.
 - **The owner's closure signature.** The owner signs the assembled core as the final act. The closure cannot launder an unverified claim: signing tooling refuses to countersign a summary that disagrees with the signed custody record.
+- **The applied kernel write boundary.** The filesystem rights the kernel denied by default, the exact files re-permitted, and the one recorded scratch class — bound to the digest of the grant they were derived from.
 
 ## Verifying a passport
 
-The verifier checks, in order, and stops at the first failure:
+The verifier checks in a fixed order and stops when a check fails. The main links are:
 
 1. Strict parse — malformed JSON and duplicate keys are rejected.
 2. The grant signature, against a pinned owner key.

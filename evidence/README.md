@@ -28,7 +28,9 @@ certification.
 
 ## Published artifacts
 
-`examples/verified/` holds the published run passport, its byte-tampered twin, and the exact pre-run and post-run bytes of the file the run changed. Because a passport binds commit identifiers of this repository, the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
+`examples/verified/` holds the published run passport, its byte-tampered twin, and the exact pre-run and post-run bytes of the file the run changed. A published passport carries the commit identifiers of the private repository the run happened in; they are disclosed deliberately as part of the record, so the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
+
+The second controlled run's exact result bytes are published at `app/product/demo/test_demonstration_contract.py`. No passport for that run is published; the record `EVD-CORE-0004` describes it.
 
 ## Layout
 

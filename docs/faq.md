@@ -6,7 +6,7 @@ No. Deedseal does not run, prompt, or orchestrate agents. It is the authority la
 
 **Why not just seccomp, AppArmor, or SELinux?**
 
-Those confine what a process may do while it runs, and they are good at it. Deedseal answers two different questions: was this run authorized, and what exactly did it change — with evidence that survives leaving the host. The two layers compose, and Deedseal's own status page lists kernel-level confinement of the agent as an open objective rather than pretending the kernel layer is already covered.
+Those confine what a process may do while it runs, and they are good at it. Deedseal answers two different questions: was this run authorized, and what exactly did it change — with evidence that survives leaving the host. The two layers compose: the published run records grant-derived kernel write confinement, while resource and egress bounds remain open objectives.
 
 **Why not a sandbox like gVisor or Firecracker?**
 

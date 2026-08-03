@@ -3,7 +3,7 @@
 
 The seed ships with one passing test. A supervised run extends this file
 in exactly the bounded way its signed work grant authorizes, and the run
-passport binds the resulting commit.
+passport binds the resulting bytes.
 """
 
 import unittest

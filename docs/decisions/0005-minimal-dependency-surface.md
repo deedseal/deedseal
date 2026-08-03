@@ -13,6 +13,6 @@ The validation tools use the Python standard library only — no packages, no lo
 
 ## Consequences
 
-- The whole publication pipeline can be audited by reading two Python files and one workflow file.
+- The publication pipeline can be audited by reading the committed scripts named in `.github/workflows/validate-public-record.yml` and the workflow itself; nothing runs that is not named there.
 - Cross-platform behavior relies on the runners' provided Python versions rather than exact pinned interpreters — an accepted trade against adding a setup action.
 - Convenience tooling (link checkers, linters) must be implemented in the gate itself rather than pulled in as dependencies; the gate grows deliberately instead of the dependency list growing silently.
