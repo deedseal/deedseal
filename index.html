@@ -1,0 +1,185 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+<!-- This page is part of the public record: it is static, carries no script,
+     no tracker, no analytics, and makes no request to any host. What you can
+     read in this source is everything the page does. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deedseal — an enforcement layer for AI coding agents</title>
+<meta name="description" content="The owner signs a permission, the Linux kernel holds the boundary, and every run closes into a passport anyone can verify offline — trusting neither us nor the agent.">
+<meta property="og:title" content="Deedseal — proof over trust">
+<meta property="og:description" content="You let an AI agent into your code. Can you prove it did only what you allowed?">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://deedseal.com/">
+<style>
+  :root{
+    --field:#0b0f14; --name:#f2f5f8; --muted:#8c98a3; --ring:#28323e;
+    --hair:#171e27; --point:#34a873; --core:#60d69c; --card:#0e141b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--field); color:var(--name);
+    font:400 17px/1.65 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  main{max-width:680px;margin:0 auto;padding:0 24px}
+  a{color:var(--core);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+
+  header{padding:72px 0 0;display:flex;align-items:center;gap:18px}
+  .wordmark{font-weight:800;font-size:34px;letter-spacing:-.02em}
+  .mark{position:relative;width:44px;height:44px;flex:none}
+  .mark .r1,.mark .r2{position:absolute;border-radius:50%;border:2px solid var(--ring)}
+  .mark .r1{inset:0}
+  .mark .r2{inset:9px}
+  .mark .dot{
+    position:absolute;inset:18px;border-radius:50%;background:var(--point);
+    box-shadow:0 0 14px 4px rgba(52,168,115,.55);
+  }
+  .mark .dot::after{
+    content:"";position:absolute;inset:2.5px;border-radius:50%;background:var(--core);
+  }
+
+  h1{font-size:clamp(28px,5.6vw,40px);line-height:1.18;letter-spacing:-.015em;
+     font-weight:800;margin:40px 0 18px}
+  .sub{color:var(--muted);font-size:19px}
+  .sub b{color:var(--name);font-weight:600}
+
+  section{margin-top:64px}
+  h2{font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+     color:var(--muted);font-weight:600;margin-bottom:18px}
+  .rule{border:none;border-top:1px solid var(--hair);margin-top:64px}
+
+  .problem{font-size:19px}
+  .problem em{color:var(--muted);font-style:normal}
+
+  .steps{display:grid;gap:14px}
+  .step{border:1px solid var(--hair);background:var(--card);border-radius:10px;
+        padding:18px 20px;display:flex;gap:16px;align-items:baseline}
+  .step .n{color:var(--point);font-weight:700;font-size:15px;flex:none}
+  .step b{display:block;margin-bottom:2px}
+  .step span{color:var(--muted);font-size:15.5px}
+
+  .term{border:1px solid var(--hair);background:#080b0f;border-radius:10px;
+        padding:18px 20px;overflow-x:auto;font-size:13.5px;line-height:1.7;
+        white-space:pre}
+  .term .c{color:var(--muted)}
+  .term .ok{color:var(--core);font-weight:600}
+  .term .no{color:#e0705a;font-weight:600}
+  .actions{margin-top:18px;display:flex;gap:12px;flex-wrap:wrap}
+  .btn{display:inline-block;padding:10px 16px;border-radius:8px;font-size:15px;
+       border:1px solid var(--ring);color:var(--name)}
+  .btn:hover{border-color:var(--point);text-decoration:none}
+  .btn.primary{background:var(--point);border-color:var(--point);color:#06130c;font-weight:600}
+  .btn.primary:hover{background:var(--core)}
+
+  ul.who{list-style:none;display:grid;gap:12px}
+  ul.who li{padding-left:22px;position:relative;color:var(--muted);font-size:16.5px}
+  ul.who li::before{content:"";position:absolute;left:0;top:.55em;width:8px;height:8px;
+                    border-radius:50%;background:var(--point)}
+  ul.who b{color:var(--name);font-weight:600}
+
+  .status{border:1px solid var(--hair);border-radius:10px;padding:18px 20px;
+          color:var(--muted);font-size:15.5px;background:var(--card)}
+  .status b{color:var(--name)}
+
+  footer{margin:80px 0 56px;display:flex;flex-direction:column;gap:10px;
+         color:var(--muted);font-size:13.5px}
+  footer .slogan{color:var(--muted);letter-spacing:.02em}
+  @media (max-width:480px){
+    header{padding-top:48px}
+    .wordmark{font-size:28px}
+    .mark{width:38px;height:38px}
+    .mark .r2{inset:8px}.mark .dot{inset:15px}
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="mark" aria-hidden="true"><i class="r1"></i><i class="r2"></i><i class="dot"></i></div>
+    <div class="wordmark">deedseal</div>
+  </header>
+
+  <h1>You let an AI agent into your&nbsp;code. Can you prove it did only what you allowed?</h1>
+  <p class="sub">Deedseal is an enforcement layer for AI coding agents: the owner signs
+  a permission, the Linux kernel holds the boundary, and every run closes into a
+  passport that anyone can verify offline — <b>trusting neither us nor the agent</b>.</p>
+
+  <hr class="rule">
+
+  <section>
+    <h2>The problem</h2>
+    <p class="problem">AI agents already write code and edit documents. But when someone
+    asks <em>“what else could it have touched?”</em>, today's only answer is
+    <em>“trust the agent's logs.”</em> For a client, an auditor, or a court —
+    that is not an answer.</p>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <div class="steps">
+      <div class="step"><div class="n">01</div>
+        <div><b>Permission</b><span>The owner signs a grant: these files, this task,
+        this time window. Nothing else is on the table.</span></div></div>
+      <div class="step"><div class="n">02</div>
+        <div><b>Boundary</b><span>The Linux kernel refuses every write outside the
+        grant while the agent works. Not a request to the agent — a refusal by the
+        operating system.</span></div></div>
+      <div class="step"><div class="n">03</div>
+        <div><b>Passport</b><span>The run closes into a signed record of what was
+        permitted and what happened, byte for byte. Checked in thirty seconds,
+        offline, on your machine.</span></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Check it yourself — right now</h2>
+    <p style="color:var(--muted);font-size:16px;margin-bottom:16px">
+    A real run passport and a copy of it with exactly <b style="color:var(--name)">one
+    byte</b> changed are published. The verifier is one Python file, standard library
+    only, no network.</p>
+    <div class="term"><span class="c">$</span> python3 tools/verify_run_passport.py examples/verified/run-passport.json
+<span class="ok">RUN_PASSPORT_VERDICT: PASS</span>
+
+<span class="c">$</span> python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
+<span class="no">RUN_PASSPORT_VERDICT: BLOCK</span> <span class="c">block_owner_authorization_signature_invalid</span></div>
+    <div class="actions">
+      <a class="btn primary" href="https://github.com/deedseal/deedseal/blob/main/docs/verify.md">Read the walkthrough</a>
+      <a class="btn" href="https://github.com/deedseal/deedseal">Browse the record on GitHub</a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Who this is for</h2>
+    <ul class="who">
+      <li><b>Engineers</b> who let agents change real repositories and want the allowed
+      scope enforced and recorded — not assumed.</li>
+      <li><b>Reviewers and auditors</b> handed machine-made changes, who need
+      “what else could it have touched?” answered without trusting the agent's account.</li>
+      <li><b>Anyone who must stand behind AI-made work</b> — before a client, an
+      auditor, or a court.</li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="status"><b>Honest status.</b> Deedseal is in active development. The
+    core is demonstrated publicly and verifiably — one supervised run is published with
+    its passport, its tampered twin, and the verifier, re-proved on three operating
+    systems on every change. The product is not for sale yet. We publish the record,
+    not promises. Current state, dated:
+    <a href="https://github.com/deedseal/deedseal/blob/main/docs/status.md">status</a>.</div>
+  </section>
+
+  <footer>
+    <hr class="rule" style="margin:0 0 24px;width:100%">
+    <div class="slogan mono">Proof over trust.</div>
+    <div>Content CC-BY-4.0 · Verifier Apache-2.0 · Deedseal, 2026</div>
+  </footer>
+</main>
+</body>
+</html>
