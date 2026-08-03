@@ -580,6 +580,18 @@ def validate_evidence_graph(
                 fail(f"{claim_id}: withdrawn claim lacks withdrawn evidence")
 
 
+def validate_snapshot_dates(
+    prepared_on: str,
+    claims: list[dict[str, Any]],
+    evidence: list[dict[str, Any]],
+) -> None:
+    prepared = date.fromisoformat(prepared_on)
+    for collection in (claims, evidence):
+        for item in collection:
+            if date.fromisoformat(item["observed_on"]) > prepared:
+                fail(f"{item['id']}: observed_on is after snapshot.prepared_on")
+
+
 def all_public_files() -> list[Path]:
     files: list[Path] = []
     for path in ROOT.rglob("*"):
@@ -775,7 +787,7 @@ def validate_repository(*, require_published: bool = False) -> tuple[str, int, i
     snapshot_id = nonempty_string(snapshot["id"], "snapshot.id")
     if SNAPSHOT_RE.fullmatch(snapshot_id) is None:
         fail("snapshot.id: invalid public snapshot ID")
-    iso_date(snapshot["prepared_on"], "snapshot.prepared_on")
+    prepared_on = iso_date(snapshot["prepared_on"], "snapshot.prepared_on")
     if snapshot["publication_status"] not in PUBLICATION_STATUSES:
         fail("snapshot.publication_status: invalid status")
     if require_published and snapshot["publication_status"] != "published":
@@ -790,6 +802,7 @@ def validate_repository(*, require_published: bool = False) -> tuple[str, int, i
 
     claims = [validate_claim(value, snapshot_id) for value in claims_value]
     evidence = [validate_evidence_index(value) for value in evidence_value]
+    validate_snapshot_dates(prepared_on, claims, evidence)
     claim_ids = [claim["id"] for claim in claims]
     evidence_ids = [item["id"] for item in evidence]
     if len(claim_ids) != len(set(claim_ids)):
@@ -843,4 +856,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
