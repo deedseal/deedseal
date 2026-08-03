@@ -73,6 +73,8 @@ properties, not by an exclusivity claim.
   unresolved security objectives;
 - benchmark or economic data that has not passed a separate publication review.
 
+Exception, reviewed once and scoped: the passport published under `examples/verified/` and the public trust anchors inside the published verifier. Both are disclosed on purpose so a reader can render a verdict without asking us; nothing outside those two artifacts is exempt.
+
 ## Publication sequence
 
 1. Re-anchor both private components.
@@ -84,4 +86,3 @@ properties, not by an exclusivity claim.
 5. Update the ledger and public artifact hashes.
 6. Pass public-record validation in a pull request.
 7. Publish only after owner review and merge.
-

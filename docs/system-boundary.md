@@ -59,7 +59,7 @@ This repository is downstream of both private layers. It may publish:
 - aggregate test or run summaries that clear disclosure review;
 - public schemas and validation logic for the publication itself.
 
-It does not publish private source, raw run artifacts, operational topology, credential material, task prompts, internal attack details, or unresolved security work.
+It does not publish private source, credential material, internal attack details, or unresolved security work. One raw run artifact is published deliberately — the demonstration passport under `examples/verified/`, which carries its own grant, custody record, task prompt, nonce, and the quarantine paths of that run; that disclosure was reviewed once and is the exception, not the rule.
 
 ## Meaning of the boundary
 

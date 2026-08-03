@@ -5,8 +5,10 @@
 WHAT THIS IS. One file, Python standard library only. No network, no repository checkout,
 no running service, no private key, no third-party package, no configuration. Hand it one
 passport and it answers with a single line -- `RUN_PASSPORT_VERDICT: PASS` and exit code 0,
-or `RUN_PASSPORT_VERDICT: BLOCK <reason_code>` and exit code 1. A usage error exits 2 and is
-not a verdict. Read the file before you trust its answer; that is why it is one file.
+or `RUN_PASSPORT_VERDICT: BLOCK <reason_code>` and exit code 1. A missing argument exits 2
+and is not a verdict. An unreadable or nonexistent path prints
+`RUN_PASSPORT_VERDICT: BLOCK passport_unreadable` and exits 1. Read the file before you
+trust its answer; that is why it is one file.
 
 WHAT A PASS MEANS, PRECISELY. Every link below verified over exactly the bytes you supplied:
 
@@ -60,19 +62,15 @@ from typing import Any, Mapping
 # --- The pinned production trust anchors. Not defaults to override; the CLI never
 # --- supplies a substitute, and no passport field can name one. --------------------------
 #
-# OWNER authority key -- signs the v0.5 grant (RunSpec) AND the final closure. The owner
-# anchor set is a CLOSED, committed TWO-KEY map after the PR #564 custody rotation:
-# v0.1 is HISTORICAL-VERIFICATION-ONLY (the 11 already-committed v0.1 RunPassports keep
-# verifying) and v0.2 is the LIVE key every NEW grant + closure is signed with. Mirrors
-# app/core/owner_grant_signature.py::OWNER_GRANT_PRODUCTION_OWNER_{KEY_ID,PUBLIC_KEY_HEX}
-# (v0.1) and OWNER_GRANT_LIVE_OWNER_{KEY_ID,PUBLIC_KEY_HEX} (v0.2).
+# The owner anchor set published here is a closed, one-key map: the live
+# v0.2 owner key. Earlier keys and the records signed under them are not
+# published, and this copy cannot verify them.
 LIVE_OWNER_KEY_ID = "kbp-owner-ed25519-v0.2"
 LIVE_OWNER_PUBLIC_KEY_HEX = (
     "5e6e3cd40ec7feed51f0a3d803a4e105f14dd07d2a221e6edef072cc7952bcde"
 )
-# SERVICE-CUSTODY key -- signs the service-custody record. Mirrors
-# app/runtime/service_custody_signature.py's committed production anchor and
-# tools/governance/verify_custody_record_offline.py's pinned constant.
+# The service-custody key signs the custody record and mirrors the private
+# custody signer's committed anchor.
 PRODUCTION_CUSTODY_KEY_ID = "kbp-service-custody-ed25519-v0.1"
 PRODUCTION_CUSTODY_PUBLIC_KEY_HEX = (
     "86f86166be52a9264cd9176b7a31fb5dccaa6c5c6fd2d01aa2a33b769dd6a6c5"
@@ -96,8 +94,6 @@ PRODUCTION_CUSTODY_TRUST_ANCHORS: dict[str, str] = {
 # closure's signed core, so a v1 artifact can never be reclassified as the public
 # successor after signing.
 PUBLIC_PASSPORT_SCHEMA_VERSION_V10 = "deedseal-run-passport/1.0"
-# Frozen compatibility alias used by historical callers and tests.
-PUBLIC_PASSPORT_SCHEMA_VERSION = PUBLIC_PASSPORT_SCHEMA_VERSION_V10
 
 PASSPORT_TOP_FIELDS: frozenset[str] = frozenset(
     {
@@ -146,7 +142,7 @@ COMMITTED_BINDING_FIELDS: frozenset[str] = frozenset(
     {"commit_identity", "changed_paths", "committed_file_hashes"}
 )
 
-# owner-grant v0.5 signing contract (app/core/owner_grant_signature.py).
+# Owner-grant v0.5 signing contract, copied from the private grant signer.
 OWNER_GRANT_SIGNATURE_VERSION_V0_5 = "owner-grant-signature-v0.5"
 OWNER_GRANT_SIGNATURE_VERSION_V0_6 = "owner-grant-signature-v0.6"
 OWNER_GRANT_PUBLICATION_CLASS_INTERNAL = "internal"
@@ -161,11 +157,10 @@ OWNER_GRANT_SIGNATURE_ALGORITHM = "ed25519"
 _OWNER_GRANT_SIGNED_FIELDS = ("grant_id", "issued_by", "allowed_scope", "operation_class")
 _OWNER_GRANT_FRESHNESS_FIELDS = ("nonce", "issued_at", "expires_at", "run_id", "head_sha")
 
-# service-custody signing contract (app/runtime/service_custody_signature.py and
-# tools/governance/verify_custody_record_offline.py).
-# Compatibility spelling for the deployed #610 v0.2 path.
+# Service-custody signing contract, copied from the private custody signer.
+# The compatibility spelling remains fixed for existing signed records.
 CUSTODY_RECORD_SCHEMA_NEUTRAL_V10 = "deedseal-supervised-run-custody/1.0"
-# Frozen compatibility alias used by historical drift checks and fixtures.
+# Signature contract retained for the published custody record.
 CUSTODY_SIGNATURE_VERSION = "kbp-service-custody-record-signature/0.1"
 CUSTODY_SIGNATURE_ALGORITHM = "ed25519"
 CUSTODY_SIGNATURE_DOMAIN = "kbp-service-custody-record-signature-v0.1"
@@ -291,11 +286,10 @@ LANDLOCK_RUNTIME_SCRATCH_ACCESS_FS: tuple[str, ...] = (
 # The digest of the ONE admitted scratch root. Pinned, not merely well-formed: without this
 # constant a record could claim the non-grant create-and-write rule was applied over `/`, or
 # over the repository worktree, and a reader checking only the shape would accept it. The
-# path itself is never carried in a record -- it names both the internal codename and the
-# agent vendor, so a public record containing it would be refused at signing -- but its
-# digest discloses WHICH root was used while disclosing nothing about the string. Equal by
-# construction to sha256 of `grant_derived_landlock.AGENT_RUNTIME_SCRATCH_PATH`; the
-# acceptance suite proves the three copies agree.
+# path itself is never carried in a record, but its digest discloses WHICH root was used
+# while disclosing nothing about the string. Equal by construction to SHA-256 of the
+# private boundary builder's committed runtime-scratch path constant; the acceptance
+# suite proves the copies agree.
 LANDLOCK_RUNTIME_SCRATCH_ROOT_SHA256 = (
     "768f8b3b2a86cdbe6f711c61f47642ef334b113d22fdfee51ee28eb945e5ad8a"
 )
@@ -330,20 +324,15 @@ CUSTODY_RECORD_FIELDS_NEUTRAL_V10: frozenset[str] = frozenset(
         "runner_report",
     }
 )
-CUSTODY_RECORD_FIELDS_BY_SCHEMA: Mapping[str, frozenset[str]] = {
-    CUSTODY_RECORD_SCHEMA_NEUTRAL_V10: CUSTODY_RECORD_FIELDS_NEUTRAL_V10,
-}
-CUSTODY_RECORD_FIELDS = CUSTODY_RECORD_FIELDS_NEUTRAL_V10
 CUSTODY_SIGNED_RECORD_FIELDS_NEUTRAL_V10: frozenset[str] = (
     CUSTODY_RECORD_FIELDS_NEUTRAL_V10 | {"signature"}
 )
-CUSTODY_SIGNED_RECORD_FIELDS = CUSTODY_SIGNED_RECORD_FIELDS_NEUTRAL_V10
 CUSTODY_SIGNATURE_FIELDS: frozenset[str] = frozenset(
     {"signature_version", "signature_algorithm", "signing_key_id", "signature_hex"}
 )
 POSITIVE_CUSTODY_RECORD_STATUS = "OUTCOME_SUCCESS"
 
-# The final owner closure contract -- introduced by this D4.1 envelope. The owner signs
+# The final owner-closure contract. The owner signs
 # the canonical bytes of the ENTIRE passport minus its own `closure` object.
 CLOSURE_FIELDS: frozenset[str] = frozenset({"closure_version", "signature"})
 CLOSURE_VERSION_V01 = "kbp-run-passport-v1-owner-closure/0.1"
@@ -353,9 +342,6 @@ CLOSURE_SIGNATURE_DOMAIN_V01 = "kbp-run-passport-v1-owner-closure-signature-v0.1
 # between historical and public envelopes without minting a new closure anchor.
 PUBLIC_CLOSURE_VERSION_V10 = CLOSURE_VERSION_V01
 PUBLIC_CLOSURE_SIGNATURE_DOMAIN_V10 = CLOSURE_SIGNATURE_DOMAIN_V01
-# Frozen compatibility aliases: do not change the signing bytes of legacy passports.
-CLOSURE_VERSION = CLOSURE_VERSION_V01
-CLOSURE_SIGNATURE_DOMAIN = CLOSURE_SIGNATURE_DOMAIN_V01
 CLOSURE_SIGNATURE_ALGORITHM = "ed25519"
 CLOSURE_SIGNATURE_FIELDS: frozenset[str] = frozenset(
     {"signature_version", "signature_algorithm", "signing_key_id", "signature_hex"}
@@ -410,8 +396,6 @@ BLOCK_CUSTODY_OUTCOME_NOT_SUCCESS = "block_custody_outcome_not_success"
 BLOCK_CUSTODY_PUBLICATION_CONTRACT_MALFORMED = (
     "block_custody_publication_contract_malformed"
 )
-BLOCK_PUBLICATION_TEXT_NOT_NEUTRAL = "block_publication_text_not_neutral"
-
 BLOCK_GRANT_CUSTODY_BINDING_MISMATCH = "block_grant_custody_binding_mismatch"
 BLOCK_RUN_ID_MISMATCH = "block_run_id_binding_mismatch"
 BLOCK_EXECUTION_ID_MISMATCH = "block_execution_id_binding_mismatch"
@@ -490,8 +474,8 @@ def parse_passport_json(text: str) -> dict[str, Any]:
     return parsed
 
 
-# --- Pure-Python Ed25519 verify (RFC 8032), copied from
-# app/core/owner_grant_signature.py so this file needs no import from it. -----------------
+# --- Pure-Python Ed25519 verification (RFC 8032), included here so the verifier needs
+# --- no private imports. ----------------------------------------------------------------
 
 _P = 2**255 - 19
 _L = 2**252 + 27742317777372353535851937790883648493
@@ -625,8 +609,7 @@ def _verify_ed25519_against_anchors(
     return None
 
 
-# --- Owner-grant v0.5 canonical signing bytes (copied from
-# app/core/owner_grant_signature.py::canonical_owner_grant_payload, v0.5 branch). ---------
+# --- Owner-grant v0.5 canonical signing bytes, copied from the private grant signer. -----
 
 
 def _normalized_path_list(value: object) -> list[str] | None:
@@ -731,7 +714,7 @@ def canonical_owner_grant_v0_5_payload(grant: Mapping[str, Any]) -> bytes | None
         "expected_changed_paths": expected,
         "markers": normalized_markers,
     }
-    # This D4.1 envelope's authorization grants carry no `budget`; a grant that does is
+    # This envelope's authorization grants carry no `budget`; a grant that does is
     # out of contract for this passport version and fails closed.
     if grant.get("budget") is not None:
         return None
@@ -794,8 +777,7 @@ def canonical_owner_grant_v0_6_payload(grant: Mapping[str, Any]) -> bytes | None
     return canonical_json(payload).encode("utf-8")
 
 
-# --- Service-custody canonical signing bytes (copied from
-# app/runtime/service_custody_signature.py::canonical_signing_payload). -------------------
+# --- Service-custody canonical signing bytes, copied from the private custody signer. ----
 
 
 def _custody_record_fields_for_schema(schema: object) -> frozenset[str] | None:
@@ -827,14 +809,9 @@ def _valid_landlock_observation(value: object, *, allowed_files: object) -> bool
     that quietly dropped one, is refused here rather than taken on trust.
 
     `runtime_scratch` is checked structurally: the exact key set, the one admitted class,
-    and the one pinned access list.  Its root is disclosed only as a digest, and this
-    verifier deliberately does not pin that digest's value -- a portable file cannot confirm
-    a private deployment path, and hard-coding one would assert a host fact it has no way to
-    observe.  What IS established here, and is the part that matters for the published
-    claim, is that the non-grant capability is present, is bounded to the one class, cannot
-    name any path, and carries no removal or node-creation right.  The root's identity is
-    bound by the signature over these bytes and is confirmed against its own pinned constant
-    by the authority before signing.
+    and the one pinned access list. Its root is disclosed only as a digest, and this
+    verifier pins that digest's value: the recorded root must equal the constant committed
+    here.
     """
 
     if not isinstance(value, Mapping):
@@ -1022,7 +999,7 @@ def canonical_custody_signing_payload(
         return None
 
 
-# --- Final owner closure canonical signing bytes (this D4.1 envelope's own contract). ----
+# --- Final owner-closure canonical signing bytes for this envelope. ----------------------
 
 
 def canonical_closure_payload(passport: Mapping[str, Any]) -> bytes | None:
@@ -1279,7 +1256,7 @@ def _verify_run_passport(
     if any(path not in scope_allowed for path in scope_new):
         return False, BLOCK_NEW_FILES_MISMATCH
 
-    # 9 (contract shape). Acceptance-contract binding: the owner-signed contract equals the
+    # 7. Acceptance-contract binding: the owner-signed contract equals the
     # passport's scope contract, byte-normalized.
     scope_contract = scope.get("acceptance_contract")
     grant_contract = grant.get("acceptance_contract")
@@ -1304,7 +1281,7 @@ def _verify_run_passport(
     if scope_expected != scope_allowed:
         return False, BLOCK_ACCEPTANCE_CONTRACT_MISMATCH
 
-    # 7. Observed changed-path exactness -- the custody-signed observations ARE the source
+    # 8. Observed changed-path exactness -- the custody-signed observations ARE the source
     # of truth; the passport's execution block must equal them, and their post-set must
     # equal the authorized scope and acceptance surface.
     observed_post = execution.get("observed_post_worktree_entries")
@@ -1326,7 +1303,7 @@ def _verify_run_passport(
     if sorted(dict.fromkeys(observed_post)) != scope_allowed:
         return False, BLOCK_OBSERVED_PATHS_MISMATCH
 
-    # 8. seed / staged / materialized SHA-chain equality requirements.
+    # 9. seed / staged / materialized SHA-chain equality requirements.
     chain = execution.get("sha256_chain")
     if not isinstance(chain, Mapping) or set(chain) != set(scope_allowed):
         return False, BLOCK_SHA_CHAIN_MISMATCH
@@ -1406,12 +1383,9 @@ def _verify_run_passport(
     if refusal is not None:
         return False, refusal
 
-    # Single-owner-identity requirement. The owner anchor set is the closed two-key map
-    # {v0.1 HISTORICAL, v0.2 LIVE}; each of the grant and the closure verified independently
-    # against it above. A genuine passport is authorized and closed by ONE owner identity, so
-    # the grant and closure owner key ids MUST be identical. A mixed/spliced passport (v0.1
-    # grant + v0.2 closure, or the reverse) is refused here with the existing closure wrong-key
-    # reason -- it can never reach PASS even though each signature alone is valid.
+    # Single-owner-identity requirement. The grant and closure verify independently against
+    # the supplied closed owner-anchor map, and their key ids MUST be identical. A mismatch
+    # is refused with the existing closure wrong-key reason.
     if closure_signature.get("signing_key_id") != grant_owner_key_id:
         return False, BLOCK_CLOSURE_WRONG_KEY
 

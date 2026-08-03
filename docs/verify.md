@@ -2,9 +2,11 @@
 
 This repository publishes a real run passport, a byte-tampered twin of it, and the offline verifier that renders the verdict. This page walks through checking all of it yourself. Verification needs no account, no network, no running service, and no trust in the machine that produced the passport — only the files in this repository and a standard Python interpreter.
 
-The passport was produced by a supervised run: an AI coding agent, working under an owner-signed work grant, added one test method — `test_demonstration_marker_is_present` — to a single named file, and the accepted run closed into the passport. The run identifier bound in the passport is `deedseal-public-demonstration-v1.0`.
+The passport was produced by a supervised run: an AI coding agent, working under an owner-signed work grant, added one test function — `test_demonstration_marker_is_present` — to a single named file, and the accepted run closed into the passport. The run identifier bound in the passport is `deedseal-public-demonstration-v1.0`.
 
 **The run happened in a private engineering repository, and that repository is not published.** This is stated plainly because it changes what you can check: you cannot inspect the run's commit. What you can do is stronger than taking our word for it — the exact bytes of the changed file, before and after, are published here, and the passport's own signed digests are computed over those bytes. Hashing the published file and comparing it to the signed digest is a check you perform, not a claim you accept. The last section shows how.
+
+**Scope of this walkthrough.** This page covers the one run that is publicly checkable end to end: the passport under `examples/verified/`. The repository also records a second controlled run (`CLM-0009`), which published its exact result bytes and a sanitized internal attestation but no passport; the passport verification procedure on this page does not apply to it.
 
 ## Three ways to check, easiest first
 
@@ -26,7 +28,7 @@ The product this repository documents is controlled execution for AI coding agen
 | [`examples/verified/run-passport.tampered.json`](../examples/verified/run-passport.tampered.json) | The same bytes with exactly one byte changed | `afdb416d…893e` |
 | [`examples/verified/target-before`](../examples/verified/target-before) | The changed file's exact bytes before the run | `11ad307b…82e7` |
 | [`examples/verified/target-after`](../examples/verified/target-after) | The changed file's exact bytes after the run | `941793d7…bc71` |
-| [`tools/verify_run_passport.py`](../tools/verify_run_passport.py) | The offline verifier — one file, standard library only, Apache-2.0 | `e25fbf02…c5c4` |
+| [`tools/verify_run_passport.py`](../tools/verify_run_passport.py) | The offline verifier — one file, standard library only, Apache-2.0 | `26100954…859c` |
 
 The digests in this table bind the page to the artifact bytes in the same checkout. Because page and artifacts can be changed together, they are a consistency check, not an independent anchor — no verdict below depends on them.
 
@@ -97,7 +99,7 @@ python3 tools/verify_run_passport.py my-tampered.json
 
 The verdict is `BLOCK`, exit code `1`. The reason code you get depends on which byte you changed, because the verifier checks in a fixed order and stops at the first broken link: a byte in the grant breaks the grant signature, a byte in the custody record breaks the custody signature, a byte that malforms the JSON is rejected at parse. A passport is a verdict over exactly its bytes; a file that differs in one byte is a different — and here failing — input.
 
-A usage error — a missing argument, an unreadable path — exits with code `2` and is not a verdict.
+A missing argument exits with code `2` and is not a verdict. An unreadable or nonexistent path is treated fail-closed: the verifier prints `RUN_PASSPORT_VERDICT: BLOCK passport_unreadable` and exits `1`.
 
 ## What a PASS proves
 
@@ -115,6 +117,8 @@ A PASS is a statement about the signed chain over exactly the bytes you verified
 - **Not semantic quality.** The passport proves the change was authorized, bounded, observed, and sealed. It does not prove the change is good code. Correctness review remains the owner's job.
 - **Nothing about other runs.** One passport is evidence about one run. It says nothing about any run it does not bind, and nothing about general behavior of the system that produced it.
 - **Not the contents of a repository you cannot see.** The passport binds a commit in a private repository. It proves what that commit changed, by digest; it does not open the repository, and nothing here asks you to assume anything else about it.
+
+A PASS also does not, by itself, prove the run occurred as described to an independent observer: the signing keys, the verifier, the passport, and the continuous integration are today controlled by the same owner. What it establishes is that the record is internally consistent and tamper-evident against keys pinned in a verifier you can read in full.
 
 A passport that does not verify is treated as no passport at all — deny by default applies to evidence too.
 
@@ -147,6 +151,8 @@ The flag says the vendor's sandbox is off. The lines beneath it say what the ker
 This is the part that does not require trusting the private repository at all.
 
 The passport records, under `committed_binding.committed_file_hashes`, a SHA-256 for each path the run was allowed to change — computed over the committed bytes. The published `target-after` file is those exact bytes. So hash it yourself and compare:
+
+Note: the path the passport names, `app/product/demo/test_demonstration_contract.py`, also exists in this repository — but as the target of the *second* controlled run, with different bytes and a different purpose. The bytes the published passport binds are the ones in `examples/verified/target-after`, and nowhere else. Do not hash the repository path expecting a match.
 
 ```
 python3 -c "import hashlib,sys; print(hashlib.sha256(open('examples/verified/target-after','rb').read()).hexdigest())"

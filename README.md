@@ -2,7 +2,9 @@
 
 Deny-by-default execution control for AI coding agents on Linux, with a signed, offline-verifiable passport for every run.
 
-Deedseal is designed so that what a machine was allowed to do — and what it actually did — can be proven later, offline, without trusting the machine that did it. Deedseal aims to make execution authority explicit and its evidence portable.
+Deedseal is designed so that what a machine was allowed to do — and what it actually did — can be proven later, offline, without trusting the machine that did it.
+
+In plain terms: before an AI coding agent runs, the owner signs a permission slip naming exactly which files it may change. The kernel holds that boundary while the agent works. Afterwards, a signed passport records what was permitted and what happened — and anyone can check that passport on their own machine, offline, without asking us.
 
 ## This repository
 
@@ -16,6 +18,12 @@ In depth: [architecture](docs/architecture.md) (how the pieces fit), [trust mode
 - **One canonical path.** A signed work grant, checked at a single authorization gate, executed through a single effect broker. There is no second door.
 - **A signed passport for every run.** Each supervised run closes into a single evidence record binding the grant, the execution, and the complete resulting changeset — verifiable offline by anyone holding the verifier.
 - **The owner decides.** Automation and AI tooling implement and propose; approval, merge, and signature stay with one human. Self-approval is rejected outright.
+
+## Who this is for
+
+- Engineers who let AI coding agents change real repositories and want the allowed scope enforced and recorded rather than assumed.
+- Reviewers and auditors who are handed machine-made changes and need an answer to "what else could it have touched?" that does not depend on the agent's own account.
+- Anyone evaluating this project: every claim in the table below is labelled with exactly what you can and cannot reproduce yourself.
 
 ## What Deedseal is not
 
@@ -44,14 +52,12 @@ A run passport is one JSON record per supervised run, binding what was requested
 
 **Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json).
 
-**Demonstration.** A real passport, a twin of it differing at exactly one byte, and the offline verifier that renders the verdict are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Continuous integration re-proves both on three operating systems on every change. Walkthrough: [docs/verify.md](docs/verify.md).
-
 ## Verify it yourself
 
 A real run passport, a twin of it with exactly one byte changed, and the offline verifier are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Pick the path that fits you:
 
 - **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break.
-- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again. An AI coding agent checking the proof about an AI coding agent's run is the point.
+- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again.
 - **Terminal**, offline, standard Python only:
 
 ```
@@ -91,7 +97,7 @@ Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineeri
 
 ## What Deedseal does not do
 
-Deedseal does not sandbox the workload itself. To run possibly-malicious code, pair it with an appropriate sandbox or virtual machine. Deedseal does not protect against a compromised kernel or a compromised owner key. Kernel-level confinement of the agent process — resource, egress, and filesystem bounds — is an open objective tracked in [docs/status.md](docs/status.md), not a shipped property.
+Deedseal does not sandbox the workload itself. To run possibly-malicious code, pair it with an appropriate sandbox or virtual machine. Deedseal does not protect against a compromised kernel or a compromised owner key. Grant-derived filesystem confinement of the agent process is applied by the kernel and recorded in the published passport ([docs/verify.md](docs/verify.md)); resource and egress bounds remain open objectives tracked in [docs/status.md](docs/status.md).
 
 ## Status
 
@@ -99,7 +105,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 
 ## How Deedseal is built
 
-The discipline that governs runs also governs the codebase: AI workers implement inside bounded task packets with pinned scope, acceptance is an ordered suite of deterministic checks — about half of them hostile probes that must fail for the right reason — and only the owner merges. The method is documented in [docs/method.md](docs/method.md). Significant decisions about this public repository are recorded in [docs/decisions/](docs/decisions/README.md).
+The discipline that governs runs also governs the codebase: AI workers implement inside bounded task packets with pinned scope, acceptance is an ordered suite of deterministic checks — about half of them hostile probes that must fail for the right reason — and only the owner merges. The method is documented in [docs/method.md](docs/method.md). Significant decisions about this public repository are recorded in [docs/decisions/](docs/decisions/README.md). This public repository is itself young — published 2026-08-01 — and much of it was authored by AI workers under the method it documents; the commit history shows which commits were machine-authored and that every merge is the owner's.
 
 ## FAQ
 

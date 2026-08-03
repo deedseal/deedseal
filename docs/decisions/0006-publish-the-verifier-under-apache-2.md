@@ -5,7 +5,7 @@
 
 ## Context
 
-A public record of claims is weaker than a public artifact a reader can check. The next step is a published demonstration: a real run passport, produced by a supervised run against a public demonstration repository, alongside the offline verifier that renders the verdict. The verifier is the first product source code to leave the private engineering repositories, and this repository's content license (CC BY 4.0, decision 0004) is not a code license.
+A public record of claims is weaker than a public artifact a reader can check. The next step is a published demonstration: a real run passport, produced by a supervised run against a demonstration target in a private engineering repository, with the changed file's exact bytes published here, alongside the offline verifier that renders the verdict. The verifier is the one piece of product source code published here, and this repository's content license (CC BY 4.0, decision 0004) is not a code license.
 
 ## Decision
 
@@ -15,7 +15,7 @@ Two artifacts accompany it: a real passport that verifies, and a byte-tampered t
 
 ## Consequences
 
-- Readers can check the claim themselves; the corresponding claim moves from `internally-verified` to `public-reproducible`, the first of that class in the ledger.
+- Readers can check the claim themselves; the corresponding claim moves from `internally-verified` to `public-reproducible`, a class the ledger did not previously carry.
 - Apache-2.0 grants a patent license for the published file — deliberate, and the reason a permissive code license was chosen over the content license.
 - The published public keys tie this repository to the signing lineage that produced the passport; forward-only key rotation remains the mechanism for retiring an anchor.
 - Publishing a verifier invites scrutiny of its logic. That is the point: a verifier nobody can read is a verifier nobody should trust.
