@@ -1,5 +1,7 @@
 # Deedseal
 
+[![Public record validation](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml/badge.svg)](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml)
+
 Deny-by-default execution control for AI coding agents on Linux, with a signed, offline-verifiable passport for every run.
 
 Deedseal is designed so that what a machine was allowed to do — and what it actually did — can be proven later, offline, without trusting the machine that did it.
@@ -10,8 +12,8 @@ In plain terms: before an AI coding agent runs, the owner signs a permission sli
 
 A real run passport, a twin of it with exactly one byte changed, and the offline verifier are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Pick the path that fits you:
 
-- **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break.
-- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again.
+- **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break — the check named `Re-prove the published demonstration` fails within about two minutes of your edit.
+- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again — it should report `PASS`, then `BLOCK` with a named reason for your tampered copy.
 - **Terminal**, offline, standard Python only:
 
 ```
@@ -19,15 +21,33 @@ python3 tools/verify_run_passport.py examples/verified/run-passport.json
 python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
 ```
 
+The command against `examples/verified/run-passport.json` must end with:
+
+```
+RUN_PASSPORT_VERDICT: PASS
+```
+
+and exit `0`. The second must end with:
+
+```
+RUN_PASSPORT_VERDICT: BLOCK block_owner_authorization_signature_invalid
+```
+
+and exit `1`. One byte of difference between the two files is the entire reason for the different verdicts.
+
 What a PASS proves, what it does not, and how to check the changed file's bytes against the passport's signed digests: [docs/verify.md](docs/verify.md).
 
 ## This repository
 
-This repository is the public documentation and machine-validated evidence record for Deedseal. The engineering repositories stay private. The one exception to "no product source here" is the offline run-passport verifier, which is published so that verification does not require trusting us — see [decision 0006](docs/decisions/0006-publish-the-verifier-under-apache-2.md).
+This repository is the public documentation and machine-validated evidence record for Deedseal. The engineering repositories stay private — what is published here is the record, not the source.
+
+One deliberate exception: the offline run-passport verifier is published in full, so that checking a passport never requires trusting us. The reasoning is recorded in [decision 0006](docs/decisions/0006-publish-the-verifier-under-apache-2.md).
 
 In depth: [architecture](docs/architecture.md) (how the pieces fit), [trust model](docs/trust-model.md) (what is assumed, threatened, and out of scope), [system boundary](docs/system-boundary.md) (the engineering lifecycle around a run).
 
 ## What Deedseal is
+
+Four properties. Each one is enforced by the system and recorded in the run passport — none is a promise.
 
 - **Deny-by-default authority.** Every action is matched against explicitly enumerated allow paths; anything unmatched — an unknown action type, an ambiguous scope, a self-approval attempt — is blocked and recorded.
 - **One canonical path.** A signed work grant, checked at a single authorization gate, executed through a single effect broker. There is no second door.
@@ -49,6 +69,8 @@ In depth: [architecture](docs/architecture.md) (how the pieces fit), [trust mode
 
 ## How a permitted action runs
 
+One path, five stations, no second door:
+
 An agent's requested action reaches the authorization gate. The gate checks it against a signed work grant, issued and signed offline by the owner, which pins the repository state, a short validity window, and the exact set of files the run may change. Anything outside an enumerated allow path is denied and recorded. Permitted work executes in a disposable quarantine under a separate operating-system principal; the result is observed byte for byte, and only the observed bytes are staged, all or nothing. The run then closes into a signed passport.
 
 ```mermaid
@@ -69,9 +91,9 @@ A run passport is one JSON record per supervised run, binding what was requested
 
 ## Verified claims
 
-[![Public record validation](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml/badge.svg)](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml)
+Beyond documentation, this repository maintains a machine-validated public record: bounded claims tied to a dated snapshot, each backed by a sanitized evidence record, with statuses that say exactly what a public reader can and cannot reproduce. Structure, cross-references, artifact digests, and disclosure rules are checked by CI on every change.
 
-Beyond documentation, this repository maintains a machine-validated public record: bounded claims tied to a dated snapshot, each backed by a sanitized evidence record, with statuses that say exactly what a public reader can and cannot reproduce. Structure, cross-references, artifact digests, and disclosure rules are checked by CI on every change. `internally-verified` means the property was checked against a fixed private-source snapshot; it is evidence of internal verification, not independent certification.
+`internally-verified` means the property was checked against a fixed private-source snapshot; it is evidence of internal verification, not independent certification.
 
 | Claim | Statement | Evidence | Status |
 |---|---|---|---|
@@ -109,7 +131,7 @@ The discipline that governs runs also governs the codebase: AI workers implement
 
 ## FAQ
 
-Answers to the obvious questions — "Why not just seccomp?", "How is a passport different from an audit log?", "Can I use it today?" — are in [docs/faq.md](docs/faq.md).
+Short answers to the questions readers actually ask — "Why not just seccomp?", "How is a passport different from an audit log?", "Can I use it today?" — are in [docs/faq.md](docs/faq.md).
 
 ## Security
 
@@ -126,3 +148,11 @@ The mark, the lockup, and the palette are documented in [assets/README.md](asset
 ## License
 
 Documentation in this repository is licensed under [CC BY 4.0](LICENSE); executable files declare their own license with an SPDX identifier. The underlying product source is private and not covered by that license; see [NOTICE.md](NOTICE.md).
+
+## Where to go next
+
+- [docs/verify.md](docs/verify.md) — run the verification yourself, three ways, with expected outputs.
+- [docs/passport.md](docs/passport.md) — what a run passport binds and what the verifier checks.
+- [docs/trust-model.md](docs/trust-model.md) — what is assumed, what is threatened, what is out of scope.
+- [docs/status.md](docs/status.md) — what is shipped, what is open, dated updates.
+- [docs/faq.md](docs/faq.md) — the obvious questions, answered plainly.
