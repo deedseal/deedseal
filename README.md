@@ -44,7 +44,22 @@ A run passport is one JSON record per supervised run, binding what was requested
 
 **Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json).
 
-**Demonstration.** The verifier is not published yet, so nothing here can be checked by a reader today. A supervised run against [`demo/`](demo/README.md) will publish a real passport, a byte-tampered twin, and the verifier itself, at which point the claims below gain a `public-reproducible` entry. Progress: [docs/status.md](docs/status.md).
+**Demonstration.** A real passport, a twin of it differing at exactly one byte, and the offline verifier that renders the verdict are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Continuous integration re-proves both on three operating systems on every change. Walkthrough: [docs/verify.md](docs/verify.md).
+
+## Verify it yourself
+
+A real run passport, a twin of it with exactly one byte changed, and the offline verifier are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Pick the path that fits you:
+
+- **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break.
+- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again. An AI coding agent checking the proof about an AI coding agent's run is the point.
+- **Terminal**, offline, standard Python only:
+
+```
+python3 tools/verify_run_passport.py examples/verified/run-passport.json
+python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
+```
+
+What a PASS proves, what it does not, and how to check the changed file's bytes against the passport's signed digests: [docs/verify.md](docs/verify.md).
 
 ## Verified claims
 
@@ -61,6 +76,7 @@ Beyond documentation, this repository maintains a machine-validated public recor
 | `CLM-0005` | Postflight checks worker history and scope before publication; readiness, approval, and merge remain owner actions. | `EVD-OFFICE-0001` | `internally-verified` |
 | `CLM-0006` | Typed interruptions and recorded failures receive terminal dispositions; retry admits a closed failure set and reclaims prior worker state. | `EVD-OFFICE-0001` | `internally-verified` |
 | `CLM-0007` | An internal 10-entry controlled-execution series records eight positive lifecycles and two designed-negative lifecycles refused before effects. | `EVD-CORE-0002` | `internally-verified` |
+| `CLM-0008` | A published run passport verifies PASS with the published offline verifier, and a one-byte tampered copy verifies BLOCK, using only this repository's files and a Python interpreter. | `EVD-CORE-0003` | `public-reproducible` |
 
 Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineering-properties.md). Evidence model and what the hashes prove: [evidence/README.md](evidence/README.md). What may be published at all: [docs/publication-policy.md](docs/publication-policy.md).
 

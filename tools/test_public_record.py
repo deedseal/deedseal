@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import sys
 import unittest
 from pathlib import Path
@@ -203,6 +204,87 @@ class PublicRecordGateTests(unittest.TestCase):
             path.relative_to(gate.ROOT).as_posix() for path in gate.all_public_files()
         }
         self.assertEqual(gate.REQUIRED_PUBLIC_FILES - observed, set())
+
+    def test_demonstration_claim_is_public_reproducible(self) -> None:
+        claims_by_id = {claim["id"]: claim for claim in self.claims}
+        self.assertIn("CLM-0008", claims_by_id)
+        claim = claims_by_id["CLM-0008"]
+        self.assertEqual(claim["status"], "public-reproducible")
+        self.assertEqual(claim["component"], "CORE")
+        self.assertEqual(claim["evidence_ids"], ["EVD-CORE-0003"])
+        self.assertEqual(
+            self.evidence_by_id["EVD-CORE-0003"]["assurance"], "public-reproducible"
+        )
+        record = self.records_by_id["EVD-CORE-0003"]
+        self.assertEqual(record["verification"]["verdict"], "PASS")
+        self.assertEqual(record["disclosure"]["source_visibility"], "public")
+
+    def test_required_files_include_the_published_demonstration(self) -> None:
+        for path in (
+            "docs/verify.md",
+            "examples/verified/run-passport.json",
+            "examples/verified/run-passport.tampered.json",
+            "examples/verified/target-before",
+            "examples/verified/target-after",
+            "tools/verify_run_passport.py",
+            "tools/check_demonstration.py",
+        ):
+            with self.subTest(path=path):
+                self.assertIn(path, gate.REQUIRED_PUBLIC_FILES)
+
+    def test_readme_cannot_list_a_claim_the_ledger_lacks(self) -> None:
+        """The README table and the ledger are one set, not two. Dropping the
+        demonstration claim from the ledger must fail the equality check."""
+        claims = [claim for claim in self.claims if claim["id"] != "CLM-0008"]
+        self.assertEqual(len(claims), len(self.claims) - 1)
+        evidence_ids = {
+            evidence_id for claim in claims for evidence_id in claim["evidence_ids"]
+        }
+        with self.assertRaises(gate.ValidationError):
+            gate.validate_document_links(claims, evidence_ids)
+
+    def test_tampered_twin_shares_the_published_commit_scope(self) -> None:
+        commit_id = "b" * 40
+        self.assertIsNone(
+            gate.disclosure_violation(
+                Path("examples/verified/run-passport.tampered.json"),
+                '{"commit_sha": "' + commit_id + '"}',
+            )
+        )
+
+    def test_twins_differ_in_exactly_one_byte(self) -> None:
+        original = (gate.ROOT / "examples/verified/run-passport.json").read_bytes()
+        tampered = (
+            gate.ROOT / "examples/verified/run-passport.tampered.json"
+        ).read_bytes()
+        self.assertEqual(len(original), len(tampered))
+        differing = sum(1 for a, b in zip(original, tampered) if a != b)
+        self.assertEqual(differing, 1)
+
+    def test_demonstration_target_changed(self) -> None:
+        before = (gate.ROOT / "examples/verified/target-before").read_bytes()
+        after = (gate.ROOT / "examples/verified/target-after").read_bytes()
+        self.assertNotEqual(before, after)
+
+    def test_record_digests_match_the_published_artifacts(self) -> None:
+        record = self.records_by_id["EVD-CORE-0003"]
+        digests = {
+            observation["check"]: observation["result"].rsplit(" ", 1)[-1]
+            for observation in record["verification"]["observations"]
+        }
+        for check, path in (
+            ("published-passport-digest", "examples/verified/run-passport.json"),
+            ("tampered-twin-digest", "examples/verified/run-passport.tampered.json"),
+        ):
+            with self.subTest(check=check):
+                observed = hashlib.sha256((gate.ROOT / path).read_bytes()).hexdigest()
+                self.assertEqual(digests[check], observed)
+
+    def test_published_verifier_declares_apache_license(self) -> None:
+        text = (gate.ROOT / "tools/verify_run_passport.py").read_text(encoding="utf-8")
+        declared = gate.SPDX_RE.search(text)
+        self.assertIsNotNone(declared)
+        self.assertEqual(declared.group(1), "Apache-2.0")
 
 
 if __name__ == "__main__":

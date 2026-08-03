@@ -1,0 +1,10 @@
+"""Contract tests for the public demonstration target.
+
+The seed ships with one passing test. A supervised run extends this file in
+exactly the bounded way its signed work grant authorizes, and the run passport
+binds the resulting bytes.
+"""
+
+
+def test_seed_is_present():
+    assert True

@@ -95,3 +95,24 @@ paths in the same engineering record.
 **Boundary.** Raw passports, grants, custody records, paths, identities, and run
 artifacts are not published. The public record is an internally verified
 aggregate, not an independently reproducible dataset.
+
+## `CLM-0008` — a verdict anyone can reproduce
+
+**Statement.** A published run passport verifies PASS with the published offline
+verifier, and a one-byte tampered copy verifies BLOCK, using only this
+repository's files and a Python interpreter.
+
+**Meaning.** This is the one claim on this page that does not ask to be
+believed. The passport, a twin of it differing at exactly one byte, and the
+verifier that renders the verdict are all published here. A reader runs the
+verifier twice and sees PASS and then BLOCK, hashes the published post-run bytes
+and finds the digest the passport signs, and reads the applied kernel boundary
+in the same signed bytes as the grant it was derived from. Continuous
+integration repeats the whole check on three operating systems on every change,
+so the demonstration is re-proven rather than asserted.
+
+**Boundary.** The verdict is reproducible; the run is not. Producing a new
+passport requires the private system and its signing keys, and signing-key
+secrecy remains a trusted prerequisite. A PASS attests authorization, bounded
+scope, applied boundary, and committed-byte provenance for one run — never the
+semantic quality of the change, and never anything about runs it does not bind.

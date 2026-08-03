@@ -44,7 +44,7 @@ sequenceDiagram
 
 Note what this diagram does not contain: no network, no running service, no producing host. Verification needs none of them — no git, no repository checkout, no private key.
 
-The verifier is not published yet, so a reader cannot run this today. Publishing it, together with a real passport and a byte-tampered twin, is [decision 0006](decisions/0006-publish-the-verifier-under-apache-2.md) and a tracked workstream in [status.md](status.md).
+The verifier is published here as [`tools/verify_run_passport.py`](../tools/verify_run_passport.py) under Apache-2.0, together with a real passport and a byte-tampered twin, per [decision 0006](decisions/0006-publish-the-verifier-under-apache-2.md). Run it yourself: [verify.md](verify.md).
 
 ## What verification proves — and what it does not
 
