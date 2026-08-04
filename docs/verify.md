@@ -103,6 +103,10 @@ A missing argument exits with code `2` and is not a verdict. An unreadable or no
 
 The [refusal corpus](../demo/refusals/README.md) shows which declared BLOCK reasons can be reproduced from the published bytes and which require records signed with unavailable private keys.
 
+For an implementation-level definition of the envelope, canonical bytes,
+signature payloads, cross-bindings, verdict protocol, and generated refusal
+vocabulary, see [Run passport specification v1](passport-spec-v1.md).
+
 ## What a PASS proves
 
 A PASS is a statement about the signed chain over exactly the bytes you verified:

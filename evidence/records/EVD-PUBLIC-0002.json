@@ -1,0 +1,62 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-PUBLIC-0002",
+  "component": "PUBLIC",
+  "source_snapshot": "PUBLIC-2026-08-03-B",
+  "observed_on": "2026-08-03",
+  "kind": "published-boundary-probe-observation",
+  "assurance": "public-reproducible",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "recorded-landlock-abi",
+        "result": "recorded_landlock_abi: 8"
+      },
+      {
+        "check": "runner-landlock-abi",
+        "result": "local_landlock_abi: 7"
+      },
+      {
+        "check": "append-permitted-file",
+        "result": "operation append_permitted_file: errno=0 (SUCCESS)"
+      },
+      {
+        "check": "create-second-file",
+        "result": "operation create_second_file: errno=13 (EACCES)"
+      },
+      {
+        "check": "create-directory",
+        "result": "operation create_directory: errno=13 (EACCES)"
+      },
+      {
+        "check": "create-symbolic-link",
+        "result": "operation create_symbolic_link: errno=13 (EACCES)"
+      },
+      {
+        "check": "unlink-permitted-file",
+        "result": "operation unlink_permitted_file: errno=13 (EACCES)"
+      },
+      {
+        "check": "recorded-rules-not-run-reexecution",
+        "result": "BOUNDARY_PROBE_NOTICE: applying the boundary recorded in the passport to a temporary directory; this does not re-execute the supervised run"
+      },
+      {
+        "check": "unsupported-platform-behaviour",
+        "result": "BOUNDARY_PROBE_SKIP: unsupported platform darwin; Landlock enforcement was not checked"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "public",
+    "redactions": [],
+    "omitted": [
+      "the original execution environment and any unrecorded runtime state"
+    ]
+  },
+  "limitations": [
+    "The probe demonstrates the recorded ruleset's behavior on the reader's kernel, not the original execution.",
+    "A kernel without Landlock cannot demonstrate the boundary and reports an explicit skip instead.",
+    "The demonstration covers filesystem write classes only; it does not cover resource or network bounds."
+  ]
+}

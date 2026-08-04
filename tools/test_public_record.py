@@ -347,13 +347,27 @@ class PublicationPackagerTests(unittest.TestCase):
         )
         self.assertNotEqual(entry["artifact"]["sha256"], "0" * 64)
 
-    def test_derived_plan_covers_readme_the_run_index_and_the_landing(self) -> None:
+    def test_derived_plan_covers_every_generated_public_artifact(self) -> None:
         planned = {
             path.relative_to(gate.ROOT).as_posix()
             for path in self.packager.derived_plan()
         }
         self.assertEqual(
-            planned, {"README.md", "examples/verified/runs.md", "index.html"}
+            planned,
+            {
+                "README.md",
+                "docs/passport-spec-v1.md",
+                "examples/verified/runs.md",
+                "index.html",
+            },
+        )
+
+    def test_passport_refusal_section_is_generated_and_idempotent(self) -> None:
+        specification = self.packager.PASSPORT_SPEC_PATH.read_text(encoding="utf-8")
+        generated = self.packager.passport_spec_with_refusal_reasons(specification)
+        self.assertEqual(generated, specification)
+        self.assertEqual(
+            self.packager.passport_spec_with_refusal_reasons(generated), generated
         )
 
     def test_landing_regions_equal_what_the_tree_derives(self) -> None:

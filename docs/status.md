@@ -14,7 +14,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 | Kernel-enforcement objectives | Resource bounds, egress bounds, grant-derived kernel sandboxing of the agent | active — filesystem write confinement is applied and recorded ([verify.md](verify.md)); resource and egress bounds remain planned |
 | Unattended dispatch of agent work | Queue-driven execution of bounded task packets | draft — designed, fail-closed, not adopted |
 | Public evidence record | Machine-validated claims, sanitized records, CI-checked disclosure rules | active |
-| Public passport specification | A versioned, published format specification | planned |
+| Public passport specification | A versioned, published format specification | closed — [passport-spec-v1.md](passport-spec-v1.md) |
 | Public verifier release | A published verifier anyone can run, under Apache-2.0 | closed — `tools/verify_run_passport.py` |
 | Published demonstration | A real passport, a byte-tampered twin, and the verifier, re-checked by CI on every change | closed — [verify.md](verify.md) |
 | Second controlled run | A byte-frozen public target moved from seed to precommitted result | closed — EVD-CORE-0004, no published passport |
@@ -23,15 +23,18 @@ States are drawn from a fixed set: `active`, `draft`, `planned`, `paused`, `clos
 
 ## What done means
 
-Each workstream closes against acceptance criteria, not dates. There are no calendar promises in this repository. Three workstreams have closed against the criteria that were stated here in advance:
+Each workstream closes against acceptance criteria, not dates. There are no calendar promises in this repository. Four workstreams have closed against the criteria that were stated here in advance:
 
 - **Public verifier release** closed: the offline verifier is published here under Apache-2.0 and runs on a published passport from a clean checkout with no network.
 - **Published demonstration** closed: a real passport and its byte-tampered twin are published, continuous integration asserts PASS on one and BLOCK on the other across every supported platform, and the corresponding claim is recorded as `public-reproducible`.
 - **Second controlled run** closed: a byte-frozen public target moved from its accepted seed state to its precommitted result, the exact result bytes are published, and `EVD-CORE-0004` records the sanitized attestation. No passport for that run is published.
+- **Public passport specification** closed: an engineer can implement an independent verifier from the published document alone, including exact parsing, canonical bytes, signature payloads, cross-bindings, verdict order, and a refusal list generated from the verifier.
 
 ## Updates
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
+
+- **2026-08-03** — The Ubuntu boundary measurement became a limited public-reproducible claim (`CLM-0011`, `EVD-PUBLIC-0002`), and [passport-spec-v1.md](passport-spec-v1.md) specified the published envelope for independent verifier implementations with a generated refusal vocabulary.
 
 - **2026-08-03** — Refusal coverage became a formal public-reproducible claim (`CLM-0010`): 39 reasons declared by the published verifier, 35 demonstrated as exact corpus verdicts, and 4 explicitly classified as not reachable by mutation of the published bytes. The survey, evidence record, ledger statement, and landing-page counts are checked for drift.
 - **2026-08-03** — Public snapshot `DS-2026.08.1` finalized after the second controlled-run record landed. The publication gate now rejects any claim or evidence observation dated after the snapshot preparation date.

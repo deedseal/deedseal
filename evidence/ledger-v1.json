@@ -150,6 +150,22 @@
         "Not reachable by published mutation is a statement about this passport and the verifier's fixed first-failure order; producing a differently signed record requires private signing keys.",
         "The corpus demonstrates exact refusal verdicts for published inputs; it does not establish completeness or semantic correctness."
       ]
+    },
+    {
+      "id": "CLM-0011",
+      "statement": "The boundary recorded in the published passport, applied on an unrelated Ubuntu runner's kernel, permits the recorded file write and refuses file creation, directory creation, symbolic-link creation, and unlink; continuous integration re-observes these operations on Ubuntu on every change.",
+      "component": "PUBLIC",
+      "status": "public-reproducible",
+      "observed_on": "2026-08-03",
+      "scope": "DS-2026.08.1",
+      "evidence_ids": [
+        "EVD-PUBLIC-0002"
+      ],
+      "limitations": [
+        "The probe demonstrates the recorded ruleset's behavior on the reader's kernel, not the original execution.",
+        "A kernel without Landlock cannot demonstrate the boundary and reports an explicit skip instead.",
+        "The demonstration covers filesystem write classes only; it does not cover resource or network bounds."
+      ]
     }
   ],
   "evidence": [
@@ -270,6 +286,24 @@
       "limitations": [
         "The evidence is reproducible from the public verifier, corpus, and survey committed in this snapshot.",
         "The four classified reasons are not demonstrated by mutation of the published passport; the record explains the first-failure and signing-key boundary."
+      ]
+    },
+    {
+      "id": "EVD-PUBLIC-0002",
+      "component": "PUBLIC",
+      "kind": "published-boundary-probe-observation",
+      "assurance": "public-reproducible",
+      "observed_on": "2026-08-03",
+      "source_snapshot": "PUBLIC-2026-08-03-B",
+      "artifact": {
+        "path": "evidence/records/EVD-PUBLIC-0002.json",
+        "sha256": "131496eb1540e1d452d95d8ac7eed0daa09ec6174ea5fb2ccc1b72779e32808e"
+      },
+      "redactions": [],
+      "limitations": [
+        "The probe demonstrates the recorded ruleset's behavior on the reader's kernel, not the original execution.",
+        "A kernel without Landlock cannot demonstrate the boundary and reports an explicit skip instead.",
+        "The demonstration covers filesystem write classes only; it does not cover resource or network bounds."
       ]
     }
   ]
