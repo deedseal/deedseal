@@ -684,6 +684,7 @@ REQUIRED_PUBLIC_FILES = {
     "tools/verify_run_passport.py",
     "tools/check_demonstration.py",
     "tools/check_round_trip_v2_target.py",
+    "tools/boundary_probe.py",
     "tools/survey_refusals.py",
     "demo/README.md",
     "demo/refusals/README.md",
