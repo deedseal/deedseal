@@ -29,7 +29,16 @@ The complete input text, decoded strictly as UTF-8 without newline translation, 
 
 ## Trust anchors and Ed25519
 
-The verifier contains closed constant maps for two trust-anchor identifiers: `kbp-owner-ed25519-v0.2` and `kbp-service-custody-ed25519-v0.1`. Public-key bytes are constants inside the verifier; they are never read from the passport, a file, an environment variable, or a command-line option. This specification names the identifiers but intentionally does not reproduce key material.
+The verifier contains closed constant maps for two trust-anchor identifiers. Public keys are constants inside the implementation; they are never read from the passport, a file, an environment variable, or a command-line option — a verifier that accepts a key from its input verifies nothing.
+
+An implementation must pin exactly these two, as 32-byte Ed25519 public keys:
+
+| Identifier | Public key, hexadecimal |
+|---|---|
+| `kbp-owner-ed25519-v0.2` | `5e6e3cd40ec7feed51f0a3d803a4e105f14dd07d2a221e6edef072cc7952bcde` |
+| `kbp-service-custody-ed25519-v0.1` | `86f86166be52a9264cd9176b7a31fb5dccaa6c5c6fd2d01aa2a33b769dd6a6c5` |
+
+These are public keys, not secrets: they are what a reader checks signatures *against*, and they are published in full in every implementation. An earlier revision of this document withheld them as "key material" and named only the identifiers. That made the specification insufficient — an implementation built from it could not pin the same anchors, which a second implementation discovered by hitting exactly that wall. The corresponding private keys are held by the owner and appear nowhere.
 
 All three signatures use Ed25519. `signature_hex` is exactly 128 lowercase hexadecimal characters encoding the 64-byte signature `R || S`. Public keys are 32 bytes. Verification follows RFC 8032 with SHA-512. A decoded public-key point of small order is refused. `S` must be strictly less than the Ed25519 group order, which rejects the scalar malleability form. Encodings that do not decode to curve points are refused. The implementation explicitly rejects a small-order public key; it does not separately reject a small-order `R` point.
 

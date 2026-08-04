@@ -620,7 +620,10 @@ def disclosure_violation(path: Path, text: str) -> str | None:
         line = text[line_start:line_end]
         if (
             path.as_posix() == ".github/workflows/validate-public-record.yml"
-            and f"actions/checkout@{match.group(0)}" in line
+            and any(
+                f"{action}@{match.group(0)}" in line
+                for action in ("actions/checkout", "actions/setup-go")
+            )
         ):
             continue
         if path.as_posix().startswith(PUBLIC_COMMIT_ID_PREFIX):
@@ -685,6 +688,10 @@ REQUIRED_PUBLIC_FILES = {
     "examples/verified/conformance/manifest.json",
     "examples/verified/conformance/README.md",
     "tools/verify_run_passport.py",
+    "verifiers/README.md",
+    "verifiers/go/go.mod",
+    "verifiers/go/main.go",
+    "verifiers/go/run_conformance.sh",
     "tools/check_conformance.py",
     "tools/check_demonstration.py",
     "tools/check_round_trip_v2_target.py",
