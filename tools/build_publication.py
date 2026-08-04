@@ -39,6 +39,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from check_runs import published_passports
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFIER = REPO_ROOT / "tools" / "verify_run_passport.py"
@@ -63,6 +65,9 @@ CLAIM_TABLE_HEADER = "| Claim | Statement | Evidence | Status |\n|---|---|---|--
 RECORD_SCHEMA_VERSION = "deedseal.public-evidence-record/v1"
 PUBLISHED_RUN_KIND = "published-verification-artifact"
 PUBLIC_REPRODUCIBLE = "public-reproducible"
+VERIFIED_RUNS_REGION = "verified-runs"
+LATEST_PUBLISHED_RUN_REGION = "latest-published-run"
+LANDING_PAGE_REGIONS = (VERIFIED_RUNS_REGION, LATEST_PUBLISHED_RUN_REGION)
 
 
 class PublicationError(Exception):
@@ -332,17 +337,74 @@ def build_record(
 
 
 def verified_run_sentence(count: int) -> str:
-    """The landing page's run clause, correct English at any count.
-
-    A door that says "1 runs are published" is worse than the typed number it
-    replaced, so the singular is spelt out rather than rendered as a digit.
-    """
+    """The landing page's run clause, correct English at any count."""
     if count == 1:
-        return "one supervised run is\n      published"
-    return f"{count} supervised runs are\n      published"
+        return (
+            "1 supervised run is published with its passport, its tampered twin, "
+            "and the verifier"
+        )
+    return (
+        f"{count} supervised runs are published, each with its passport, "
+        "its tampered twin, and the verifier"
+    )
 
 
-def landing_with_generated_regions(landing: str) -> str:
+def newest_published_run_date(ledger: dict) -> str:
+    """The observed date of the ledger's newest published-run evidence entry."""
+    published_entries = [
+        entry for entry in ledger["evidence"] if entry.get("kind") == PUBLISHED_RUN_KIND
+    ]
+    if not published_entries:
+        raise PublicationError(
+            f"{LATEST_PUBLISHED_RUN_REGION}: ledger has no {PUBLISHED_RUN_KIND} evidence"
+        )
+    newest = max(
+        published_entries,
+        key=lambda entry: (entry["observed_on"], entry["id"]),
+    )
+    return newest["observed_on"]
+
+
+def generated_region_span(landing: str, region: str) -> tuple[int, int, int, int]:
+    """Return one generated region's boundaries, or refuse malformed markers."""
+    opening = f"<!-- generated:{region} -->"
+    closing = f"<!-- /generated:{region} -->"
+    if landing.count(opening) != 1 or landing.count(closing) != 1:
+        raise PublicationError(f"{region}: generated marker pair is missing or malformed")
+
+    opening_start = landing.index(opening)
+    content_start = opening_start + len(opening)
+    content_end = landing.index(closing)
+    if content_end < content_start:
+        raise PublicationError(f"{region}: generated marker pair is missing or malformed")
+    return opening_start, content_start, content_end, content_end + len(closing)
+
+
+def validate_landing_region_layout(landing: str) -> None:
+    """Refuse nested or crossing generated regions before replacing either."""
+    spans = {
+        region: generated_region_span(landing, region)
+        for region in LANDING_PAGE_REGIONS
+    }
+    first, second = sorted(spans, key=lambda region: spans[region][0])
+    if spans[second][0] < spans[first][3]:
+        raise PublicationError(f"{first}: generated marker pair overlaps {second}")
+
+
+def replace_generated_region(landing: str, region: str, generated: str) -> str:
+    """Replace exactly one marked region, or refuse a malformed pair."""
+    _opening_start, content_start, content_end, _closing_end = generated_region_span(
+        landing, region
+    )
+    return landing[:content_start] + generated + landing[content_end:]
+
+
+def landing_with_generated_regions(
+    landing: str,
+    ledger: dict,
+    *,
+    run_count: int | None = None,
+) -> str:
     """`landing` with each generated region replaced by what the tree derives.
 
     Only the text between a marker pair changes; everything else on the page is
@@ -350,26 +412,19 @@ def landing_with_generated_regions(landing: str) -> str:
     malformed marker pair is an error, never a silent skip -- a region quietly
     left alone is exactly the drift this machinery exists to prevent.
     """
-    regions = {"verified-runs": verified_run_sentence(len(published_passports()))}
-    result = landing
-    for name, replacement in regions.items():
-        opening = f"<!-- generated:{name} -->"
-        closing = f"<!-- /generated:{name} -->"
-        start = result.find(opening)
-        end = result.find(closing)
-        if start < 0 or end < 0 or end < start:
-            raise PublicationError(
-                f"landing page has no well-formed region markers for '{name}'"
-            )
-        if result.find(opening, start + 1) >= 0 or result.find(closing, end + 1) >= 0:
-            raise PublicationError(f"landing page repeats the markers for '{name}'")
-        result = result[: start + len(opening)] + replacement + result[end:]
-    return result
-
-
-def published_passports() -> list[Path]:
-    """Every published run passport, counted the same way the counter counts."""
-    return sorted(PUBLISHED_ROOT.rglob("run-passport.json"))
+    validate_landing_region_layout(landing)
+    if run_count is None:
+        run_count = len(published_passports())
+    landing = replace_generated_region(
+        landing,
+        VERIFIED_RUNS_REGION,
+        verified_run_sentence(run_count),
+    )
+    return replace_generated_region(
+        landing,
+        LATEST_PUBLISHED_RUN_REGION,
+        newest_published_run_date(ledger),
+    )
 
 
 def derived_plan() -> dict[Path, str]:
@@ -381,7 +436,7 @@ def derived_plan() -> dict[Path, str]:
         ),
         RUNS_INDEX: runs_index_text(),
         LANDING_PATH: landing_with_generated_regions(
-            LANDING_PATH.read_text(encoding="utf-8")
+            LANDING_PATH.read_text(encoding="utf-8"), ledger
         ),
     }
     return plan

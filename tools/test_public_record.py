@@ -6,11 +6,15 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
 import re
 import sys
+import tempfile
 import unittest
+from contextlib import redirect_stdout
 from datetime import date, timedelta
 from pathlib import Path
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -359,46 +363,87 @@ class PublicationPackagerTests(unittest.TestCase):
     def test_landing_regions_equal_what_the_tree_derives(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
         self.assertEqual(
-            self.packager.landing_with_generated_regions(landing), landing
+            self.packager.landing_with_generated_regions(landing, self.ledger),
+            landing,
         )
 
     def test_landing_generation_is_idempotent(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        once = self.packager.landing_with_generated_regions(landing)
-        self.assertEqual(self.packager.landing_with_generated_regions(once), once)
+        once = self.packager.landing_with_generated_regions(landing, self.ledger)
+        self.assertEqual(
+            self.packager.landing_with_generated_regions(once, self.ledger), once
+        )
 
     def test_landing_count_equals_the_published_passports(self) -> None:
         count = len(self.counter.published_passports())
         expected = self.packager.verified_run_sentence(count)
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn(expected, landing)
+        match = re.search(
+            r"<!-- generated:verified-runs -->(.*?)<!-- /generated:verified-runs -->",
+            landing,
+        )
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), expected)
 
     def test_the_run_clause_is_grammatical_at_any_count(self) -> None:
-        """A door that says "1 runs are published" is worse than the typed
-        number it replaced."""
-        self.assertIn("one supervised run is", self.packager.verified_run_sentence(1))
-        self.assertIn("2 supervised runs are", self.packager.verified_run_sentence(2))
-        self.assertNotIn("1 supervised", self.packager.verified_run_sentence(1))
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        expected = {
+            1: "1 supervised run is published with its passport, its tampered twin, "
+            "and the verifier",
+            2: "2 supervised runs are published, each with its passport, its tampered "
+            "twin, and the verifier",
+        }
+        for count, sentence in expected.items():
+            with self.subTest(count=count):
+                generated = self.packager.landing_with_generated_regions(
+                    landing, self.ledger, run_count=count
+                )
+                match = re.search(
+                    r"<!-- generated:verified-runs -->(.*?)"
+                    r"<!-- /generated:verified-runs -->",
+                    generated,
+                )
+                self.assertIsNotNone(match)
+                self.assertEqual(match.group(1), sentence)
+
+    def test_landing_date_equals_the_newest_published_evidence(self) -> None:
+        expected = max(
+            entry["observed_on"]
+            for entry in self.ledger["evidence"]
+            if entry["kind"] == self.packager.PUBLISHED_RUN_KIND
+        )
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        match = re.search(
+            r"<!-- generated:latest-published-run -->(.*?)"
+            r"<!-- /generated:latest-published-run -->",
+            landing,
+        )
+        self.assertIsNotNone(match)
+        self.assertEqual(match.group(1), expected)
 
     def test_a_hand_edited_landing_number_is_refused(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        tampered = landing.replace(
-            "one supervised run is", "five supervised runs are"
-        )
+        tampered = landing.replace("1 supervised run is", "5 supervised runs are")
         self.assertNotEqual(tampered, landing)
-        self.assertNotEqual(
-            self.packager.landing_with_generated_regions(tampered), tampered
-        )
+
+        with tempfile.TemporaryDirectory(dir=gate.ROOT) as temporary_directory:
+            temporary_landing = Path(temporary_directory) / "index.html"
+            temporary_landing.write_text(tampered, encoding="utf-8")
+            output = io.StringIO()
+            with patch.object(self.packager, "LANDING_PATH", temporary_landing):
+                with redirect_stdout(output):
+                    result = self.packager.command_check(None)
+
+        self.assertEqual(result, 1)
+        self.assertIn("index.html", output.getvalue())
 
     def test_a_missing_region_marker_is_an_error_not_a_silent_skip(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        for broken in (
-            landing.replace("<!-- /generated:verified-runs -->", ""),
-            landing.replace("<!-- generated:verified-runs -->", ""),
-        ):
-            with self.subTest():
-                with self.assertRaises(self.packager.PublicationError):
-                    self.packager.landing_with_generated_regions(broken)
+        for region in self.packager.LANDING_PAGE_REGIONS:
+            broken = landing.replace(f"<!-- /generated:{region} -->", "", 1)
+            with self.subTest(region=region):
+                with self.assertRaisesRegex(self.packager.PublicationError, region):
+                    self.packager.landing_with_generated_regions(broken, self.ledger)
 
     def test_landing_makes_no_external_request_and_carries_no_script(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
