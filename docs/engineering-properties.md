@@ -103,9 +103,9 @@ aggregate, not an independently reproducible dataset.
 verifier, and a one-byte tampered copy verifies BLOCK, using only this
 repository's files and a Python interpreter.
 
-**Meaning.** This is the one claim on this page that does not ask to be
-believed. The passport, a twin of it differing at exactly one byte, and the
-verifier that renders the verdict are all published here. A reader runs the
+**Meaning.** This claim does not ask to be believed. The passport, a twin of it
+differing at exactly one byte, and the verifier that renders the verdict are all
+published here. A reader runs the
 verifier twice and sees PASS and then BLOCK, hashes the published post-run bytes
 and finds the digest the passport signs, and reads the applied kernel boundary
 in the same signed bytes as the grant it was derived from. Continuous
@@ -138,3 +138,25 @@ file.
 sanitized internal attestation. This record is not a signed commit-bound
 passport and does not make the second run publicly reproducible. It proves
 exact-byte result presence, not semantic quality.
+
+## `CLM-0010` — refusal coverage measured from published bytes
+
+**Statement.** The published verifier declares 39 refusal reasons; the
+published mutation corpus demonstrates 35 exact refusal verdicts and classifies
+4 as not reachable by mutation of the published bytes.
+
+**Meaning.** The survey parses every `block_*` string from the verifier source
+instead of relying on a hand-maintained count. It runs every named corpus case,
+accepts a reason as demonstrated only when the exact final verdict and exit code
+match, and requires the demonstrated and not-reachable sets to account for all
+declared reasons. The same measured values generate the landing-page counts and
+are checked against this claim and its evidence record.
+
+**Boundary.** The 39 reasons are declarations in this published verifier, not a
+claim about every rejection path in private components. The 35 demonstrated
+reasons are reachable from the published passport and hostile file inputs under
+the verifier's fixed first-failure order. Of the other four, three require a
+differently signed owner grant or custody record before the verifier can reach a
+later check; one is declared as a custody failure reason but is not returned as
+a passport-verifier verdict. The corpus demonstrates refusal behavior, not
+semantic correctness or completeness.

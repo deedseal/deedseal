@@ -7,6 +7,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 
@@ -24,6 +25,25 @@ NOT_REACHABLE_BY_PUBLISHED_MUTATION = {
     "block_public_run_passport_contract_malformed",
     "block_supervised_agent_capture_failed",
 }
+
+
+@dataclass(frozen=True)
+class RefusalCoverage:
+    """One mechanically evaluated view of declared and demonstrated refusals."""
+
+    declared: frozenset[str]
+    demonstrated: frozenset[str]
+    not_reachable: frozenset[str]
+    failed_cases: tuple[str, ...]
+    errors: tuple[str, ...]
+
+    @property
+    def counts(self) -> tuple[int, int, int]:
+        return (
+            len(self.declared),
+            len(self.demonstrated),
+            len(self.not_reachable),
+        )
 
 
 def declared_reasons() -> set[str]:
@@ -46,10 +66,8 @@ def load_corpus() -> ModuleType:
     return module
 
 
-def main() -> int:
-    if not VERIFIER.is_file() or not CORPUS.is_file():
-        print("REFUSAL_SURVEY: FAIL required verifier or corpus is missing")
-        return 1
+def evaluate_coverage() -> RefusalCoverage:
+    """Evaluate the corpus once and return the exact refusal classification."""
 
     declared = declared_reasons()
     corpus = load_corpus()
@@ -59,7 +77,7 @@ def main() -> int:
         for case in corpus.CASES
         if str(case["expect"]).startswith("block_")
     }
-    produced = {
+    demonstrated = {
         str(result["expect_reason"])
         for result in results
         if result["passed"]
@@ -68,10 +86,12 @@ def main() -> int:
     }
 
     errors: list[str] = []
-    failed_cases = [str(result["name"]) for result in results if not result["passed"]]
+    failed_cases = tuple(
+        str(result["name"]) for result in results if not result["passed"]
+    )
     if failed_cases:
-        errors.append(f"corpus cases failed: {failed_cases}")
-    missing_proof = claimed - produced
+        errors.append(f"corpus cases failed: {list(failed_cases)}")
+    missing_proof = claimed - demonstrated
     if missing_proof:
         errors.append(f"claimed reasons not produced: {sorted(missing_proof)}")
     undeclared_claims = claimed - declared
@@ -85,29 +105,47 @@ def main() -> int:
             f"extra {sorted(classification - declared)}"
         )
 
-    for reason in sorted(declared):
+    return RefusalCoverage(
+        declared=frozenset(declared),
+        demonstrated=frozenset(demonstrated),
+        not_reachable=frozenset(NOT_REACHABLE_BY_PUBLISHED_MUTATION),
+        failed_cases=failed_cases,
+        errors=tuple(errors),
+    )
+
+
+def main() -> int:
+    if not VERIFIER.is_file() or not CORPUS.is_file():
+        print("REFUSAL_SURVEY: FAIL required verifier or corpus is missing")
+        return 1
+
+    coverage = evaluate_coverage()
+
+    for reason in sorted(coverage.declared):
         status = (
             "demonstrated"
-            if reason in produced
+            if reason in coverage.demonstrated
             else "not reachable by published-byte mutation"
         )
         print(f"{reason}: {status}")
 
-    if errors:
-        for error in errors:
+    if coverage.errors:
+        for error in coverage.errors:
             print(f"REFUSAL_SURVEY_ERROR: {error}")
         print("REFUSAL_SURVEY: FAIL")
         return 1
 
-    print(f"declared refusal reasons: {len(declared)}")
-    print(f"demonstrated refusal reasons: {len(produced)}")
+    declared_count, demonstrated_count, not_reachable_count = coverage.counts
+    print(f"declared refusal reasons: {declared_count}")
+    print(f"demonstrated refusal reasons: {demonstrated_count}")
     print(
         "not reachable by published-byte mutation: "
-        f"{len(NOT_REACHABLE_BY_PUBLISHED_MUTATION)}"
+        f"{not_reachable_count}"
     )
     print(
-        f"REFUSAL_SURVEY: PASS {len(declared)} declared; {len(produced)} demonstrated; "
-        f"{len(NOT_REACHABLE_BY_PUBLISHED_MUTATION)} not reachable by mutation"
+        f"REFUSAL_SURVEY: PASS {declared_count} declared; "
+        f"{demonstrated_count} demonstrated; "
+        f"{not_reachable_count} not reachable by mutation"
     )
     return 0
 

@@ -1,0 +1,39 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-PUBLIC-0001",
+  "component": "PUBLIC",
+  "source_snapshot": "PUBLIC-2026-08-03-A",
+  "observed_on": "2026-08-03",
+  "kind": "published-refusal-coverage-survey",
+  "assurance": "public-reproducible",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "declared-refusal-reasons",
+        "result": "39 distinct block_* strings parsed from the published verifier"
+      },
+      {
+        "check": "demonstrated-refusal-reasons",
+        "result": "35 distinct exact BLOCK verdicts produced by the published corpus"
+      },
+      {
+        "check": "not-reachable-by-published-mutation",
+        "result": "4 declared reasons classified outside published-byte mutation"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "public",
+    "redactions": [],
+    "omitted": [
+      "private signing keys needed to produce differently signed owner grants and custody records"
+    ]
+  },
+  "limitations": [
+    "The counts describe the verifier and corpus committed in this public snapshot, not every refusal path in private components.",
+    "Not reachable by published mutation means the verifier cannot reach that reason by mutating the published passport under its fixed first-failure order; it does not mean the input state is impossible.",
+    "Three classified reasons require a differently signed owner grant or custody record; one is a declared custody reason that is not returned as a passport-verifier verdict.",
+    "The corpus demonstrates deterministic refusal outcomes for published inputs; it does not establish completeness or semantic correctness."
+  ]
+}
