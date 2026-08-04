@@ -9,4 +9,5 @@ not resolve in this repository, by design.
 
 | Run | Parent commit | Resulting commit | Artifacts |
 |---|---|---|---|
+| `deedseal-bounded-run-002` | `8ff2f2044dae45fbc2029d29a72f9fe502ede6f1` | `590864013e9bc3e0681e57cb1133376220b8b4a8` | [`examples/verified/run-002`](run-002) |
 | `deedseal-public-demonstration-v1.0` | `abcc8f8fa655bb2dbf648357a031d50590a2f47a` | `4fd528a2e3a2ff76c24e36557b4e452a614b2332` | [`examples/verified`](.) |

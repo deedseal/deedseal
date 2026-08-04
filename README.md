@@ -108,6 +108,7 @@ Beyond documentation, this repository maintains a machine-validated public recor
 | `CLM-0009` | A second controlled run produced the precommitted target bytes, proved staged-to-materialized equality, and published those exact result bytes in this repository. | `EVD-CORE-0004` | `internally-verified` |
 | `CLM-0010` | The published verifier declares 39 refusal reasons; the published mutation corpus demonstrates 35 exact refusal verdicts and classifies 4 as not reachable by mutation of the published bytes. | `EVD-PUBLIC-0001` | `public-reproducible` |
 | `CLM-0011` | The boundary recorded in the published passport, applied on an unrelated Ubuntu runner's kernel, permits the recorded file write and refuses file creation, directory creation, symbolic-link creation, and unlink; continuous integration re-observes these operations on Ubuntu on every change. | `EVD-PUBLIC-0002` | `public-reproducible` |
+| `CLM-0012` | A second supervised run is published with its passport, its one-byte tampered twin, and the exact before and after bytes of the file it changed; the passport verifies PASS and the twin verifies BLOCK using only this repository's files and a Python interpreter. | `EVD-CORE-0005` | `public-reproducible` |
 
 Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineering-properties.md). Evidence model and what the hashes prove: [evidence/README.md](evidence/README.md). What may be published at all: [docs/publication-policy.md](docs/publication-policy.md).
 
