@@ -196,3 +196,25 @@ passport at exactly one byte, derived by the published rule rather than chosen.
 or a statement about availability. Reproducing either verdict does not reproduce
 the run; producing new passports requires the private system and its signing
 keys.
+
+## `CLM-0013` — two implementations agree
+
+**Statement.** Two implementations of the published run-passport envelope
+produce identical verdicts and exit codes on all 48 published conformance
+vectors, and continuous integration re-observes this on every change.
+
+**Meaning.** The published specification was complete enough to build a working
+verifier from. The second implementation uses a different language, a different
+JSON decoder, and a different signature library — and Go's decoder differs from
+Python's in exactly the places where implementations quietly diverge: duplicate
+keys, key order, and re-serialization escaping. Neither implementation was
+adjusted to make the other agree. The one gap the exercise found — trust-anchor
+public keys omitted from the specification — is recorded in that document rather
+than quietly patched.
+
+**Boundary.** Both implementations come from this project. This is agreement
+between two implementations, not two parties checking each other, and no
+statement here should be read as independent verification. Agreement covers the
+48 published vectors; it establishes nothing about inputs outside them and does
+not establish correctness in general. Four declared refusal reasons cannot be
+reached by mutating the published bytes and are absent from the vectors.

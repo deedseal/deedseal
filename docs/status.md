@@ -2,14 +2,14 @@
 
 ## Maturity
 
-Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development; one supervised run is published with an offline-verifiable passport ([verify.md](verify.md)), and a second controlled run is published as a sanitized record only. The passport format is not frozen. Grant-derived filesystem confinement is applied by the kernel and recorded in the published run passport; resource and egress bounds remain open objectives. Deedseal is not yet available for production use, and no performance or economic claims are made.
+Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development; one supervised run is published with an offline-verifiable passport ([verify.md](verify.md)), and a second controlled run is published as a sanitized record only. The published passport envelope is frozen under a stated compatibility commitment; new capability arrives as a new version. Grant-derived filesystem confinement is applied by the kernel and recorded in the published run passport; resource and egress bounds remain open objectives. Deedseal is not yet available for production use, and no performance or economic claims are made.
 
 ## Workstreams
 
 | Workstream | Scope | State |
 | --- | --- | --- |
 | Authorization and signed-grant chain | Owner-signed grants, deny-by-default gate, effect broker, OS-principal separation | active |
-| Run passport format | The evidence record and what it binds | draft — not frozen |
+| Run passport format | The evidence record and what it binds | closed — frozen at `deedseal-run-passport/1.0` ([passport-spec-v1.md](passport-spec-v1.md)) |
 | Offline verifier | Single-file, standard-library verification against pinned keys | active |
 | Kernel-enforcement objectives | Resource bounds, egress bounds, grant-derived kernel sandboxing of the agent | active — filesystem write confinement is applied and recorded ([verify.md](verify.md)); resource and egress bounds remain planned |
 | Unattended dispatch of agent work | Queue-driven execution of bounded task packets | draft — designed, fail-closed, not adopted |
@@ -23,17 +23,19 @@ States are drawn from a fixed set: `active`, `draft`, `planned`, `paused`, `clos
 
 ## What done means
 
-Each workstream closes against acceptance criteria, not dates. There are no calendar promises in this repository. Four workstreams have closed against the criteria that were stated here in advance:
+Each workstream closes against acceptance criteria, not dates. There are no calendar promises in this repository. Five workstreams have closed against the criteria that were stated here in advance:
 
 - **Public verifier release** closed: the offline verifier is published here under Apache-2.0 and runs on a published passport from a clean checkout with no network.
 - **Published demonstration** closed: a real passport and its byte-tampered twin are published, continuous integration asserts PASS on one and BLOCK on the other across every supported platform, and the corresponding claim is recorded as `public-reproducible`.
 - **Second controlled run** closed: a byte-frozen public target moved from its accepted seed state to its precommitted result, the exact result bytes are published, and `EVD-CORE-0004` records the sanitized attestation. No passport for that run is published.
+- **Run passport format** closed: the published envelope is frozen under a stated compatibility commitment, its behaviour is pinned by 48 committed conformance vectors, and a second implementation built from the specification reaches identical verdicts on all of them.
 - **Public passport specification** closed: an engineer can implement an independent verifier from the published document alone, including exact parsing, canonical bytes, signature payloads, cross-bindings, verdict order, and a refusal list generated from the verifier.
 
 ## Updates
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
 
+- **2026-08-04** — The published envelope `deedseal-run-passport/1.0` is frozen under an explicit compatibility commitment: passports carrying it keep verifying, the field set stays closed, and new capability arrives as a new version rather than a silent extension. What justifies the freeze is recorded as `CLM-0013` / `EVD-PUBLIC-0003`: two implementations, in different languages with different JSON decoders and signature libraries, produce identical verdicts on all 48 published conformance vectors. Both implementations come from this project; this is not independent verification.
 - **2026-08-04** — A second supervised run was published (`CLM-0012`, `EVD-CORE-0005`). Its passport, its one-byte tampered twin, and the exact before and after bytes of the changed file are under `examples/verified/run-002/`; `tools/check_runs.py` now reports two verified runs. The run was the first dispatched under authority-enforced acceptance markers.
 - **2026-08-03** — The Ubuntu boundary measurement became a limited public-reproducible claim (`CLM-0011`, `EVD-PUBLIC-0002`), and [passport-spec-v1.md](passport-spec-v1.md) specified the published envelope for independent verifier implementations with a generated refusal vocabulary.
 

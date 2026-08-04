@@ -109,6 +109,7 @@ Beyond documentation, this repository maintains a machine-validated public recor
 | `CLM-0010` | The published verifier declares 39 refusal reasons; the published mutation corpus demonstrates 35 exact refusal verdicts and classifies 4 as not reachable by mutation of the published bytes. | `EVD-PUBLIC-0001` | `public-reproducible` |
 | `CLM-0011` | The boundary recorded in the published passport, applied on an unrelated Ubuntu runner's kernel, permits the recorded file write and refuses file creation, directory creation, symbolic-link creation, and unlink; continuous integration re-observes these operations on Ubuntu on every change. | `EVD-PUBLIC-0002` | `public-reproducible` |
 | `CLM-0012` | A second supervised run is published with its passport, its one-byte tampered twin, and the exact before and after bytes of the file it changed; the passport verifies PASS and the twin verifies BLOCK using only this repository's files and a Python interpreter. | `EVD-CORE-0005` | `public-reproducible` |
+| `CLM-0013` | Two implementations of the published run-passport envelope produce identical verdicts and exit codes on all 48 published conformance vectors, and continuous integration re-observes this on every change. | `EVD-PUBLIC-0003` | `public-reproducible` |
 
 Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineering-properties.md). Evidence model and what the hashes prove: [evidence/README.md](evidence/README.md). What may be published at all: [docs/publication-policy.md](docs/publication-policy.md).
 
@@ -126,7 +127,7 @@ Deedseal does not sandbox the workload itself. To run possibly-malicious code, p
 
 ## Status
 
-Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development. The passport format is not frozen, and Deedseal is not yet available for production use. Current workstreams and their state are tracked in [docs/status.md](docs/status.md).
+Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development. The published passport envelope is frozen under a stated compatibility commitment ([specification](docs/passport-spec-v1.md)); Deedseal is not yet available for production use. Current workstreams and their state are tracked in [docs/status.md](docs/status.md).
 
 ## How Deedseal is built
 

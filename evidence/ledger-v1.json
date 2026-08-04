@@ -181,6 +181,22 @@
         "The verdict attests integrity and provenance of the recorded run against the trust anchors pinned in the published verifier; it does not attest semantic quality of the change the run produced.",
         "Reproducing the verdict does not reproduce the run; producing new passports requires the private system and its signing keys."
       ]
+    },
+    {
+      "id": "CLM-0013",
+      "statement": "Two implementations of the published run-passport envelope produce identical verdicts and exit codes on all 48 published conformance vectors, and continuous integration re-observes this on every change.",
+      "component": "PUBLIC",
+      "status": "public-reproducible",
+      "observed_on": "2026-08-04",
+      "scope": "DS-2026.08.1",
+      "evidence_ids": [
+        "EVD-PUBLIC-0003"
+      ],
+      "limitations": [
+        "Both implementations come from this project; this is agreement between two implementations, not two parties checking each other.",
+        "Agreement covers the 48 published vectors and does not establish correctness for inputs outside them.",
+        "Four declared refusal reasons cannot be reached by mutating the published bytes and are absent from the vectors."
+      ]
     }
   ],
   "evidence": [
@@ -336,6 +352,23 @@
       "limitations": [
         "The private source of the system that produced the run is identified only by its opaque snapshot identifier.",
         "Public reproducibility applies to checking the published passport and its tampered twin, not to producing new passports."
+      ]
+    },
+    {
+      "id": "EVD-PUBLIC-0003",
+      "component": "PUBLIC",
+      "kind": "published-verification-artifact",
+      "assurance": "public-reproducible",
+      "observed_on": "2026-08-04",
+      "source_snapshot": "PUBLIC-2026-08-04-A",
+      "artifact": {
+        "path": "evidence/records/EVD-PUBLIC-0003.json",
+        "sha256": "ca27692184cfc2a67242bc14ecee3db2527c0bf4f69ad1d7b5d23fd0810784c5"
+      },
+      "redactions": [],
+      "limitations": [
+        "The vectors are derived from one published passport; the private system that produced it is not published.",
+        "Agreement is observed on committed inputs, not on arbitrary passports."
       ]
     }
   ]
