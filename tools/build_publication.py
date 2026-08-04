@@ -47,6 +47,7 @@ RECORDS_DIR = REPO_ROOT / "evidence" / "records"
 PUBLISHED_ROOT = REPO_ROOT / "examples" / "verified"
 README_PATH = REPO_ROOT / "README.md"
 RUNS_INDEX = PUBLISHED_ROOT / "runs.md"
+LANDING_PATH = REPO_ROOT / "index.html"
 
 PASS_VERDICT = "RUN_PASSPORT_VERDICT: PASS"
 BLOCK_PREFIX = "RUN_PASSPORT_VERDICT: BLOCK"
@@ -330,6 +331,47 @@ def build_record(
 # --------------------------------------------------------------------------
 
 
+def verified_run_sentence(count: int) -> str:
+    """The landing page's run clause, correct English at any count.
+
+    A door that says "1 runs are published" is worse than the typed number it
+    replaced, so the singular is spelt out rather than rendered as a digit.
+    """
+    if count == 1:
+        return "one supervised run is\n      published"
+    return f"{count} supervised runs are\n      published"
+
+
+def landing_with_generated_regions(landing: str) -> str:
+    """`landing` with each generated region replaced by what the tree derives.
+
+    Only the text between a marker pair changes; everything else on the page is
+    hand-written and judged, and the generator must not touch it. A missing or
+    malformed marker pair is an error, never a silent skip -- a region quietly
+    left alone is exactly the drift this machinery exists to prevent.
+    """
+    regions = {"verified-runs": verified_run_sentence(len(published_passports()))}
+    result = landing
+    for name, replacement in regions.items():
+        opening = f"<!-- generated:{name} -->"
+        closing = f"<!-- /generated:{name} -->"
+        start = result.find(opening)
+        end = result.find(closing)
+        if start < 0 or end < 0 or end < start:
+            raise PublicationError(
+                f"landing page has no well-formed region markers for '{name}'"
+            )
+        if result.find(opening, start + 1) >= 0 or result.find(closing, end + 1) >= 0:
+            raise PublicationError(f"landing page repeats the markers for '{name}'")
+        result = result[: start + len(opening)] + replacement + result[end:]
+    return result
+
+
+def published_passports() -> list[Path]:
+    """Every published run passport, counted the same way the counter counts."""
+    return sorted(PUBLISHED_ROOT.rglob("run-passport.json"))
+
+
 def derived_plan() -> dict[Path, str]:
     """Everything this tool derives from the current tree, as {path: text}."""
     ledger = load_json(LEDGER_PATH)
@@ -338,6 +380,9 @@ def derived_plan() -> dict[Path, str]:
             README_PATH.read_text(encoding="utf-8"), ledger
         ),
         RUNS_INDEX: runs_index_text(),
+        LANDING_PATH: landing_with_generated_regions(
+            LANDING_PATH.read_text(encoding="utf-8")
+        ),
     }
     return plan
 

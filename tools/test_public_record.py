@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import re
 import sys
 import unittest
 from datetime import date, timedelta
@@ -346,12 +347,67 @@ class PublicationPackagerTests(unittest.TestCase):
         )
         self.assertNotEqual(entry["artifact"]["sha256"], "0" * 64)
 
-    def test_derived_plan_covers_readme_and_the_run_index(self) -> None:
+    def test_derived_plan_covers_readme_the_run_index_and_the_landing(self) -> None:
         planned = {
             path.relative_to(gate.ROOT).as_posix()
             for path in self.packager.derived_plan()
         }
-        self.assertEqual(planned, {"README.md", "examples/verified/runs.md"})
+        self.assertEqual(
+            planned, {"README.md", "examples/verified/runs.md", "index.html"}
+        )
+
+    def test_landing_regions_equal_what_the_tree_derives(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertEqual(
+            self.packager.landing_with_generated_regions(landing), landing
+        )
+
+    def test_landing_generation_is_idempotent(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        once = self.packager.landing_with_generated_regions(landing)
+        self.assertEqual(self.packager.landing_with_generated_regions(once), once)
+
+    def test_landing_count_equals_the_published_passports(self) -> None:
+        count = len(self.counter.published_passports())
+        expected = self.packager.verified_run_sentence(count)
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn(expected, landing)
+
+    def test_the_run_clause_is_grammatical_at_any_count(self) -> None:
+        """A door that says "1 runs are published" is worse than the typed
+        number it replaced."""
+        self.assertIn("one supervised run is", self.packager.verified_run_sentence(1))
+        self.assertIn("2 supervised runs are", self.packager.verified_run_sentence(2))
+        self.assertNotIn("1 supervised", self.packager.verified_run_sentence(1))
+
+    def test_a_hand_edited_landing_number_is_refused(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        tampered = landing.replace(
+            "one supervised run is", "five supervised runs are"
+        )
+        self.assertNotEqual(tampered, landing)
+        self.assertNotEqual(
+            self.packager.landing_with_generated_regions(tampered), tampered
+        )
+
+    def test_a_missing_region_marker_is_an_error_not_a_silent_skip(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        for broken in (
+            landing.replace("<!-- /generated:verified-runs -->", ""),
+            landing.replace("<!-- generated:verified-runs -->", ""),
+        ):
+            with self.subTest():
+                with self.assertRaises(self.packager.PublicationError):
+                    self.packager.landing_with_generated_regions(broken)
+
+    def test_landing_makes_no_external_request_and_carries_no_script(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertEqual(landing.lower().count("<script"), 0)
+        hosts = {
+            match.split("/")[2]
+            for match in re.findall(r"https?://[^\s\"')]+", landing)
+        }
+        self.assertEqual(hosts, {"deedseal.com", "github.com"})
 
     def test_twin_derivation_is_deterministic_and_one_byte(self) -> None:
         original = (
