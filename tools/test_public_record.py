@@ -476,6 +476,76 @@ class PublicationPackagerTests(unittest.TestCase):
                 self.assertIn("each with its passport", clause)
                 self.assertNotIn("published, with its", clause)
 
+    def test_the_landing_promise_names_the_version_the_bytes_carry(self) -> None:
+        """The one thing on that page a reader acts on later.
+
+        Someone downloads the verifier today and verifies a passport next year.
+        The clause that tells them they can is derived from the published bytes,
+        not from a sentence someone was confident about.
+        """
+        version = self.packager.published_envelope_version()
+        for passport in self.counter.published_passports():
+            with self.subTest(passport=passport.name):
+                self.assertEqual(
+                    json.loads(passport.read_text(encoding="utf-8"))["schema_version"],
+                    version,
+                )
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        self.assertIn(
+            f'<!-- generated:envelope-commitment -->frozen at <span class="mono">{version}</span>',
+            landing,
+        )
+
+    def test_a_status_freeze_the_bytes_do_not_carry_is_refused(self) -> None:
+        """Status is hand-written and dated. It does not get the last word on
+        what format the published passports are in."""
+        status = (gate.ROOT / "docs" / "status.md").read_text(encoding="utf-8")
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.envelope_commitment(status, "deedseal-run-passport/9.9")
+
+    def test_an_unfrozen_status_makes_no_promise(self) -> None:
+        """The state this repository was in until the envelope froze.
+
+        The generator has to render it honestly rather than raise, or the page
+        could never walk the commitment back.
+        """
+        version = self.packager.published_envelope_version()
+        unfrozen = (
+            "| Workstream | Scope | State |\n"
+            "| --- | --- | --- |\n"
+            "| Run passport format | The evidence record | draft — not frozen |\n"
+        )
+        clause = self.packager.envelope_commitment(unfrozen, version)
+        self.assertIn("not frozen yet", clause)
+        self.assertNotIn("frozen at", clause)
+        self.assertNotIn("keeps verifying", clause)
+
+    def test_a_missing_workstream_row_is_refused(self) -> None:
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.frozen_envelope_version("# Status\n\nNo table here.\n")
+
+    def test_the_page_names_no_format_it_cannot_read_off_the_bytes(self) -> None:
+        """No passports, or passports in two envelopes: either way the clause
+        is unwritable and the publication has to stop rather than pick one."""
+        real = self.packager.published_passports
+        with tempfile.TemporaryDirectory() as tmp:
+            pair = []
+            for index, version in enumerate(("1.0", "2.0")):
+                path = Path(tmp) / f"run-{index}.json"
+                path.write_text(
+                    json.dumps({"schema_version": f"deedseal-run-passport/{version}"}),
+                    encoding="utf-8",
+                )
+                pair.append(path)
+            for label, listing in (("none", lambda: []), ("mixed", lambda: pair)):
+                with self.subTest(published=label):
+                    try:
+                        self.packager.published_passports = listing
+                        with self.assertRaises(self.packager.PublicationError):
+                            self.packager.published_envelope_version()
+                    finally:
+                        self.packager.published_passports = real
+
     def test_a_hand_edited_landing_number_is_refused(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
         # Derived, never spelt out: the clause changes with the published run
@@ -499,6 +569,10 @@ class PublicationPackagerTests(unittest.TestCase):
                 ">4<!-- /generated:refusal-not-reachable -->",
                 ">0<!-- /generated:refusal-not-reachable -->",
             ),
+            (
+                self.packager.published_envelope_version() + "</span>",
+                "deedseal-run-passport/9.9</span>",
+            ),
         )
         for original, replacement in replacements:
             with self.subTest(original=original):
@@ -512,6 +586,7 @@ class PublicationPackagerTests(unittest.TestCase):
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
         for name in (
             "verified-runs",
+            "envelope-commitment",
             "refusal-declared",
             "refusal-demonstrated",
             "refusal-not-reachable",
