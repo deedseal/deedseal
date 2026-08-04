@@ -4,7 +4,7 @@
 
 This specification describes the one public envelope currently admitted by the published verifier. It is written for implementers of independent verifiers. The format is not frozen. A future change may add a separately dispatched envelope or change the verifier and this document together; an implementation must refuse an unrecognized version rather than guess how to interpret it.
 
-A conforming verifier admits exactly `deedseal-run-passport/1.0`. It accepts a passport only if every check below succeeds in the stated order. The published passport in `examples/verified/run-passport.json` is the concrete conformance fixture.
+A conforming verifier admits exactly `deedseal-run-passport/1.0`. It accepts a passport only if every check below succeeds in the stated order. The [language-neutral conformance suite](../examples/verified/conformance/README.md) provides committed passing and refusal inputs with exact expected verdicts and exit codes.
 
 ## JSON envelope
 

@@ -21,7 +21,11 @@ from typing import Any, Callable
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VERIFIER = REPO_ROOT / "tools" / "verify_run_passport.py"
 PASSPORT = REPO_ROOT / "examples" / "verified" / "run-passport.json"
+MANIFEST = REPO_ROOT / "examples" / "verified" / "conformance" / "manifest.json"
 VERDICT_PREFIX = "RUN_PASSPORT_VERDICT: BLOCK "
+sys.path.insert(0, str(REPO_ROOT / "tools"))
+
+import check_conformance
 
 Mutation = Callable[[dict[str, Any]], object]
 
@@ -599,40 +603,46 @@ def _verdict_lines(completed: subprocess.CompletedProcess[str]) -> list[str]:
 
 
 def evaluate_cases() -> list[dict[str, object]]:
-    base = json.loads(PASSPORT.read_text(encoding="utf-8"))
+    """Read the generated manifest; do not maintain a second expectation list."""
+
+    manifest = check_conformance.load_manifest(MANIFEST)
+    by_id = {str(vector["id"]): vector for vector in manifest["vectors"]}
+    expected_ids = {str(case["name"]) for case in CASES}
+    if set(by_id) - {"valid-published-passport"} != expected_ids:
+        raise check_conformance.ConformanceError(
+            "manifest refusal vector ids differ from corpus case ids"
+        )
+    evaluated = {
+        str(result["id"]): result
+        for result in check_conformance.evaluate_manifest(MANIFEST)
+    }
     results: list[dict[str, object]] = []
-    with tempfile.TemporaryDirectory(prefix="deedseal-refusals-") as temporary:
-        directory = Path(temporary)
-        for index, case in enumerate(CASES):
-            path = _materialize_case(case, base, directory, index)
-            expected = _expected_verdict(case, path)
-            completed = subprocess.run(
-                [sys.executable, str(VERIFIER), str(path)],
-                cwd=str(REPO_ROOT),
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            verdicts = _verdict_lines(completed)
-            observed = verdicts[0] if len(verdicts) == 1 else repr(verdicts)
-            results.append(
-                {
-                    "name": case["name"],
-                    "expect_reason": case["expect"],
-                    "expected": expected,
-                    "observed": observed,
-                    "returncode": completed.returncode,
-                    "passed": completed.returncode == 1 and verdicts == [expected],
-                }
-            )
+    for case in CASES:
+        name = str(case["name"])
+        vector = by_id[name]
+        observed = evaluated[name]
+        results.append(
+            {
+                "name": name,
+                "expect_reason": vector.get("expect_reason", "passport_unreadable"),
+                "expected": vector.get("expect_reason", "passport_unreadable"),
+                "observed": observed["observed"],
+                "returncode": observed["returncode"],
+                "passed": observed["passed"],
+            }
+        )
     return results
 
 
 def main() -> int:
-    if not VERIFIER.is_file() or not PASSPORT.is_file():
-        print("REFUSAL_CORPUS: FAIL required verifier or passport is missing")
+    if not VERIFIER.is_file() or not PASSPORT.is_file() or not MANIFEST.is_file():
+        print("REFUSAL_CORPUS: FAIL required verifier, passport, or manifest is missing")
         return 1
-    results = evaluate_cases()
+    try:
+        results = evaluate_cases()
+    except check_conformance.ConformanceError as exc:
+        print(f"REFUSAL_CORPUS: FAIL {exc}")
+        return 1
     failures = 0
     for result in results:
         status = "PASS" if result["passed"] else "FAIL"

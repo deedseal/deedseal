@@ -33,11 +33,15 @@ from __future__ import annotations
 import argparse
 import difflib
 import hashlib
+import importlib.util
 import json
 import re
+import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
+from types import ModuleType
 
 from survey_refusals import RefusalCoverage, evaluate_coverage
 
@@ -51,6 +55,10 @@ README_PATH = REPO_ROOT / "README.md"
 RUNS_INDEX = PUBLISHED_ROOT / "runs.md"
 LANDING_PATH = REPO_ROOT / "index.html"
 PASSPORT_SPEC_PATH = REPO_ROOT / "docs" / "passport-spec-v1.md"
+CONFORMANCE_ROOT = PUBLISHED_ROOT / "conformance"
+CONFORMANCE_VECTORS = CONFORMANCE_ROOT / "vectors"
+CONFORMANCE_MANIFEST = CONFORMANCE_ROOT / "manifest.json"
+REFUSAL_CORPUS_PATH = REPO_ROOT / "demo" / "refusals" / "test_refusals.py"
 
 PASS_VERDICT = "RUN_PASSPORT_VERDICT: PASS"
 BLOCK_PREFIX = "RUN_PASSPORT_VERDICT: BLOCK"
@@ -70,6 +78,8 @@ REFUSAL_CLAIM_ID = "CLM-0010"
 REFUSAL_EVIDENCE_ID = "EVD-PUBLIC-0001"
 SPEC_REFUSAL_OPEN = "<!-- generated:passport-refusal-reasons -->"
 SPEC_REFUSAL_CLOSE = "<!-- /generated:passport-refusal-reasons -->"
+CONFORMANCE_SCHEMA_VERSION = "deedseal.passport-conformance/v1"
+CONFORMANCE_INPUT_KINDS = frozenset({"file", "absent", "directory"})
 
 
 class PublicationError(Exception):
@@ -479,6 +489,122 @@ def published_passports() -> list[Path]:
     return sorted(PUBLISHED_ROOT.rglob("run-passport.json"))
 
 
+def load_refusal_corpus() -> ModuleType:
+    """Load mutation definitions without making the demo directory a package."""
+
+    spec = importlib.util.spec_from_file_location(
+        "deedseal_conformance_refusal_corpus", REFUSAL_CORPUS_PATH
+    )
+    if spec is None or spec.loader is None:
+        raise PublicationError("could not load refusal corpus")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def conformance_suite() -> tuple[dict, dict[str, tuple[str, bytes | None]]]:
+    """Derive the relocatable manifest and exact vector filesystem states."""
+
+    corpus = load_refusal_corpus()
+    base = load_json(PUBLISHED_ROOT / "run-passport.json")
+    vectors: list[dict[str, object]] = []
+    states: dict[str, tuple[str, bytes | None]] = {}
+
+    pass_name = "vectors/vector-001.json"
+    pass_bytes = (PUBLISHED_ROOT / "run-passport.json").read_bytes()
+    vectors.append(
+        {
+            "id": "valid-published-passport",
+            "why": "The unchanged published passport must be accepted.",
+            "input": pass_name,
+            "input_kind": "file",
+            "expect_verdict": "PASS",
+            "expect_exit_code": 0,
+        }
+    )
+    states[pass_name] = ("file", pass_bytes)
+
+    with tempfile.TemporaryDirectory(prefix="deedseal-conformance-") as temporary:
+        temporary_root = Path(temporary)
+        for index, case in enumerate(corpus.CASES, start=2):
+            relative = f"vectors/vector-{index:03d}.json"
+            source = corpus._materialize_case(case, base, temporary_root, index)
+            path_kind = str(case.get("path_kind", "file"))
+            input_kind = {"file": "file", "missing": "absent", "directory": "directory"}.get(
+                path_kind
+            )
+            if input_kind not in CONFORMANCE_INPUT_KINDS:
+                raise PublicationError(
+                    f"{case.get('name')}: unknown corpus path kind {path_kind!r}"
+                )
+            reason = str(case["expect"])
+            vector: dict[str, object] = {
+                "id": str(case["name"]),
+                "why": str(case["why"]),
+                "input": relative,
+                "input_kind": input_kind,
+                "expect_verdict": "BLOCK",
+                "expect_exit_code": 1,
+            }
+            if reason.startswith("block_"):
+                vector["expect_reason"] = reason
+            vectors.append(vector)
+            payload = source.read_bytes() if input_kind == "file" else None
+            states[relative] = (input_kind, payload)
+
+    manifest = {
+        "schema_version": CONFORMANCE_SCHEMA_VERSION,
+        "specification": "docs/passport-spec-v1.md",
+        "vectors": vectors,
+    }
+    return manifest, states
+
+
+def conformance_manifest_text() -> str:
+    manifest, _states = conformance_suite()
+    return dump_json(manifest)
+
+
+def conformance_state_failures() -> list[str]:
+    """Refuse changed bytes, wrong path kinds, stale files, and absent-path drift."""
+
+    _manifest, states = conformance_suite()
+    failures: list[str] = []
+    expected_entries = {Path(relative).relative_to("vectors") for relative in states}
+    observed_entries = {
+        path.relative_to(CONFORMANCE_VECTORS)
+        for path in CONFORMANCE_VECTORS.rglob("*")
+        if path.name != ".gitkeep"
+    } if CONFORMANCE_VECTORS.exists() else set()
+
+    for relative, (kind, payload) in states.items():
+        path = CONFORMANCE_ROOT / relative
+        if kind == "file":
+            if not path.is_file():
+                failures.append(f"{relative}: expected a file")
+            elif path.read_bytes() != payload:
+                failures.append(f"{relative}: bytes differ from corpus derivation")
+        elif kind == "absent":
+            if path.exists():
+                failures.append(f"{relative}: expected no filesystem entry")
+        elif kind == "directory":
+            if not path.is_dir():
+                failures.append(f"{relative}: expected a directory")
+            elif not (path / ".gitkeep").is_file():
+                failures.append(f"{relative}: directory lacks .gitkeep")
+        else:
+            failures.append(f"{relative}: unknown input kind {kind!r}")
+
+    allowed = expected_entries | {
+        Path(relative).relative_to("vectors") / ".gitkeep"
+        for relative, (kind, _payload) in states.items()
+        if kind == "directory"
+    }
+    for extra in sorted(observed_entries - allowed):
+        failures.append(f"vectors/{extra.as_posix()}: unexpected generated entry")
+    return failures
+
+
 def derived_plan() -> dict[Path, str]:
     """Everything this tool derives from the current tree, as {path: text}."""
     ledger = load_json(LEDGER_PATH)
@@ -493,6 +619,7 @@ def derived_plan() -> dict[Path, str]:
         PASSPORT_SPEC_PATH: passport_spec_with_refusal_reasons(
             PASSPORT_SPEC_PATH.read_text(encoding="utf-8")
         ),
+        CONFORMANCE_MANIFEST: conformance_manifest_text(),
     }
     return plan
 
@@ -524,7 +651,11 @@ def ledger_digest_failures() -> list[str]:
 def command_check(_: argparse.Namespace) -> int:
     ledger = load_json(LEDGER_PATH)
     coverage = refusal_coverage()
-    problems = ledger_digest_failures() + refusal_claim_failures(ledger, coverage)
+    problems = (
+        ledger_digest_failures()
+        + refusal_claim_failures(ledger, coverage)
+        + conformance_state_failures()
+    )
     for path, expected in derived_plan().items():
         actual = path.read_text(encoding="utf-8") if path.exists() else ""
         if actual != expected:
@@ -544,6 +675,28 @@ def command_check(_: argparse.Namespace) -> int:
         print("PUBLICATION_PACKAGER: FAIL")
         return 1
     print("PUBLICATION_PACKAGER: PASS")
+    return 0
+
+
+def command_generate_conformance(_: argparse.Namespace) -> int:
+    """Replace only the generated vectors and manifest with their derivation."""
+
+    manifest, states = conformance_suite()
+    if CONFORMANCE_VECTORS.exists():
+        shutil.rmtree(CONFORMANCE_VECTORS)
+    CONFORMANCE_VECTORS.mkdir(parents=True)
+    for relative, (kind, payload) in states.items():
+        path = CONFORMANCE_ROOT / relative
+        if kind == "file":
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(payload if payload is not None else b"")
+        elif kind == "directory":
+            path.mkdir(parents=True)
+            (path / ".gitkeep").write_bytes(b"")
+        elif kind != "absent":
+            raise PublicationError(f"unknown input kind {kind!r}")
+    CONFORMANCE_MANIFEST.write_text(dump_json(manifest), encoding="utf-8")
+    print(f"CONFORMANCE_GENERATOR: PASS {len(manifest['vectors'])} vectors")
     return 0
 
 
@@ -678,6 +831,11 @@ def main(argv: list[str] | None = None) -> int:
 
     check = sub.add_parser("check", help="refuse if any derived file was hand-edited")
     check.set_defaults(handler=command_check)
+
+    conformance = sub.add_parser(
+        "generate-conformance", help="regenerate the language-neutral vector suite"
+    )
+    conformance.set_defaults(handler=command_generate_conformance)
 
     args = parser.parse_args(argv)
     try:
