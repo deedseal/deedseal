@@ -55,6 +55,7 @@ README_PATH = REPO_ROOT / "README.md"
 RUNS_INDEX = PUBLISHED_ROOT / "runs.md"
 LANDING_PATH = REPO_ROOT / "index.html"
 PASSPORT_SPEC_PATH = REPO_ROOT / "docs" / "passport-spec-v1.md"
+STATUS_PATH = REPO_ROOT / "docs" / "status.md"
 CONFORMANCE_ROOT = PUBLISHED_ROOT / "conformance"
 CONFORMANCE_VECTORS = CONFORMANCE_ROOT / "vectors"
 CONFORMANCE_MANIFEST = CONFORMANCE_ROOT / "manifest.json"
@@ -360,6 +361,71 @@ def verified_run_sentence(count: int) -> str:
     return f"{count} supervised runs are\n      published, each {tail}"
 
 
+def frozen_envelope_version(status: str) -> str | None:
+    """The envelope version `docs/status.md` declares frozen, or None.
+
+    Status is written for humans and dated by hand, so it is parsed rather than
+    trusted: the workstream row must exist, and the version it names is read out
+    of it. A row that does not say `frozen at` returns None -- that is a real
+    state this repository was in until today, not a parse failure.
+    """
+    row = re.search(
+        r"^\|\s*Run passport format\s*\|[^|]*\|\s*(.+?)\s*\|\s*$", status, re.MULTILINE
+    )
+    if row is None:
+        raise PublicationError(
+            "docs/status.md has no 'Run passport format' workstream row"
+        )
+    named = re.search(r"frozen at `([^`]+)`", row.group(1))
+    return None if named is None else named.group(1)
+
+
+def published_envelope_version() -> str:
+    """The `schema_version` every published passport carries.
+
+    The landing may not name a format the published bytes do not carry, so the
+    bytes are the authority here and disagreement between them is fatal.
+    """
+    passports = published_passports()
+    if not passports:
+        raise PublicationError("no published passport to read an envelope version from")
+    versions = {load_json(path)["schema_version"] for path in passports}
+    if len(versions) > 1:
+        raise PublicationError(
+            "published passports disagree on schema_version: "
+            + ", ".join(sorted(versions))
+        )
+    return versions.pop()
+
+
+def envelope_commitment(status: str, published_version: str) -> str:
+    """The landing's durability clause, or a refusal to make one.
+
+    A promise about the format is the one thing on that page a reader could act
+    on later -- download the verifier now, verify a passport next year. So it is
+    derived from two sources that have to agree: what status declares, and what
+    the published passports actually carry. If they diverge, the page says
+    nothing rather than something convenient.
+    """
+    declared = frozen_envelope_version(status)
+    if declared is None:
+        return (
+            "not frozen yet — the published envelope\n"
+            "      may still change, so treat a passport you verify today as a\n"
+            "      demonstration rather than a commitment"
+        )
+    if declared != published_version:
+        raise PublicationError(
+            f"docs/status.md declares {declared} frozen, but the published "
+            f"passports carry {published_version}"
+        )
+    return (
+        f'frozen at <span class="mono">{declared}</span> —\n'
+        "      a passport that verifies today keeps verifying, and new capability\n"
+        "      arrives as a new version, never as a silent change to this one"
+    )
+
+
 def refusal_coverage() -> RefusalCoverage:
     """Return measured refusal coverage, or fail the publication closed."""
 
@@ -465,6 +531,9 @@ def landing_with_generated_regions(landing: str) -> str:
     declared, demonstrated, not_reachable = coverage.counts
     regions = {
         "verified-runs": verified_run_sentence(len(published_passports())),
+        "envelope-commitment": envelope_commitment(
+            STATUS_PATH.read_text(encoding="utf-8"), published_envelope_version()
+        ),
         "refusal-declared": str(declared),
         "refusal-demonstrated": str(demonstrated),
         "refusal-not-reachable": str(not_reachable),
