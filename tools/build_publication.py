@@ -354,9 +354,10 @@ def verified_run_sentence(count: int) -> str:
     A door that says "1 runs are published" is worse than the typed number it
     replaced, so the singular is spelt out rather than rendered as a digit.
     """
+    tail = "with its passport, its tampered twin,\n      and the verifier"
     if count == 1:
-        return "one supervised run is\n      published"
-    return f"{count} supervised runs are\n      published"
+        return f"one supervised run is\n      published, {tail}"
+    return f"{count} supervised runs are\n      published, each {tail}"
 
 
 def refusal_coverage() -> RefusalCoverage:

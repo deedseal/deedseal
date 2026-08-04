@@ -458,6 +458,24 @@ class PublicationPackagerTests(unittest.TestCase):
         self.assertIn("2 supervised runs are", self.packager.verified_run_sentence(2))
         self.assertNotIn("1 supervised", self.packager.verified_run_sentence(1))
 
+    def test_the_run_clause_agrees_with_its_own_possessive(self) -> None:
+        """The generated region has to cover the whole clause, not just the
+        count.
+
+        It once covered only the number, which left a plural subject in front
+        of a singular possessive: "2 supervised runs are published with its
+        passport". Subject-verb agreement alone did not catch it, because the
+        half that disagreed was outside the region the generator owned.
+        """
+        singular = self.packager.verified_run_sentence(1)
+        self.assertIn("with its passport", singular)
+        self.assertNotIn("each with its", singular)
+        for count in (2, 3, 11):
+            with self.subTest(count=count):
+                clause = self.packager.verified_run_sentence(count)
+                self.assertIn("each with its passport", clause)
+                self.assertNotIn("published, with its", clause)
+
     def test_a_hand_edited_landing_number_is_refused(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
         # Derived, never spelt out: the clause changes with the published run
