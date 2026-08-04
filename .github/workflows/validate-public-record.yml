@@ -58,6 +58,12 @@ jobs:
       - name: Re-prove the published demonstration
         run: ${{ matrix.python }} tools/check_demonstration.py
 
+      - name: Re-prove the refusal corpus
+        run: ${{ matrix.python }} demo/refusals/test_refusals.py
+
+      - name: Survey refusal coverage
+        run: ${{ matrix.python }} tools/survey_refusals.py
+
       # The count is the honest measure of this repository's evidence: it rises
       # only when another run's passport verifies, never when prose changes.
       - name: Count verified runs

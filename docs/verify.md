@@ -101,6 +101,8 @@ The verdict is `BLOCK`, exit code `1`. The reason code you get depends on which 
 
 A missing argument exits with code `2` and is not a verdict. An unreadable or nonexistent path is treated fail-closed: the verifier prints `RUN_PASSPORT_VERDICT: BLOCK passport_unreadable` and exits `1`.
 
+The [refusal corpus](../demo/refusals/README.md) shows which declared BLOCK reasons can be reproduced from the published bytes and which require records signed with unavailable private keys.
+
 ## What a PASS proves
 
 A PASS is a statement about the signed chain over exactly the bytes you verified:
