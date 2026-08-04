@@ -5,9 +5,14 @@
 from __future__ import annotations
 
 import copy
+import contextlib
 import hashlib
+import io
+import json
 import re
+import shutil
 import sys
+import tempfile
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
@@ -357,6 +362,7 @@ class PublicationPackagerTests(unittest.TestCase):
             {
                 "README.md",
                 "docs/passport-spec-v1.md",
+                "examples/verified/conformance/manifest.json",
                 "examples/verified/runs.md",
                 "index.html",
             },
@@ -552,12 +558,126 @@ class PublicationPackagerTests(unittest.TestCase):
         )
 
     def test_packager_tools_declare_an_allowed_license(self) -> None:
-        for name in ("build_publication.py", "check_runs.py"):
+        for name in ("build_publication.py", "check_conformance.py", "check_runs.py"):
             with self.subTest(tool=name):
                 text = (gate.ROOT / "tools" / name).read_text(encoding="utf-8")
                 declared = gate.SPDX_RE.search(text)
                 self.assertIsNotNone(declared)
                 self.assertIn(declared.group(1), gate.ALLOWED_SPDX)
+
+
+class ConformanceSuiteTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        import build_publication as packager
+        import check_conformance as runner
+        import check_runs as counter
+        import survey_refusals as survey
+
+        cls.packager = packager
+        cls.runner = runner
+        cls.counter = counter
+        cls.survey = survey
+        cls.manifest_path = packager.CONFORMANCE_MANIFEST
+        cls.manifest = runner.load_manifest(cls.manifest_path)
+
+    def _copied_suite(self, temporary: str) -> Path:
+        destination = Path(temporary) / "conformance"
+        shutil.copytree(self.manifest_path.parent, destination)
+        return destination / "manifest.json"
+
+    def _quiet_main(self, manifest: Path) -> int:
+        with contextlib.redirect_stdout(io.StringIO()):
+            return self.runner.main([str(manifest)])
+
+    def test_input_kinds_and_exact_file_bytes_match_derivation(self) -> None:
+        _derived_manifest, states = self.packager.conformance_suite()
+        observed_kinds: set[str] = set()
+        for vector in self.manifest["vectors"]:
+            kind = vector.get("input_kind", "file")
+            observed_kinds.add(kind)
+            self.assertIn(kind, self.runner.INPUT_KINDS)
+            path = self.manifest_path.parent / vector["input"]
+            expected_kind, expected_bytes = states[vector["input"]]
+            self.assertEqual(kind, expected_kind)
+            if kind == "file":
+                self.assertTrue(path.is_file(), vector["id"])
+                self.assertEqual(path.read_bytes(), expected_bytes, vector["id"])
+            elif kind == "absent":
+                self.assertFalse(path.exists(), vector["id"])
+            elif kind == "directory":
+                self.assertTrue(path.is_dir(), vector["id"])
+        self.assertEqual(observed_kinds, {"file", "absent", "directory"})
+        empty = next(vector for vector in self.manifest["vectors"] if vector["id"] == "empty-file")
+        self.assertEqual((self.manifest_path.parent / empty["input"]).stat().st_size, 0)
+
+    def test_unknown_input_kind_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path = self._copied_suite(temporary)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            manifest["vectors"][0]["input_kind"] = "unknown"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            self.assertEqual(self._quiet_main(manifest_path), 1)
+
+    def test_absent_input_must_remain_absent(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path = self._copied_suite(temporary)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            vector = next(item for item in manifest["vectors"] if item["input_kind"] == "absent")
+            path = manifest_path.parent / vector["input"]
+            path.write_bytes(b"appeared")
+            self.assertEqual(self._quiet_main(manifest_path), 1)
+
+    def test_vector_ids_are_unique_and_suite_has_a_pass(self) -> None:
+        ids = [vector["id"] for vector in self.manifest["vectors"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue(any(vector["expect_verdict"] == "PASS" for vector in self.manifest["vectors"]))
+
+    def test_manifest_reasons_equal_demonstrated_corpus_reasons(self) -> None:
+        manifest_reasons = {
+            vector["expect_reason"]
+            for vector in self.manifest["vectors"]
+            if "expect_reason" in vector
+        }
+        self.assertEqual(manifest_reasons, set(self.survey.evaluate_coverage().demonstrated))
+
+    def test_committed_conformance_suite_passes(self) -> None:
+        self.assertEqual(self._quiet_main(self.manifest_path), 0)
+
+    def test_hand_edited_expected_reason_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path = self._copied_suite(temporary)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            vector = next(item for item in manifest["vectors"] if "expect_reason" in item)
+            vector["expect_reason"] = "block_future_reason"
+            manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+            self.assertEqual(self._quiet_main(manifest_path), 1)
+
+    def test_hand_edited_vector_bytes_fail(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            manifest_path = self._copied_suite(temporary)
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            vector = next(
+                item
+                for item in manifest["vectors"]
+                if item["input_kind"] == "file" and item["expect_verdict"] == "PASS"
+            )
+            path = manifest_path.parent / vector["input"]
+            payload = bytearray(path.read_bytes())
+            payload[0] = ord("[") if payload[0] != ord("[") else ord("{")
+            path.write_bytes(payload)
+            self.assertEqual(self._quiet_main(manifest_path), 1)
+
+    def test_vector_names_do_not_change_the_published_run_count(self) -> None:
+        self.assertFalse(any(Path(vector["input"]).name == "run-passport.json" for vector in self.manifest["vectors"]))
+        self.assertEqual(len(self.counter.published_passports()), 2)
+
+    def test_manifest_is_byte_identical_to_generator_output(self) -> None:
+        self.assertEqual(
+            self.manifest_path.read_text(encoding="utf-8"),
+            self.packager.conformance_manifest_text(),
+        )
 
 
 if __name__ == "__main__":

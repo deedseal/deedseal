@@ -61,6 +61,9 @@ jobs:
       - name: Re-prove the refusal corpus
         run: ${{ matrix.python }} demo/refusals/test_refusals.py
 
+      - name: Run the conformance suite
+        run: ${{ matrix.python }} tools/check_conformance.py
+
       - name: Survey refusal coverage
         run: ${{ matrix.python }} tools/survey_refusals.py
 

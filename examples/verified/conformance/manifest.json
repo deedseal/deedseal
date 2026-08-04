@@ -1,0 +1,435 @@
+{
+  "schema_version": "deedseal.passport-conformance/v1",
+  "specification": "docs/passport-spec-v1.md",
+  "vectors": [
+    {
+      "id": "valid-published-passport",
+      "why": "The unchanged published passport must be accepted.",
+      "input": "vectors/vector-001.json",
+      "input_kind": "file",
+      "expect_verdict": "PASS",
+      "expect_exit_code": 0
+    },
+    {
+      "id": "non-json-input",
+      "why": "Text that is not JSON cannot be a passport.",
+      "input": "vectors/vector-002.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_unparseable"
+    },
+    {
+      "id": "empty-file",
+      "why": "An empty file contains no passport object.",
+      "input": "vectors/vector-003.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_unparseable"
+    },
+    {
+      "id": "truncated-file",
+      "why": "A passport cut off before its closing brace is incomplete JSON.",
+      "input": "vectors/vector-004.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_unparseable"
+    },
+    {
+      "id": "duplicate-json-key",
+      "why": "A duplicate key would make the passport ambiguous.",
+      "input": "vectors/vector-005.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_duplicate_key"
+    },
+    {
+      "id": "trailing-json-value",
+      "why": "A second JSON value after the passport is trailing content.",
+      "input": "vectors/vector-006.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_trailing_content"
+    },
+    {
+      "id": "array-instead-of-object",
+      "why": "The passport envelope must be a JSON object.",
+      "input": "vectors/vector-007.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_not_object"
+    },
+    {
+      "id": "unknown-top-level-field",
+      "why": "An undeclared envelope field has no defined meaning.",
+      "input": "vectors/vector-008.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_unknown_field"
+    },
+    {
+      "id": "missing-top-level-field",
+      "why": "A required envelope field cannot be omitted.",
+      "input": "vectors/vector-009.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_missing_field"
+    },
+    {
+      "id": "unsupported-schema",
+      "why": "The verifier only interprets its declared passport schema.",
+      "input": "vectors/vector-010.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_schema_unsupported"
+    },
+    {
+      "id": "malformed-section",
+      "why": "A passport section cannot be replaced by a value of another type.",
+      "input": "vectors/vector-011.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_passport_malformed_section"
+    },
+    {
+      "id": "whitespace-only-reserialization",
+      "why": "Equivalent JSON text is still different from the required canonical bytes.",
+      "input": "vectors/vector-012.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_public_run_passport_noncanonical_serialization"
+    },
+    {
+      "id": "missing-owner-signature",
+      "why": "An authorization without an owner signature is not an authorization.",
+      "input": "vectors/vector-013.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_authorization_malformed"
+    },
+    {
+      "id": "swapped-owner-signing-key-id",
+      "why": "The authorization must name a pinned owner key.",
+      "input": "vectors/vector-014.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_authorization_wrong_key"
+    },
+    {
+      "id": "altered-owner-signature",
+      "why": "An altered authorization signature no longer authenticates its fields.",
+      "input": "vectors/vector-015.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_authorization_signature_invalid"
+    },
+    {
+      "id": "widened-allowed-files",
+      "why": "Adding a file to the signed grant changes what the owner authorized.",
+      "input": "vectors/vector-016.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_authorization_signature_invalid"
+    },
+    {
+      "id": "unsupported-custody-schema",
+      "why": "The verifier cannot interpret an undeclared custody schema.",
+      "input": "vectors/vector-017.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_schema_unsupported"
+    },
+    {
+      "id": "unknown-custody-signature-field",
+      "why": "The custody signature object has a closed field set.",
+      "input": "vectors/vector-018.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_malformed"
+    },
+    {
+      "id": "swapped-custody-signing-key-id",
+      "why": "The custody record must name the pinned custody key.",
+      "input": "vectors/vector-019.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_wrong_key"
+    },
+    {
+      "id": "altered-custody-signature",
+      "why": "An altered custody signature no longer authenticates the record.",
+      "input": "vectors/vector-020.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_signature_invalid"
+    },
+    {
+      "id": "changed-roadmap-step",
+      "why": "The envelope roadmap step must equal the signed custody step.",
+      "input": "vectors/vector-021.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_publication_contract_malformed"
+    },
+    {
+      "id": "unknown-field-inside-signed-sub-object",
+      "why": "An extra owner-signature field changes the grant digest bound by custody.",
+      "input": "vectors/vector-022.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_grant_custody_binding_mismatch"
+    },
+    {
+      "id": "changed-run-id",
+      "why": "The envelope run identifier must equal the signed identifiers.",
+      "input": "vectors/vector-023.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_run_id_binding_mismatch"
+    },
+    {
+      "id": "changed-execution-id",
+      "why": "The envelope execution identifier must equal the custody identifier.",
+      "input": "vectors/vector-024.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_execution_id_binding_mismatch"
+    },
+    {
+      "id": "changed-implementation-head",
+      "why": "The envelope head must equal every signed head observation.",
+      "input": "vectors/vector-025.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_implementation_head_binding_mismatch"
+    },
+    {
+      "id": "second-file-added-to-scope",
+      "why": "The visible scope cannot be wider than the signed file lists.",
+      "input": "vectors/vector-026.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_allowed_files_binding_mismatch"
+    },
+    {
+      "id": "changed-new-files",
+      "why": "The new-file list must equal the owner-signed list.",
+      "input": "vectors/vector-027.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_new_files_binding_mismatch"
+    },
+    {
+      "id": "changed-acceptance-contract",
+      "why": "The visible acceptance surface must equal the owner-signed contract.",
+      "input": "vectors/vector-028.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_acceptance_contract_binding_mismatch"
+    },
+    {
+      "id": "changed-observed-paths",
+      "why": "Observed paths must equal the signed custody observations and scope.",
+      "input": "vectors/vector-029.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_observed_paths_binding_mismatch"
+    },
+    {
+      "id": "changed-sha-chain",
+      "why": "The digest chain must cover exactly the authorized file set.",
+      "input": "vectors/vector-030.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_sha256_chain_binding_mismatch"
+    },
+    {
+      "id": "changed-committed-digest",
+      "why": "The committed digest must equal the materialized file digest.",
+      "input": "vectors/vector-031.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_committed_hash_binding_mismatch"
+    },
+    {
+      "id": "malformed-commit-sha",
+      "why": "A commit identity must contain correctly shaped commit identifiers.",
+      "input": "vectors/vector-032.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_commit_identity_binding_mismatch"
+    },
+    {
+      "id": "changed-parent-sha",
+      "why": "The cargo parent must equal the execution head.",
+      "input": "vectors/vector-033.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_complete_cargo_changeset_binding_mismatch"
+    },
+    {
+      "id": "widened-changed-path-set",
+      "why": "The complete changed-path set cannot contain an unauthorized file.",
+      "input": "vectors/vector-034.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_complete_cargo_changeset_binding_mismatch"
+    },
+    {
+      "id": "cargo-commit-equals-parent",
+      "why": "A claimed cargo commit must differ from its parent execution head.",
+      "input": "vectors/vector-035.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_cargo_commit_equals_execution_head"
+    },
+    {
+      "id": "changed-commit-sha",
+      "why": "Changing a well-formed cargo commit changes the owner-closed passport.",
+      "input": "vectors/vector-036.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_closure_signature_invalid"
+    },
+    {
+      "id": "stripped-closure-signature",
+      "why": "A passport without its final owner signature is not closed.",
+      "input": "vectors/vector-037.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_closure_signature_missing"
+    },
+    {
+      "id": "unknown-closure-field",
+      "why": "The owner closure has a closed field set.",
+      "input": "vectors/vector-038.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_closure_unknown_field"
+    },
+    {
+      "id": "malformed-closure-signature",
+      "why": "The closure signature must have the declared hexadecimal shape.",
+      "input": "vectors/vector-039.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_closure_signature_malformed"
+    },
+    {
+      "id": "swapped-closure-signing-key-id",
+      "why": "The final closure must name the same pinned owner key as the grant.",
+      "input": "vectors/vector-040.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_closure_signature_wrong_key"
+    },
+    {
+      "id": "altered-closure-signature",
+      "why": "An altered closure signature no longer authenticates the assembled record.",
+      "input": "vectors/vector-041.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_owner_closure_signature_invalid"
+    },
+    {
+      "id": "removed-os-boundary",
+      "why": "Removing the applied boundary changes the custody-signed record.",
+      "input": "vectors/vector-042.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_signature_invalid"
+    },
+    {
+      "id": "emptied-boundary-rules",
+      "why": "Removing every boundary rule changes the custody-signed record.",
+      "input": "vectors/vector-043.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_signature_invalid"
+    },
+    {
+      "id": "extra-boundary-rule",
+      "why": "Adding a boundary rule changes the custody-signed record.",
+      "input": "vectors/vector-044.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_signature_invalid"
+    },
+    {
+      "id": "widened-runtime-scratch-rights",
+      "why": "Adding a scratch right changes the custody-signed boundary.",
+      "input": "vectors/vector-045.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_signature_invalid"
+    },
+    {
+      "id": "changed-scratch-root-digest",
+      "why": "Changing the scratch root identity changes the custody-signed boundary.",
+      "input": "vectors/vector-046.json",
+      "input_kind": "file",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1,
+      "expect_reason": "block_custody_record_signature_invalid"
+    },
+    {
+      "id": "directory-instead-of-file",
+      "why": "A directory cannot supply passport bytes.",
+      "input": "vectors/vector-047.json",
+      "input_kind": "directory",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1
+    },
+    {
+      "id": "path-does-not-exist",
+      "why": "A missing path cannot supply passport bytes.",
+      "input": "vectors/vector-048.json",
+      "input_kind": "absent",
+      "expect_verdict": "BLOCK",
+      "expect_exit_code": 1
+    }
+  ]
+}

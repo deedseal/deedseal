@@ -72,10 +72,11 @@ def evaluate_coverage() -> RefusalCoverage:
     declared = declared_reasons()
     corpus = load_corpus()
     results = corpus.evaluate_cases()
+    manifest = corpus.check_conformance.load_manifest(corpus.MANIFEST)
     claimed = {
-        str(case["expect"])
-        for case in corpus.CASES
-        if str(case["expect"]).startswith("block_")
+        str(vector["expect_reason"])
+        for vector in manifest["vectors"]
+        if isinstance(vector, dict) and "expect_reason" in vector
     }
     demonstrated = {
         str(result["expect_reason"])
