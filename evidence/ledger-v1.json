@@ -2,7 +2,7 @@
   "schema_version": "deedseal.public-evidence-ledger/v1",
   "snapshot": {
     "id": "DS-2026.08.1",
-    "prepared_on": "2026-08-03",
+    "prepared_on": "2026-08-04",
     "publication_status": "published"
   },
   "claims": [
@@ -166,6 +166,21 @@
         "A kernel without Landlock cannot demonstrate the boundary and reports an explicit skip instead.",
         "The demonstration covers filesystem write classes only; it does not cover resource or network bounds."
       ]
+    },
+    {
+      "id": "CLM-0012",
+      "statement": "A second supervised run is published with its passport, its one-byte tampered twin, and the exact before and after bytes of the file it changed; the passport verifies PASS and the twin verifies BLOCK using only this repository's files and a Python interpreter.",
+      "component": "CORE",
+      "status": "public-reproducible",
+      "observed_on": "2026-08-04",
+      "scope": "DS-2026.08.1",
+      "evidence_ids": [
+        "EVD-CORE-0005"
+      ],
+      "limitations": [
+        "The verdict attests integrity and provenance of the recorded run against the trust anchors pinned in the published verifier; it does not attest semantic quality of the change the run produced.",
+        "Reproducing the verdict does not reproduce the run; producing new passports requires the private system and its signing keys."
+      ]
     }
   ],
   "evidence": [
@@ -304,6 +319,23 @@
         "The probe demonstrates the recorded ruleset's behavior on the reader's kernel, not the original execution.",
         "A kernel without Landlock cannot demonstrate the boundary and reports an explicit skip instead.",
         "The demonstration covers filesystem write classes only; it does not cover resource or network bounds."
+      ]
+    },
+    {
+      "id": "EVD-CORE-0005",
+      "component": "CORE",
+      "kind": "published-verification-artifact",
+      "assurance": "public-reproducible",
+      "observed_on": "2026-08-04",
+      "source_snapshot": "CORE-2026-08-04-A",
+      "artifact": {
+        "path": "evidence/records/EVD-CORE-0005.json",
+        "sha256": "4f265e721fe6fc20f34dcba341a4b11d618f689e7b5bd86052463faf704c07cb"
+      },
+      "redactions": [],
+      "limitations": [
+        "The private source of the system that produced the run is identified only by its opaque snapshot identifier.",
+        "Public reproducibility applies to checking the published passport and its tampered twin, not to producing new passports."
       ]
     }
   ]

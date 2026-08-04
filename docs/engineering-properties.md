@@ -178,3 +178,21 @@ operations.
 does not re-execute or prove the boundary of the original run. A kernel without
 Landlock cannot demonstrate it. The probe covers filesystem write classes, not
 resource or network bounds.
+
+## `CLM-0012` — a second published run
+
+**Statement.** A second supervised run is published with its passport, its
+one-byte tampered twin, and the exact before and after bytes of the file it
+changed; the passport verifies PASS and the twin verifies BLOCK using only this
+repository's files and a Python interpreter.
+
+**Meaning.** The record is now a sequence rather than a single event. Each
+published passport binds the commit it produced and the head its grant signed,
+so a reader can walk the runs in order from `examples/verified/runs.md` and
+check each one independently. The tampered twin for this run differs from its
+passport at exactly one byte, derived by the published rule rather than chosen.
+
+**Boundary.** Two published runs are two data points, not a rate, a benchmark,
+or a statement about availability. Reproducing either verdict does not reproduce
+the run; producing new passports requires the private system and its signing
+keys.

@@ -1,0 +1,52 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-CORE-0005",
+  "component": "CORE",
+  "source_snapshot": "CORE-2026-08-04-A",
+  "observed_on": "2026-08-04",
+  "kind": "published-verification-artifact",
+  "assurance": "public-reproducible",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "published-passport-digest",
+        "result": "sha256 fef0635107bbca466d742dd30b83f9bfe27ba55b362b4e9a43ee223672a6c7d5"
+      },
+      {
+        "check": "published-passport-verdict",
+        "result": "PASS, exit code 0"
+      },
+      {
+        "check": "tampered-twin-digest",
+        "result": "sha256 eac2f8fd84c7a18b4623a2980919cc750acdfc586be495afa49dd5746ef85df4"
+      },
+      {
+        "check": "tampered-twin-verdict",
+        "result": "BLOCK block_owner_authorization_signature_invalid, exit code 1"
+      },
+      {
+        "check": "twin-byte-distance",
+        "result": "same length; exactly 1 differing byte at offset 988"
+      },
+      {
+        "check": "committed-bytes-match-signed-digest",
+        "result": "sha256 of the published post-run file equals the passport's signed committed_file_hashes entry"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "public",
+    "redactions": [],
+    "omitted": [
+      "the private system that produced the run, and its signing keys",
+      "the agent's captured output, which the signed record carries only as digests",
+      "implementation detail of the controlled-execution path"
+    ]
+  },
+  "limitations": [
+    "The verdicts are reproducible from this repository; the run that produced the passport is not. New passports require the private system and its signing keys.",
+    "A PASS attests authorization, bounded scope, applied boundary, and committed-byte provenance for one run. It does not attest the semantic quality of the change.",
+    "Signing-key secrecy is a trusted prerequisite. An attacker holding the private keys could mint records the published verifier would accept."
+  ]
+}

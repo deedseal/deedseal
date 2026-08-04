@@ -34,6 +34,7 @@ Each workstream closes against acceptance criteria, not dates. There are no cale
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
 
+- **2026-08-04** — A second supervised run was published (`CLM-0012`, `EVD-CORE-0005`). Its passport, its one-byte tampered twin, and the exact before and after bytes of the changed file are under `examples/verified/run-002/`; `tools/check_runs.py` now reports two verified runs. The run was the first dispatched under authority-enforced acceptance markers.
 - **2026-08-03** — The Ubuntu boundary measurement became a limited public-reproducible claim (`CLM-0011`, `EVD-PUBLIC-0002`), and [passport-spec-v1.md](passport-spec-v1.md) specified the published envelope for independent verifier implementations with a generated refusal vocabulary.
 
 - **2026-08-03** — Refusal coverage became a formal public-reproducible claim (`CLM-0010`): 39 reasons declared by the published verifier, 35 demonstrated as exact corpus verdicts, and 4 explicitly classified as not reachable by mutation of the published bytes. The survey, evidence record, ledger statement, and landing-page counts are checked for drift.

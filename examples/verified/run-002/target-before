@@ -1,0 +1,11 @@
+"""Contract tests for a bounded run target.
+
+This file exists to give a supervised run a small, byte-checkable thing to
+change. The size of the change is not the point; the boundedness is.
+"""
+
+
+def test_target_is_present():
+    marker = "deedseal"
+    assert isinstance(marker, str)
+    assert len(marker.strip()) > 0
