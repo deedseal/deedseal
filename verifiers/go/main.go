@@ -100,9 +100,27 @@ func signature(m object, version, keyID, malformed, wrong, invalid string, paylo
 	if !vok || !aok || !kok || !sok || v != version || alg != "ed25519" || !lowerHex(sh, 128) { return block(malformed) }
 	if kid != keyID { return block(wrong) }
 	pub, _ := hex.DecodeString(pubHex); sig, _ := hex.DecodeString(sh)
+	if smallOrderPublicKey(pub) { return block(invalid) }
 	// crypto/ed25519 rejects non-canonical S values. The pinned public keys are
 	// decoded constants and are not small-order points.
 	if !ed25519.Verify(ed25519.PublicKey(pub), payload, sig) { return block(invalid) }; return true, ""
+}
+
+func smallOrderPublicKey(publicKey []byte) bool {
+	// The canonical torsion encodings and their non-canonical aliases are a
+	// closed set. Keeping this check outside crypto/ed25519 makes the anchor
+	// rule explicit even if the standard library's point checks change.
+	weak := []string{
+		"0000000000000000000000000000000000000000000000000000000000000000",
+		"0100000000000000000000000000000000000000000000000000000000000000",
+		"e0eb7a7c3b41b8ae1656e3faf19fc46ada098deb9c32b1fd866205165f49b800",
+		"5f9c95bca3508c24b1d0b1559c83ef5b04445cc4581c8e86d8224e1dd09f1157",
+		"ecffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+		"edffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+		"eeffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff7f",
+	}
+	encoded := hex.EncodeToString(publicKey); for _, candidate := range weak { if encoded == candidate { return true } }; return false
 }
 
 func normalizeAcceptance(v any) (object, bool) {
