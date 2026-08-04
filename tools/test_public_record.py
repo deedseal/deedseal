@@ -454,8 +454,15 @@ class PublicationPackagerTests(unittest.TestCase):
 
     def test_a_hand_edited_landing_number_is_refused(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        # Derived, never spelt out: the clause changes with the published run
+        # count, and a test that hard-codes today's wording stops testing
+        # anything the day another run is published.
+        run_count = len(self.counter.published_passports())
         replacements = (
-            ("one supervised run is", "five supervised runs are"),
+            (
+                self.packager.verified_run_sentence(run_count),
+                self.packager.verified_run_sentence(run_count + 3),
+            ),
             (
                 ">39<!-- /generated:refusal-declared -->",
                 ">99<!-- /generated:refusal-declared -->",
