@@ -373,6 +373,64 @@ class PublicationPackagerTests(unittest.TestCase):
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
         self.assertIn(expected, landing)
 
+    def test_refusal_claim_and_record_equal_the_measured_coverage(self) -> None:
+        coverage = self.packager.refusal_coverage()
+        self.assertEqual(coverage.counts, (39, 35, 4))
+        self.assertEqual(coverage.errors, ())
+        self.assertEqual(
+            self.packager.refusal_claim_failures(self.ledger, coverage), []
+        )
+        claim = next(
+            item
+            for item in self.ledger["claims"]
+            if item["id"] == self.packager.REFUSAL_CLAIM_ID
+        )
+        self.assertEqual(
+            claim["statement"], self.packager.refusal_claim_statement(coverage)
+        )
+
+    def test_refusal_claim_rejects_ledger_or_survey_drift(self) -> None:
+        coverage = self.packager.refusal_coverage()
+        changed_ledger = copy.deepcopy(self.ledger)
+        claim = next(
+            item
+            for item in changed_ledger["claims"]
+            if item["id"] == self.packager.REFUSAL_CLAIM_ID
+        )
+        claim["statement"] = claim["statement"].replace("39", "40", 1)
+        self.assertTrue(
+            self.packager.refusal_claim_failures(changed_ledger, coverage)
+        )
+
+        changed_coverage = self.packager.RefusalCoverage(
+            declared=coverage.declared | {"block_future_reason"},
+            demonstrated=coverage.demonstrated,
+            not_reachable=coverage.not_reachable,
+            failed_cases=coverage.failed_cases,
+            errors=coverage.errors,
+        )
+        failures = self.packager.refusal_claim_failures(
+            self.ledger, changed_coverage
+        )
+        self.assertTrue(any("statement" in failure for failure in failures))
+        self.assertTrue(
+            any("declared-refusal-reasons" in failure for failure in failures)
+        )
+
+    def test_landing_refusal_counts_equal_the_measured_coverage(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        declared, demonstrated, not_reachable = self.packager.refusal_coverage().counts
+        for name, value in (
+            ("refusal-declared", declared),
+            ("refusal-demonstrated", demonstrated),
+            ("refusal-not-reachable", not_reachable),
+        ):
+            with self.subTest(region=name):
+                self.assertIn(
+                    f"<!-- generated:{name} -->{value}<!-- /generated:{name} -->",
+                    landing,
+                )
+
     def test_the_run_clause_is_grammatical_at_any_count(self) -> None:
         """A door that says "1 runs are published" is worse than the typed
         number it replaced."""
@@ -382,23 +440,45 @@ class PublicationPackagerTests(unittest.TestCase):
 
     def test_a_hand_edited_landing_number_is_refused(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        tampered = landing.replace(
-            "one supervised run is", "five supervised runs are"
+        replacements = (
+            ("one supervised run is", "five supervised runs are"),
+            (
+                ">39<!-- /generated:refusal-declared -->",
+                ">99<!-- /generated:refusal-declared -->",
+            ),
+            (
+                ">35<!-- /generated:refusal-demonstrated -->",
+                ">39<!-- /generated:refusal-demonstrated -->",
+            ),
+            (
+                ">4<!-- /generated:refusal-not-reachable -->",
+                ">0<!-- /generated:refusal-not-reachable -->",
+            ),
         )
-        self.assertNotEqual(tampered, landing)
-        self.assertNotEqual(
-            self.packager.landing_with_generated_regions(tampered), tampered
-        )
+        for original, replacement in replacements:
+            with self.subTest(original=original):
+                tampered = landing.replace(original, replacement)
+                self.assertNotEqual(tampered, landing)
+                self.assertNotEqual(
+                    self.packager.landing_with_generated_regions(tampered), tampered
+                )
 
     def test_a_missing_region_marker_is_an_error_not_a_silent_skip(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        for broken in (
-            landing.replace("<!-- /generated:verified-runs -->", ""),
-            landing.replace("<!-- generated:verified-runs -->", ""),
+        for name in (
+            "verified-runs",
+            "refusal-declared",
+            "refusal-demonstrated",
+            "refusal-not-reachable",
         ):
-            with self.subTest():
-                with self.assertRaises(self.packager.PublicationError):
-                    self.packager.landing_with_generated_regions(broken)
+            for marker in (
+                f"<!-- /generated:{name} -->",
+                f"<!-- generated:{name} -->",
+            ):
+                with self.subTest(marker=marker):
+                    broken = landing.replace(marker, "")
+                    with self.assertRaises(self.packager.PublicationError):
+                        self.packager.landing_with_generated_regions(broken)
 
     def test_landing_makes_no_external_request_and_carries_no_script(self) -> None:
         landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")

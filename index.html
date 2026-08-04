@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 <!-- There is no script element anywhere on this page. It is static, carries
      no tracker, no analytics, and makes no request to any host. What you can
@@ -119,6 +119,33 @@
   @media (max-width:700px){
     .prooflab{padding:11px 16px 10px}
     .proofcode{padding:16px;font-size:12px}
+  }
+
+  /* ---------- measured refusal coverage ---------- */
+  .coverage{margin-top:18px;border:1px solid var(--ring);border-radius:12px;
+            background:linear-gradient(135deg,rgba(52,168,115,.08),rgba(14,20,27,.72) 48%);
+            overflow:hidden}
+  .coverageintro{padding:22px 24px 20px;display:grid;grid-template-columns:1fr 1.25fr;
+                 gap:28px;align-items:end}
+  .coverageintro .lab{margin:0 0 8px}
+  .coveragetitle{font-size:clamp(22px,3vw,30px);line-height:1.08;letter-spacing:-.012em}
+  .coveragecopy{color:var(--muted);font-size:15.5px;max-width:520px}
+  .coveragecopy a{white-space:nowrap}
+  .coveragemetrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+                   border-top:1px solid var(--hair);background:rgba(8,11,15,.5)}
+  .coveragemetric{padding:18px 24px 20px;display:flex;flex-direction:column;gap:5px}
+  .coveragemetric+.coveragemetric{border-left:1px solid var(--hair)}
+  .coveragemetric dt{color:var(--muted);font-size:10.5px;line-height:1.45;
+                     letter-spacing:.12em;text-transform:uppercase}
+  .coveragemetric dd{color:var(--name);font-size:34px;line-height:1;font-weight:800}
+  .coveragemetric.proved dd{color:var(--core)}
+  .coveragemetric.gap dd{color:var(--warm-hi)}
+  @media (max-width:700px){
+    .coverageintro{grid-template-columns:1fr;gap:12px;padding:20px 18px}
+    .coveragecopy a{white-space:normal}
+    .coveragemetrics{grid-template-columns:1fr}
+    .coveragemetric{padding:15px 18px 17px}
+    .coveragemetric+.coveragemetric{border-left:0;border-top:1px solid var(--hair)}
   }
 
   /* ---------- the one-byte flip ---------- */
@@ -326,6 +353,32 @@
 <span class="c">$</span> python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
 <span class="no">RUN_PASSPORT_VERDICT: BLOCK</span> <span class="c">block_owner_authorization_signature_invalid</span></pre>
       </div>
+
+      <aside class="coverage" aria-labelledby="refusal-coverage-title">
+        <div class="coverageintro">
+          <div>
+            <div class="lab mono">Refusal coverage / mechanically surveyed</div>
+            <h3 class="display coveragetitle" id="refusal-coverage-title">Beyond one broken signature.</h3>
+          </div>
+          <p class="coveragecopy">The public corpus maps every verifier refusal it
+          can reach from published bytes — and names the gap it cannot.
+          <a href="https://github.com/deedseal/deedseal/blob/main/demo/refusals/README.md">Inspect every case and the explicit boundary.</a></p>
+        </div>
+        <dl class="coveragemetrics">
+          <div class="coveragemetric">
+            <dt class="mono">Declared by the verifier</dt>
+            <dd class="display"><!-- generated:refusal-declared -->39<!-- /generated:refusal-declared --></dd>
+          </div>
+          <div class="coveragemetric proved">
+            <dt class="mono">Demonstrated exact verdicts</dt>
+            <dd class="display"><!-- generated:refusal-demonstrated -->35<!-- /generated:refusal-demonstrated --></dd>
+          </div>
+          <div class="coveragemetric gap">
+            <dt class="mono">Outside published-byte mutation</dt>
+            <dd class="display"><!-- generated:refusal-not-reachable -->4<!-- /generated:refusal-not-reachable --></dd>
+          </div>
+        </dl>
+      </aside>
 
       <div class="actions">
         <a class="btn primary" href="https://github.com/deedseal/deedseal/blob/main/docs/verify.md">Read the walkthrough</a>

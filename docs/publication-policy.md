@@ -17,7 +17,7 @@ what a public reader cannot reproduce.
 | `design-target` | Intended behavior that is not claimed as implemented. |
 | `withdrawn` | Previously published statement that is no longer current. |
 
-One current product claim is classified as `public-reproducible`: `CLM-0008`, the published demonstration. Its artifacts are in this repository and its verdicts are re-proven by continuous integration on every change. Every other claim remains `internally-verified`.
+Two current claims are classified as `public-reproducible`: `CLM-0008`, the published demonstration, and `CLM-0010`, the refusal-coverage survey. Their artifacts are in this repository and their verdicts and counts are re-proven by continuous integration on every change. Every other claim remains `internally-verified`.
 
 ## Required claim fields
 

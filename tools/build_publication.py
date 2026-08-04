@@ -39,6 +39,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from survey_refusals import RefusalCoverage, evaluate_coverage
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERIFIER = REPO_ROOT / "tools" / "verify_run_passport.py"
@@ -63,6 +65,8 @@ CLAIM_TABLE_HEADER = "| Claim | Statement | Evidence | Status |\n|---|---|---|--
 RECORD_SCHEMA_VERSION = "deedseal.public-evidence-record/v1"
 PUBLISHED_RUN_KIND = "published-verification-artifact"
 PUBLIC_REPRODUCIBLE = "public-reproducible"
+REFUSAL_CLAIM_ID = "CLM-0010"
+REFUSAL_EVIDENCE_ID = "EVD-PUBLIC-0001"
 
 
 class PublicationError(Exception):
@@ -342,6 +346,81 @@ def verified_run_sentence(count: int) -> str:
     return f"{count} supervised runs are\n      published"
 
 
+def refusal_coverage() -> RefusalCoverage:
+    """Return measured refusal coverage, or fail the publication closed."""
+
+    coverage = evaluate_coverage()
+    if coverage.errors:
+        raise PublicationError(
+            "refusal coverage is not publishable: " + "; ".join(coverage.errors)
+        )
+    return coverage
+
+
+def refusal_claim_statement(coverage: RefusalCoverage) -> str:
+    declared, demonstrated, not_reachable = coverage.counts
+    return (
+        f"The published verifier declares {declared} refusal reasons; the published "
+        f"mutation corpus demonstrates {demonstrated} exact refusal verdicts and "
+        f"classifies {not_reachable} as not reachable by mutation of the published bytes."
+    )
+
+
+def refusal_claim_failures(ledger: dict, coverage: RefusalCoverage) -> list[str]:
+    """Refuse drift between measured coverage, the claim, and its evidence record."""
+
+    failures: list[str] = []
+    claims = [item for item in ledger["claims"] if item["id"] == REFUSAL_CLAIM_ID]
+    evidence = [
+        item for item in ledger["evidence"] if item["id"] == REFUSAL_EVIDENCE_ID
+    ]
+    if len(claims) != 1:
+        return [f"ledger must carry exactly one {REFUSAL_CLAIM_ID}"]
+    if len(evidence) != 1:
+        return [f"ledger must carry exactly one {REFUSAL_EVIDENCE_ID}"]
+
+    claim = claims[0]
+    expected_claim = {
+        "statement": refusal_claim_statement(coverage),
+        "component": "PUBLIC",
+        "status": PUBLIC_REPRODUCIBLE,
+        "evidence_ids": [REFUSAL_EVIDENCE_ID],
+    }
+    for field, expected in expected_claim.items():
+        if claim.get(field) != expected:
+            failures.append(
+                f"{REFUSAL_CLAIM_ID}.{field} differs from measured refusal coverage"
+            )
+
+    record_path = REPO_ROOT / evidence[0]["artifact"]["path"]
+    if not record_path.is_file():
+        return failures + [f"{REFUSAL_EVIDENCE_ID} record is missing"]
+    record = load_json(record_path)
+    observations = {
+        item.get("check"): item.get("result")
+        for item in record.get("verification", {}).get("observations", [])
+        if isinstance(item, dict)
+    }
+    declared, demonstrated, not_reachable = coverage.counts
+    expected_observations = {
+        "declared-refusal-reasons": (
+            f"{declared} distinct block_* strings parsed from the published verifier"
+        ),
+        "demonstrated-refusal-reasons": (
+            f"{demonstrated} distinct exact BLOCK verdicts produced by the published corpus"
+        ),
+        "not-reachable-by-published-mutation": (
+            f"{not_reachable} declared reasons classified outside published-byte mutation"
+        ),
+    }
+    for check, expected in expected_observations.items():
+        if observations.get(check) != expected:
+            failures.append(
+                f"{REFUSAL_EVIDENCE_ID} observation {check} differs from the survey"
+            )
+    return failures
+
+
 def landing_with_generated_regions(landing: str) -> str:
     """`landing` with each generated region replaced by what the tree derives.
 
@@ -350,7 +429,14 @@ def landing_with_generated_regions(landing: str) -> str:
     malformed marker pair is an error, never a silent skip -- a region quietly
     left alone is exactly the drift this machinery exists to prevent.
     """
-    regions = {"verified-runs": verified_run_sentence(len(published_passports()))}
+    coverage = refusal_coverage()
+    declared, demonstrated, not_reachable = coverage.counts
+    regions = {
+        "verified-runs": verified_run_sentence(len(published_passports())),
+        "refusal-declared": str(declared),
+        "refusal-demonstrated": str(demonstrated),
+        "refusal-not-reachable": str(not_reachable),
+    }
     result = landing
     for name, replacement in regions.items():
         opening = f"<!-- generated:{name} -->"
@@ -412,7 +498,9 @@ def ledger_digest_failures() -> list[str]:
 
 
 def command_check(_: argparse.Namespace) -> int:
-    problems = ledger_digest_failures()
+    ledger = load_json(LEDGER_PATH)
+    coverage = refusal_coverage()
+    problems = ledger_digest_failures() + refusal_claim_failures(ledger, coverage)
     for path, expected in derived_plan().items():
         actual = path.read_text(encoding="utf-8") if path.exists() else ""
         if actual != expected:

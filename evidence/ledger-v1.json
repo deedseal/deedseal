@@ -134,6 +134,22 @@
         "The underlying grant and custody record remain private; the public record is a sanitized internal attestation, not a publicly reproducible run.",
         "No passport for the second run is published here; the record is a sanitized attestation, and only the passport under examples/verified/ is offline-checkable by a reader."
       ]
+    },
+    {
+      "id": "CLM-0010",
+      "statement": "The published verifier declares 39 refusal reasons; the published mutation corpus demonstrates 35 exact refusal verdicts and classifies 4 as not reachable by mutation of the published bytes.",
+      "component": "PUBLIC",
+      "status": "public-reproducible",
+      "observed_on": "2026-08-03",
+      "scope": "DS-2026.08.1",
+      "evidence_ids": [
+        "EVD-PUBLIC-0001"
+      ],
+      "limitations": [
+        "The counts apply to the published verifier and corpus in this snapshot, not every refusal path in private components.",
+        "Not reachable by published mutation is a statement about this passport and the verifier's fixed first-failure order; producing a differently signed record requires private signing keys.",
+        "The corpus demonstrates exact refusal verdicts for published inputs; it does not establish completeness or semantic correctness."
+      ]
     }
   ],
   "evidence": [
@@ -237,6 +253,23 @@
       "limitations": [
         "The controlled run and its private evidence are summarized, not published.",
         "This record is not a signed commit-bound passport."
+      ]
+    },
+    {
+      "id": "EVD-PUBLIC-0001",
+      "component": "PUBLIC",
+      "kind": "published-refusal-coverage-survey",
+      "assurance": "public-reproducible",
+      "observed_on": "2026-08-03",
+      "source_snapshot": "PUBLIC-2026-08-03-A",
+      "artifact": {
+        "path": "evidence/records/EVD-PUBLIC-0001.json",
+        "sha256": "00d5235e45a09c75fee346a2728a14d99d32157b25d43202ebb1d7964a3c1d2a"
+      },
+      "redactions": [],
+      "limitations": [
+        "The evidence is reproducible from the public verifier, corpus, and survey committed in this snapshot.",
+        "The four classified reasons are not demonstrated by mutation of the published passport; the record explains the first-failure and signing-key boundary."
       ]
     }
   ]

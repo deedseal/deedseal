@@ -1,8 +1,9 @@
 # Public evidence records
 
-This directory contains sanitized evidence summaries for claims published by
-Deedseal. The records are designed for traceability without publishing private
-source or operational detail.
+This directory contains evidence records for claims published by Deedseal. A
+record may be a sanitized summary of private verification or a reproducible
+measurement over public files. The records are designed for traceability without
+publishing private source or operational detail.
 
 ## Evidence classes
 
@@ -14,8 +15,8 @@ source or operational detail.
   the check.
 
 The `DS-2026.08.1` snapshot was finalized on 2026-08-03. It contains both
-internal attestations and one public-reproducible record: the published passport
-demonstration.
+internal attestations and two public-reproducible records: the published passport
+demonstration and the refusal-coverage survey.
 
 ## What the hashes prove
 
@@ -31,6 +32,10 @@ certification.
 `examples/verified/` holds the published run passport, its byte-tampered twin, and the exact pre-run and post-run bytes of the file the run changed. A published passport carries the commit identifiers of the private repository the run happened in; they are disclosed deliberately as part of the record, so the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
 
 The second controlled run's exact result bytes are published at `app/product/demo/test_demonstration_contract.py`. No passport for that run is published; the record `EVD-CORE-0004` describes it.
+
+The refusal corpus and survey are published at `demo/refusals/` and
+`tools/survey_refusals.py`. Record `EVD-PUBLIC-0001` binds the formal `39 / 35 /
+4` claim to those mechanically evaluated public inputs.
 
 ## Layout
 
