@@ -64,6 +64,9 @@ jobs:
       - name: Survey refusal coverage
         run: ${{ matrix.python }} tools/survey_refusals.py
 
+      - name: Probe the recorded boundary
+        run: ${{ matrix.python }} tools/boundary_probe.py
+
       # The count is the honest measure of this repository's evidence: it rises
       # only when another run's passport verifies, never when prose changes.
       - name: Count verified runs

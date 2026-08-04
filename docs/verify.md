@@ -182,6 +182,14 @@ python3 -c "import json; d=json.load(open('examples/verified/run-passport.json')
 
 The prompt printed there is the exact text the agent was given, signed by the owner before the run. Compare it to the diff.
 
+## Demonstrate the recorded write boundary on your kernel
+
+Run the command below to apply the boundary recorded in the passport to a temporary directory and observe your own kernel permit the recorded file write while refusing file creation, directory creation, symbolic-link creation, and unlink. This probe applies the recorded rules; it does not re-run the supervised run. On a platform without Landlock, it prints a prominent skip explaining that kernel enforcement could not be checked; that skip is not a demonstrated boundary.
+
+```
+python3 tools/boundary_probe.py
+```
+
 ## Limits
 
 - The passport format is not frozen. Field names in the published passport are those of the current draft format; a versioned public specification is a tracked workstream in [status.md](status.md). What a passport binds is described in [passport.md](passport.md).
