@@ -105,6 +105,8 @@ The [refusal corpus](../demo/refusals/README.md) shows which declared BLOCK reas
 
 Implementers of another verifier can run the [language-neutral conformance suite](../examples/verified/conformance/README.md) to compare exact verdicts and exit codes on the published vector set.
 
+Readers can run either the Python verifier above or the [Go verifier](../verifiers/README.md) against a passport.
+
 For an implementation-level definition of the envelope, canonical bytes,
 signature payloads, cross-bindings, verdict protocol, and generated refusal
 vocabulary, see [Run passport specification v1](passport-spec-v1.md).

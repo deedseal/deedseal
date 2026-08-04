@@ -85,6 +85,24 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: ${{ matrix.python }} tools/validate_public_record.py --require-published
 
+  go-conformance:
+    name: Verify Go implementation agreement
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the publication for Go verification
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16
+        with:
+          go-version-file: verifiers/go/go.mod
+
+      - name: Build and run Go conformance
+        run: verifiers/go/run_conformance.sh
+
   gate:
     name: Publication gate
     needs: validate

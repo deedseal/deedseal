@@ -6,6 +6,8 @@ This specification describes the one public envelope currently admitted by the p
 
 A conforming verifier admits exactly `deedseal-run-passport/1.0`. It accepts a passport only if every check below succeeds in the stated order. The [language-neutral conformance suite](../examples/verified/conformance/README.md) provides committed passing and refusal inputs with exact expected verdicts and exit codes.
 
+The Go implementation built from this specification passes every published conformance vector.
+
 ## JSON envelope
 
 The input is one UTF-8 JSON text whose root value is an object. An array, scalar, or `null` is "not an object". Duplicate object member names are refused at every depth. Non-JSON constants including `NaN`, `Infinity`, and `-Infinity` are refused. After the first JSON value, only JSON whitespace may remain; any other trailing content is refused.
