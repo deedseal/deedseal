@@ -1,0 +1,55 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-PUBLIC-0003",
+  "component": "PUBLIC",
+  "source_snapshot": "PUBLIC-2026-08-04-A",
+  "observed_on": "2026-08-04",
+  "kind": "published-verification-artifact",
+  "assurance": "public-reproducible",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "conformance-vector-count",
+        "result": "48 committed vectors: 1 expecting PASS, 47 expecting BLOCK"
+      },
+      {
+        "check": "reference-implementation-agreement",
+        "result": "CONFORMANCE_SUITE: PASS 48 vectors"
+      },
+      {
+        "check": "second-implementation-agreement",
+        "result": "GO_CONFORMANCE: PASS 48 vectors"
+      },
+      {
+        "check": "verdict-line-and-exit-code-equality",
+        "result": "for every vector the two implementations produce the same verdict line and the same exit code"
+      },
+      {
+        "check": "implementation-divergence",
+        "result": "the two are written in different languages, with different JSON decoders and different signature libraries; neither was adjusted to make the other agree"
+      },
+      {
+        "check": "specification-sufficiency",
+        "result": "the second implementation was built from the published specification; the one gap it hit, trust-anchor public keys omitted from the document, was recorded and closed by publishing them"
+      },
+      {
+        "check": "continuous-integration-reproduction",
+        "result": "both suites run on every change to this repository; the reference suite on ubuntu, windows and macos, the second implementation on ubuntu"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "public",
+    "redactions": [],
+    "omitted": [
+      "the private system that produced the passport the vectors are derived from, and its signing keys"
+    ]
+  },
+  "limitations": [
+    "Both implementations come from this project. This is agreement between two implementations, not two parties checking each other.",
+    "Agreement covers the 48 published vectors. It says nothing about inputs outside them, and does not establish correctness in general.",
+    "Four declared refusal reasons are not reachable by mutating the published bytes and are therefore absent from the vectors; reaching them requires a differently signed record.",
+    "Passing the suite is not a statement that an implementation is safe to rely on."
+  ]
+}

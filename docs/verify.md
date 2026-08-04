@@ -200,7 +200,7 @@ python3 tools/boundary_probe.py
 
 ## Limits
 
-- The passport format is not frozen. Field names in the published passport are those of the current draft format; a versioned public specification is a tracked workstream in [status.md](status.md). What a passport binds is described in [passport.md](passport.md).
+- The published passport envelope is frozen: a passport carrying it will keep verifying, and new capability arrives as a new version rather than a change to this one. The exact commitment and its limits are in the [specification](passport-spec-v1.md); what a passport binds is described in [passport.md](passport.md).
 - This is a demonstration of one supervised run. It is not a release, and the availability status of Deedseal is unchanged by it — see [status.md](status.md).
 - The run's own repository is private, so the commit is not independently inspectable. The byte check above is what stands in its place, and it is bounded exactly as described: it proves the published bytes match the signed digests, not that the private repository contains nothing else.
 - The trust decision is the pinned keys inside the verifier you run. If someone hands you a passport and a verifier together, read the verifier before trusting its verdict — it is one short file, and that is deliberate.

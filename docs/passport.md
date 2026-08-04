@@ -57,6 +57,6 @@ A passport that does not verify is treated as no passport at all — deny by def
 
 ## Format status
 
-The passport format is not frozen. The structure described here and the [synthetic example](../examples/passport.example.json) are illustrative. The currently published envelope is specified for independent verifier implementers in [Run passport specification v1](passport-spec-v1.md).
+The published envelope is frozen: a passport carrying it will keep verifying, and new capability arrives as a new version rather than a silent change to this one. The exact commitment and its limits are in [Run passport specification v1](passport-spec-v1.md), which is where an implementer should start. The structure described on this page and the [synthetic example](../examples/passport.example.json) are illustrative; the specification is authoritative.
 
 The passport-binding and offline-verification properties described here are registered as claims `CLM-0002` and `CLM-0003` in the [public evidence record](engineering-properties.md), with their evidence class and limitations stated there.
