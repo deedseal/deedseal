@@ -668,6 +668,7 @@ REQUIRED_PUBLIC_FILES = {
     "docs/architecture.md",
     "docs/trust-model.md",
     "docs/passport.md",
+    "docs/passport-spec-v1.md",
     "docs/method.md",
     "docs/faq.md",
     "docs/status.md",

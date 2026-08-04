@@ -160,3 +160,21 @@ differently signed owner grant or custody record before the verifier can reach a
 later check; one is declared as a custody failure reason but is not returned as
 a passport-verifier verdict. The corpus demonstrates refusal behavior, not
 semantic correctness or completeness.
+
+## `CLM-0011` — recorded filesystem boundary re-observed
+
+**Statement.** The boundary recorded in the published passport, applied on an
+unrelated Ubuntu runner's kernel, permits the recorded file write and refuses
+file creation, directory creation, symbolic-link creation, and unlink;
+continuous integration re-observes these operations on Ubuntu on every change.
+
+**Meaning.** The public probe reads the signed boundary description, applies
+equivalent write-class rules to a temporary directory, and reports each
+operation's observed errno. The merged-run log recorded passport ABI 8, runner
+ABI 7, success for the permitted append, and `EACCES` for all four out-of-scope
+operations.
+
+**Boundary.** This demonstrates the recorded ruleset on the reader's kernel; it
+does not re-execute or prove the boundary of the original run. A kernel without
+Landlock cannot demonstrate it. The probe covers filesystem write classes, not
+resource or network bounds.

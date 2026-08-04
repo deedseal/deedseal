@@ -50,6 +50,7 @@ PUBLISHED_ROOT = REPO_ROOT / "examples" / "verified"
 README_PATH = REPO_ROOT / "README.md"
 RUNS_INDEX = PUBLISHED_ROOT / "runs.md"
 LANDING_PATH = REPO_ROOT / "index.html"
+PASSPORT_SPEC_PATH = REPO_ROOT / "docs" / "passport-spec-v1.md"
 
 PASS_VERDICT = "RUN_PASSPORT_VERDICT: PASS"
 BLOCK_PREFIX = "RUN_PASSPORT_VERDICT: BLOCK"
@@ -67,6 +68,8 @@ PUBLISHED_RUN_KIND = "published-verification-artifact"
 PUBLIC_REPRODUCIBLE = "public-reproducible"
 REFUSAL_CLAIM_ID = "CLM-0010"
 REFUSAL_EVIDENCE_ID = "EVD-PUBLIC-0001"
+SPEC_REFUSAL_OPEN = "<!-- generated:passport-refusal-reasons -->"
+SPEC_REFUSAL_CLOSE = "<!-- /generated:passport-refusal-reasons -->"
 
 
 class PublicationError(Exception):
@@ -366,6 +369,24 @@ def refusal_claim_statement(coverage: RefusalCoverage) -> str:
     )
 
 
+def passport_spec_with_refusal_reasons(specification: str) -> str:
+    """Replace the specification's refusal vocabulary from verifier declarations."""
+
+    coverage = refusal_coverage()
+    lines = [
+        f"- `{reason}` — Refuses {reason.removeprefix('block_').replace('_', ' ')}."
+        for reason in sorted(coverage.declared)
+    ]
+    start = specification.find(SPEC_REFUSAL_OPEN)
+    end = specification.find(SPEC_REFUSAL_CLOSE)
+    if start < 0 or end < 0 or end < start:
+        raise PublicationError("passport specification has no refusal-reason markers")
+    if specification.find(SPEC_REFUSAL_OPEN, start + 1) >= 0:
+        raise PublicationError("passport specification repeats refusal-reason markers")
+    replacement = SPEC_REFUSAL_OPEN + "\n" + "\n".join(lines) + "\n"
+    return specification[:start] + replacement + specification[end:]
+
+
 def refusal_claim_failures(ledger: dict, coverage: RefusalCoverage) -> list[str]:
     """Refuse drift between measured coverage, the claim, and its evidence record."""
 
@@ -468,6 +489,9 @@ def derived_plan() -> dict[Path, str]:
         RUNS_INDEX: runs_index_text(),
         LANDING_PATH: landing_with_generated_regions(
             LANDING_PATH.read_text(encoding="utf-8")
+        ),
+        PASSPORT_SPEC_PATH: passport_spec_with_refusal_reasons(
+            PASSPORT_SPEC_PATH.read_text(encoding="utf-8")
         ),
     }
     return plan
