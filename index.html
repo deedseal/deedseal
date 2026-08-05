@@ -11,10 +11,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deedseal — an enforcement layer for AI coding agents</title>
-<meta name="description" content="The owner signs a permission, the Linux kernel holds the boundary, and every run closes into a passport anyone can verify offline — trusting neither us nor the agent.">
-<meta property="og:title" content="Deedseal — proof over trust">
-<meta property="og:description" content="You let an AI agent into your code. Can you prove it did only what you allowed?">
+<title>Deedseal — give AI coding agents a job, not the keys</title>
+<meta name="description" content="Approve a specific AI coding job before it starts. Deedseal demonstrates blocked out-of-scope file changes and creates a signed run record your security team can check separately.">
+<meta property="og:title" content="Deedseal — give the agent a job, not the keys">
+<meta property="og:description" content="Human approval before AI coding work. A checkable record after it. Evaluation-stage and not yet for production use.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://deedseal.com/">
 <style>
@@ -72,6 +72,8 @@
   h1 .u{border-bottom:.09em solid var(--point)}
   .sub{margin-top:34px;max-width:680px;color:var(--muted);font-size:19px}
   .sub b{color:var(--name);font-weight:600}
+  .statusline{margin-top:18px;color:var(--muted);font-size:12px;
+              letter-spacing:.12em;text-transform:uppercase}
 
   /* ---------- ledger entries ---------- */
   .entry{display:grid;grid-template-columns:76px 1fr;gap:26px;
@@ -243,77 +245,86 @@
       <div class="wordmark display">deedseal</div>
     </div>
     <div class="mastmeta mono">
-      Public record / no script, no requests<br>
-      <b>Proof over trust.</b>
+      Evaluation-stage / public evidence<br>
+      <b>Human approval stays human.</b>
     </div>
   </header>
   <div class="drule" aria-hidden="true"></div>
 
   <section class="hero">
-    <p class="kicker mono">An enforcement layer for AI coding agents</p>
-    <h1 class="display"><span class="dim">You let an AI agent into your code.</span>
-      Can you <span class="u">prove</span> it did only what you allowed?</h1>
-    <p class="sub">The owner signs a permission, the Linux kernel holds the boundary,
-    and every run closes into a passport that anyone can verify offline —
-    <b>trusting neither us nor the agent</b>.</p>
+    <p class="kicker mono">For teams putting AI to work on real code</p>
+    <h1 class="display"><span class="dim">Give the agent a job.</span>
+      Not the <span class="u">keys</span>.</h1>
+    <p class="sub">Deedseal is an evaluation-stage system for giving an AI coding
+    run a specific, human-approved job instead of broad standing access. The public
+    prototype demonstrates blocked out-of-scope file changes and produces a signed
+    record that your security team can <b>check separately afterward</b>.</p>
+    <div class="actions">
+      <a class="btn primary" href="#how-it-works">See how it works</a>
+      <a class="btn" href="#public-proof">Check the public proof</a>
+    </div>
+    <p class="statusline mono">Active development / evaluation only / not for production use</p>
   </section>
 
-  <section class="entry">
+  <section class="entry" id="why">
     <div class="no mono">00</div>
     <div class="body">
-      <div class="lab mono">The problem</div>
-      <h2 class="display">“What else could it have touched?”</h2>
-      <p class="prose">AI agents already write code and edit documents. But when someone
-      asks that question, today's only answer is <em>“trust the agent's logs.”</em>
-      For a client, an auditor, or a court — that is not an answer.</p>
+      <div class="lab mono">Why teams get stuck</div>
+      <h2 class="display">AI can do useful work. Broad access is the problem.</h2>
+      <p class="prose">A coding agent needs access to files and tools to produce a real
+      result. Give it broad, standing permissions and security has good reason to
+      stop the rollout. Require a person to watch every step and much of the benefit
+      disappears. <em>Think of Deedseal as a work permit before the AI job and a
+      checkable receipt after it.</em></p>
     </div>
   </section>
 
-  <div class="groupcap mono"><span>The mechanism / three entries</span></div>
+  <div class="groupcap mono" id="how-it-works"><span>How it works / before, during, after</span></div>
 
   <section class="entry mech">
     <div class="no mono">01</div>
     <div class="body mrow">
-      <h3 class="display mname">Permission</h3>
-      <p class="mdesc">The owner signs a grant: <b>these files, this task, this time
-      window.</b> Nothing else is on the table.</p>
+      <h3 class="display mname">Approve the job</h3>
+      <p class="mdesc">A responsible person sets <b>the task, the allowed files, and the
+      time window</b> before the AI starts. The AI cannot approve itself.</p>
     </div>
   </section>
 
   <section class="entry mech">
     <div class="no mono">02</div>
     <div class="body mrow">
-      <h3 class="display mname">Boundary</h3>
-      <p class="mdesc">The Linux kernel refuses every write outside the grant while the
-      agent works. <b>Not a request to the agent — a refusal by the operating
-      system.</b></p>
+      <h3 class="display mname">Enforce the file limits</h3>
+      <p class="mdesc">In the demonstrated workflow, the operating system refuses file
+      changes outside the approved set. <b>The boundary does not depend on the AI
+      choosing to obey.</b></p>
     </div>
   </section>
 
   <section class="entry mech">
     <div class="no mono">03</div>
     <div class="body mrow">
-      <h3 class="display mname">Passport</h3>
-      <p class="mdesc">The run closes into a signed record of what was permitted and
-      what happened, byte for byte. <b>Checked in thirty seconds, offline, on your
-      machine.</b></p>
+      <h3 class="display mname">Check the record</h3>
+      <p class="mdesc">The run produces a signed record of what was approved and what
+      changed. <b>A separate verifier can check the record later without contacting
+      Deedseal.</b></p>
     </div>
   </section>
 
-  <section class="entry">
+  <section class="entry" id="public-proof">
     <div class="no mono">04</div>
     <div class="body">
-      <div class="lab mono">The exhibit / touch it yourself</div>
-      <h2 class="display">One byte, flipped.</h2>
-      <p class="prose">A real run passport and a copy of it with exactly <b>one byte</b>
-      changed are published. Flip between them and watch the verdict turn.</p>
+      <div class="lab mono">Public proof / check it yourself</div>
+      <h2 class="display">Change one byte. The verdict changes.</h2>
+      <p class="prose">A real signed run record and a copy with exactly <b>one byte</b>
+      changed are public. Switch between them and see the separate verifier accept
+      one and reject the other.</p>
 
       <div class="flip">
         <input type="radio" name="flip" id="fa" checked>
         <input type="radio" name="flip" id="fb">
         <div class="tabbar">
-          <label class="mono" for="fa">A / THE PASSPORT</label>
-          <label class="mono" for="fb">B / <span class="wide">SAME BYTES, </span>ONE BYTE CHANGED</label>
+          <label class="mono" for="fa">A / VALID RUN RECORD</label>
+          <label class="mono" for="fb">B / <span class="wide">SAME RECORD, </span>ONE BYTE CHANGED</label>
         </div>
         <div class="panes">
           <div class="pane pane-a">
@@ -340,13 +351,13 @@
 }</pre>
           </div>
         </div>
-        <div class="cardfoot">Both files sit in the public repository exactly as
-        excerpted above. The verifier is <b>one Python file</b>, standard library only,
-        no network — you can run the same check offline, on your machine.</div>
+        <div class="cardfoot">Both records are public exactly as shown above. The
+        separate verifier is <b>one Python file</b> with no network requirement, so a
+        security team can run the same check on its own machine.</div>
       </div>
 
       <div class="proof">
-        <div class="prooflab mono">Both checks, against the two published files</div>
+        <div class="prooflab mono">The separate verifier checks both public records</div>
         <pre class="code proofcode"><span class="c">$</span> python3 tools/verify_run_passport.py examples/verified/run-passport.json
 <span class="ok">RUN_PASSPORT_VERDICT: PASS</span>
 
@@ -357,32 +368,32 @@
       <aside class="coverage" aria-labelledby="refusal-coverage-title">
         <div class="coverageintro">
           <div>
-            <div class="lab mono">Refusal coverage / mechanically surveyed</div>
-            <h3 class="display coveragetitle" id="refusal-coverage-title">Beyond one broken signature.</h3>
+            <div class="lab mono">Verifier coverage / public test cases</div>
+            <h3 class="display coveragetitle" id="refusal-coverage-title">The rejection paths are published too.</h3>
           </div>
-          <p class="coveragecopy">The public corpus maps every verifier refusal it
-          can reach from published bytes — and names the gap it cannot.
-          <a href="https://github.com/deedseal/deedseal/blob/main/demo/refusals/README.md">Inspect every case and the explicit boundary.</a></p>
+          <p class="coveragecopy">The public test set shows which altered records the
+          verifier rejects and names the cases this test method cannot reach.
+          <a href="https://github.com/deedseal/deedseal/blob/main/demo/refusals/README.md">Inspect every test and its stated limits.</a></p>
         </div>
         <dl class="coveragemetrics">
           <div class="coveragemetric">
-            <dt class="mono">Declared by the verifier</dt>
+            <dt class="mono">Possible rejection reasons</dt>
             <dd class="display"><!-- generated:refusal-declared -->39<!-- /generated:refusal-declared --></dd>
           </div>
           <div class="coveragemetric proved">
-            <dt class="mono">Demonstrated exact verdicts</dt>
+            <dt class="mono">Publicly demonstrated</dt>
             <dd class="display"><!-- generated:refusal-demonstrated -->35<!-- /generated:refusal-demonstrated --></dd>
           </div>
           <div class="coveragemetric gap">
-            <dt class="mono">Outside published-byte mutation</dt>
+            <dt class="mono">Outside this test method</dt>
             <dd class="display"><!-- generated:refusal-not-reachable -->4<!-- /generated:refusal-not-reachable --></dd>
           </div>
         </dl>
       </aside>
 
       <div class="actions">
-        <a class="btn primary" href="https://github.com/deedseal/deedseal/blob/main/docs/verify.md">Read the walkthrough</a>
-        <a class="btn" href="https://github.com/deedseal/deedseal">Browse the record on GitHub</a>
+        <a class="btn primary" href="https://github.com/deedseal/deedseal/blob/main/docs/verify.md">Follow the verification steps</a>
+        <a class="btn" href="https://github.com/deedseal/deedseal">Open the technical evidence</a>
       </div>
     </div>
   </section>
@@ -390,20 +401,21 @@
   <section class="entry">
     <div class="no mono">05</div>
     <div class="body">
-      <div class="lab mono">Who this is for</div>
+      <div class="lab mono">Who should evaluate Deedseal</div>
       <div class="wrow">
-        <div class="wname">Engineers</div>
-        <p>who let agents change real repositories and want the allowed scope
-        enforced and recorded — not assumed.</p>
+        <div class="wname">Engineering leaders</div>
+        <p>testing AI coding tools on important code and unwilling to give those
+        tools broad, standing permissions.</p>
       </div>
       <div class="wrow">
-        <div class="wname">Reviewers and auditors</div>
-        <p>handed machine-made changes, who need “what else could it have touched?”
-        answered without trusting the agent's account.</p>
+        <div class="wname">Platform and security teams</div>
+        <p>who need a human-approved boundary before a run and evidence they can
+        inspect separately afterward.</p>
       </div>
       <div class="wrow">
-        <div class="wname">Anyone who must stand behind AI-made work</div>
-        <p>before a client, an auditor, or a court.</p>
+        <div class="wname">Reviewers and risk owners</div>
+        <p>who need a clear answer to two questions: what was approved, and what
+        changed?</p>
       </div>
     </div>
   </section>
@@ -411,34 +423,33 @@
   <section class="entry">
     <div class="no mono">06</div>
     <div class="body">
-      <div class="lab mono">Direction / design target</div>
-      <h2 class="display">From one enforced run to an operations appliance.</h2>
-      <p class="prose">The core above — a signed permission, a kernel-held
-      boundary, a passport anyone can verify — is being built out into a
-      self-hosted appliance of two boxes: a storage box that keeps the record,
-      and an operations box that runs the work in disposable Linux virtual
-      machines. Agents stay untrusted and interchangeable. A graph index over
-      the record answers questions but holds no authority. GitHub stays the
-      control surface, where every change waits for the owner's merge.
-      This is a design target, not a shipped capability: nothing in it is
-      claimed as implemented until it appears in the record with its own
-      evidence.</p>
+      <div class="lab mono">The product being built / design target</div>
+      <h2 class="display">A checkpoint between AI tools and company systems.</h2>
+      <p class="prose">The planned product runs on infrastructure the customer
+      controls. One part runs approved work in temporary Linux
+      environments. A separate part preserves the evidence, so the worker cannot
+      rewrite its own record. AI tools remain replaceable and untrusted; human
+      approval remains required for consequential changes. <b>This commercial
+      product is a design target, not a shipped capability.</b> Nothing is presented
+      as implemented until a specific claim and its evidence are published.</p>
     </div>
   </section>
 
   <section class="entry">
     <div class="no mono">07</div>
     <div class="body">
-      <div class="lab mono">Honest status / dated</div>
-      <h2 class="display">We publish the record, not promises.</h2>
-      <p class="prose">Deedseal is in active development. The core is demonstrated
+      <div class="lab mono">Current status / 5 August 2026</div>
+      <h2 class="display">Ready to inspect. Not ready to buy.</h2>
+      <p class="prose">Deedseal is in active development. Selected behavior is demonstrated
       publicly and verifiably — <!-- generated:verified-runs -->2 supervised runs are
       published, each with its passport, its tampered twin,
       and the verifier<!-- /generated:verified-runs -->, re-proved on three operating systems on
       every change. The published record format is <!-- generated:envelope-commitment -->frozen at <span class="mono">deedseal-run-passport/1.0</span> —
       a passport that verifies today keeps verifying, and new capability
       arrives as a new version, never as a silent change to this one<!-- /generated:envelope-commitment -->.
-      <b>The product is not for sale yet.</b> Current state, dated:
+      <b>The product is not for sale and is not offered for production use.</b>
+      The right next step is to inspect and reproduce the public evidence. Current
+      state, dated:
       <a href="https://github.com/deedseal/deedseal/blob/main/docs/status.md">status</a>.</p>
     </div>
   </section>
