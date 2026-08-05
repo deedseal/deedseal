@@ -18,6 +18,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 | Public verifier release | A published verifier anyone can run, under Apache-2.0 | closed — `tools/verify_run_passport.py` |
 | Published demonstration | A real passport, a byte-tampered twin, and the verifier, re-checked by CI on every change | closed — [verify.md](verify.md) |
 | Second controlled run | A byte-frozen public target moved from seed to precommitted result | closed — EVD-CORE-0004, no published passport |
+| Operations appliance (two-box product form) | A storage box holding the record, and an operations box running the business runtime in disposable Linux virtual machines; derived graph memory; GitHub-native owner gates | draft — design target; no implemented capability is claimed |
 
 States are drawn from a fixed set: `active`, `draft`, `planned`, `paused`, `closed`. A state may carry a short qualifier after an em dash; the state is the leading token. `closed` means the workstream's acceptance criteria are met; closed rows stay in the table.
 
@@ -34,6 +35,8 @@ Each workstream closes against acceptance criteria, not dates. There are no cale
 ## Updates
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
+
+- **2026-08-05** — The product direction is recorded as a design target: Deedseal is being built toward a self-hosted operations appliance in a two-box form — a storage box that holds the immutable record, and an operations box that executes the business runtime in disposable Linux virtual machines, with a derived graph memory and GitHub-native owner control. Per the publication policy this carries status `design-target` throughout: none of it is claimed as implemented, and each capability will arrive here only with its own published evidence. The core enforcement chain published above is unchanged by this direction.
 
 - **2026-08-04** — The published envelope `deedseal-run-passport/1.0` is frozen under an explicit compatibility commitment: passports carrying it keep verifying, the field set stays closed, and new capability arrives as a new version rather than a silent extension. What justifies the freeze is recorded as `CLM-0013` / `EVD-PUBLIC-0003`: two implementations, in different languages with different JSON decoders and signature libraries, produce identical verdicts on all 48 published conformance vectors. Both implementations come from this project; this is not independent verification.
 - **2026-08-04** — A second supervised run was published (`CLM-0012`, `EVD-CORE-0005`). Its passport, its one-byte tampered twin, and the exact before and after bytes of the changed file are under `examples/verified/run-002/`; `tools/check_runs.py` now reports two verified runs. The run was the first dispatched under authority-enforced acceptance markers.
