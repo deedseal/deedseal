@@ -14,9 +14,10 @@ publishing private source or operational detail.
 - `public-reproducible` — public source and artifacts are sufficient to repeat
   the check.
 
-The `DS-2026.08.1` snapshot was finalized on 2026-08-03. It contains both
-internal attestations and two public-reproducible records: the published passport
-demonstration and the refusal-coverage survey.
+The `DS-2026.08.1` snapshot was prepared on 2026-08-04. It contains both
+internal attestations and five public-reproducible evidence records: two
+published passport demonstrations, the refusal-coverage survey, the Ubuntu
+filesystem-boundary replay, and the cross-implementation conformance result.
 
 ## What the hashes prove
 
@@ -29,9 +30,9 @@ certification.
 
 ## Published artifacts
 
-`examples/verified/` holds the published run passport, its byte-tampered twin, and the exact pre-run and post-run bytes of the file the run changed. A published passport carries the commit identifiers of the private repository the run happened in; they are disclosed deliberately as part of the record, so the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else.
+`examples/verified/` holds two published run passports, their byte-tampered twins, and the exact pre-run and post-run bytes of the files the runs changed. A published passport carries the commit identifiers of the private repository the run happened in; they are disclosed deliberately as part of the record, so the publication gate scopes its commit-shaped disclosure rule out of that directory and nowhere else. The generated [run index](../examples/verified/runs.md) lists both published supervised runs.
 
-The second controlled run's exact result bytes are published at `app/product/demo/test_demonstration_contract.py`. No passport for that run is published; the record `EVD-CORE-0004` describes it.
+A separate controlled run's exact result bytes are published at `app/product/demo/test_demonstration_contract.py`. No passport for that run is published; the sanitized record `EVD-CORE-0004` describes it. It is distinct from the two supervised runs whose passports are published under `examples/verified/`.
 
 The refusal corpus and survey are published at `demo/refusals/` and
 `tools/survey_refusals.py`. Record `EVD-PUBLIC-0001` binds the formal `39 / 35 /

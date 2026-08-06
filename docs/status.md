@@ -2,7 +2,7 @@
 
 ## Maturity
 
-Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development; one supervised run is published with an offline-verifiable passport ([verify.md](verify.md)), and a second controlled run is published as a sanitized record only. The published passport envelope is frozen under a stated compatibility commitment; new capability arrives as a new version. Grant-derived filesystem confinement is applied by the kernel and recorded in the published run passport; resource and egress bounds remain open objectives. Deedseal is not yet available for production use, and no performance or economic claims are made.
+Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development; two supervised runs are published with offline-verifiable passports and one-byte tampered twins ([run index](../examples/verified/runs.md)), while a separate controlled run is published as a sanitized record only. The published passport envelope is frozen under a stated compatibility commitment; new capability arrives as a new version. Grant-derived filesystem confinement is applied by the kernel and recorded in the published run passports; resource and egress bounds remain open objectives. Deedseal is not yet available for production use, and no performance or economic claims are made.
 
 ## Workstreams
 
@@ -16,7 +16,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 | Public evidence record | Machine-validated claims, sanitized records, CI-checked disclosure rules | active |
 | Public passport specification | A versioned, published format specification | closed — [passport-spec-v1.md](passport-spec-v1.md) |
 | Public verifier release | A published verifier anyone can run, under Apache-2.0 | closed — `tools/verify_run_passport.py` |
-| Published demonstration | A real passport, a byte-tampered twin, and the verifier, re-checked by CI on every change | closed — [verify.md](verify.md) |
+| Published demonstrations | Two real passports, their byte-tampered twins, and the verifier, re-checked by CI on every change | closed — [verify.md](verify.md) and [run index](../examples/verified/runs.md) |
 | Second controlled run | A byte-frozen public target moved from seed to precommitted result | closed — EVD-CORE-0004, no published passport |
 | Operations appliance (two-box product form) | A storage box holding the record, and an operations box running the business runtime in disposable Linux virtual machines; derived graph memory; GitHub-native owner gates | draft — design target; no implemented capability is claimed |
 
@@ -27,7 +27,7 @@ States are drawn from a fixed set: `active`, `draft`, `planned`, `paused`, `clos
 Each workstream closes against acceptance criteria, not dates. There are no calendar promises in this repository. Five workstreams have closed against the criteria that were stated here in advance:
 
 - **Public verifier release** closed: the offline verifier is published here under Apache-2.0 and runs on a published passport from a clean checkout with no network.
-- **Published demonstration** closed: a real passport and its byte-tampered twin are published, continuous integration asserts PASS on one and BLOCK on the other across every supported platform, and the corresponding claim is recorded as `public-reproducible`.
+- **Published demonstrations** closed: two real passports and their byte-tampered twins are published, continuous integration asserts PASS on each passport and BLOCK on each twin across every supported platform, and the corresponding claims are recorded as `public-reproducible`.
 - **Second controlled run** closed: a byte-frozen public target moved from its accepted seed state to its precommitted result, the exact result bytes are published, and `EVD-CORE-0004` records the sanitized attestation. No passport for that run is published.
 - **Run passport format** closed: the published envelope is frozen under a stated compatibility commitment, its behaviour is pinned by 48 committed conformance vectors, and a second implementation built from the specification reaches identical verdicts on all of them.
 - **Public passport specification** closed: an engineer can implement an independent verifier from the published document alone, including exact parsing, canonical bytes, signature payloads, cross-bindings, verdict order, and a refusal list generated from the verifier.
