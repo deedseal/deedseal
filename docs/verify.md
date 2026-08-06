@@ -6,7 +6,7 @@ The passport was produced by a supervised run: an AI coding agent, working under
 
 **The run happened in a private engineering repository, and that repository is not published.** This is stated plainly because it changes what you can check: you cannot inspect the run's commit. What you can do is stronger than taking our word for it — the exact bytes of the changed file, before and after, are published here, and the passport's own signed digests are computed over those bytes. Hashing the published file and comparing it to the signed digest is a check you perform, not a claim you accept. The last section shows how.
 
-**Scope of this walkthrough.** This page covers the one run that is publicly checkable end to end: the passport under `examples/verified/`. The repository also records a second controlled run (`CLM-0009`), which published its exact result bytes and a sanitized internal attestation but no passport; the passport verification procedure on this page does not apply to it.
+**Scope of this walkthrough.** This page reproduces the first of two supervised runs whose passports are publicly checkable end to end; the complete list is the [published run index](../examples/verified/runs.md). The commands below use the first passport under `examples/verified/`, and the same verifier also checks the second passport under `examples/verified/run-002/`. Separately, the repository records a controlled run (`CLM-0009`) that published exact result bytes and a sanitized internal attestation but no passport; this procedure does not apply to that run.
 
 ## Three ways to check, easiest first
 
@@ -201,6 +201,6 @@ python3 tools/boundary_probe.py
 ## Limits
 
 - The published passport envelope is frozen: a passport carrying it will keep verifying, and new capability arrives as a new version rather than a change to this one. The exact commitment and its limits are in the [specification](passport-spec-v1.md); what a passport binds is described in [passport.md](passport.md).
-- This is a demonstration of one supervised run. It is not a release, and the availability status of Deedseal is unchanged by it — see [status.md](status.md).
+- This walkthrough reproduces one of the two published supervised runs. Neither run is a product release, and the availability status of Deedseal is unchanged by them — see [status.md](status.md).
 - The run's own repository is private, so the commit is not independently inspectable. The byte check above is what stands in its place, and it is bounded exactly as described: it proves the published bytes match the signed digests, not that the private repository contains nothing else.
 - The trust decision is the pinned keys inside the verifier you run. If someone hands you a passport and a verifier together, read the verifier before trusting its verdict — it is one short file, and that is deliberate.

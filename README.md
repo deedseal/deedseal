@@ -10,7 +10,7 @@ In plain terms: before an AI coding agent runs, the owner signs a permission sli
 
 ## Verify it yourself
 
-A real run passport, a twin of it with exactly one byte changed, and the offline verifier are published in this repository. The passport verifies `PASS`; the twin verifies `BLOCK`. Pick the path that fits you:
+Two real run passports, their one-byte tampered twins, and the offline verifier are published in this repository ([run index](examples/verified/runs.md)). The quick check below uses the first published run: its passport verifies `PASS`, while its twin verifies `BLOCK`. Pick the path that fits you:
 
 - **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break — the check named `Re-prove the published demonstration` fails within about two minutes of your edit.
 - **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again — it should report `PASS`, then `BLOCK` with a named reason for your tampered copy.

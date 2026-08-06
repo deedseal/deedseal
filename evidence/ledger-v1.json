@@ -132,7 +132,7 @@
       ],
       "limitations": [
         "The underlying grant and custody record remain private; the public record is a sanitized internal attestation, not a publicly reproducible run.",
-        "No passport for the second run is published here; the record is a sanitized attestation, and only the passport under examples/verified/ is offline-checkable by a reader."
+        "No passport for this controlled run is published here; its record is a sanitized attestation. The separately published supervised-run passports under examples/verified/ are offline-checkable by a reader."
       ]
     },
     {
