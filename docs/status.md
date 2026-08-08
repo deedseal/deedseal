@@ -4,6 +4,30 @@
 
 Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development; two supervised runs are published with offline-verifiable passports and one-byte tampered twins ([run index](../examples/verified/runs.md)), while a separate controlled run is published as a sanitized record only. The published passport envelope is frozen under a stated compatibility commitment; new capability arrives as a new version. Grant-derived filesystem confinement is applied by the kernel and recorded in the published run passports; resource and egress bounds remain open objectives. Deedseal is not yet available for production use, and no performance or economic claims are made.
 
+## Product 1 target
+
+The Owner fixed one finish line on 2026-08-08: Deedseal is being built toward a
+two-box platform at full working state, with complete key ceremonies including a
+hardware root in weekly use and a working Owner cockpit. This entire table is a
+`design-target`; an `engineering-reported` row is not a public capability claim.
+
+| # | Capability | Target | Today | Becomes publicly demonstrated when |
+| --- | --- | --- | --- | --- |
+| 1 | Owner authority | An Owner-signed grant is the only path to any effect; deny by default | engineering-reported — performed on real hardware | an Owner-approved statement and its claims-map disposition enter the public record |
+| 2 | Brokered model call | One live call is held to its run-only grant; the reply body reaches the asking cell only, while every durable surface retains its digest and nothing else | engineering-reported — performed once on 2026-08-08 | the Owner approves the bounded statement and its disposition enters the public record |
+| 3 | Evidence closure | A signer service over a socket assigns an append-only log position; the sealed record verifies offline as service-attested and the store carries a debt clock | engineering-reported — performed on 2026-08-07 and 2026-08-08 | the Owner-approved statement and its disposition enter the public record |
+| 4 | Weekly hardware root | A YubiKey ceremony checkpoints the append-only log with RFC 9162 inclusion proofs | not started — zero checkpoints; the operator committed to the first ceremony before 2026-08-14 21:21 UTC | the first checkpoint handoff and its disposition enter the public record |
+| 5 | Broker identity | The broker runs under its own Unix identity with one socket, one key, and deliberate egress | declarative manifests only — this is the named standing weakness | the install ceremony and a live run through that installed broker are evidenced |
+| 6 | Reproducible install | Committed manifests reproduce the two-box installation on clean hardware | manifests lag the performed ceremonies; deviations are recorded | the manifests catch up and install successfully on clean hardware |
+| 7 | Owner cockpit | The Owner can see system state and carry the system's gates without reading terminals | no repository yet | the cockpit publishes its own evidence |
+
+The boundary travels with the target: the operator, host root, and hypervisor stay
+inside the trusted computing base, so this design does not protect against them.
+A human speaks every gate and carries every signature by design. No independent
+review exists yet. Nothing is for sale yet. The weekly ceremony is an operator
+commitment measured outside the passport; the offline verifier reads no clock and
+does not enforce a cadence.
+
 ## Workstreams
 
 | Workstream | Scope | State |
@@ -18,13 +42,13 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 | Public verifier release | A published verifier anyone can run, under Apache-2.0 | closed — `tools/verify_run_passport.py` |
 | Published demonstrations | Two real passports, their byte-tampered twins, and the verifier, re-checked by CI on every change | closed — [verify.md](verify.md) and [run index](../examples/verified/runs.md) |
 | Second controlled run | A byte-frozen public target moved from seed to precommitted result | closed — EVD-CORE-0004, no published passport |
-| Operations appliance (two-box product form) | A storage box holding the record, and an operations box running the business runtime in disposable Linux virtual machines; derived graph memory; GitHub-native owner gates | draft — design target; no implemented capability is claimed |
+| Product 1 full working state | The two-box platform, complete key ceremonies with a weekly hardware root, reproducible installation, and a working Owner cockpit | draft — design target; capability gates are recorded above |
 
 States are drawn from a fixed set: `active`, `draft`, `planned`, `paused`, `closed`. A state may carry a short qualifier after an em dash; the state is the leading token. `closed` means the workstream's acceptance criteria are met; closed rows stay in the table.
 
 ## What done means
 
-Each workstream closes against acceptance criteria, not dates. There are no calendar promises in this repository. Five workstreams have closed against the criteria that were stated here in advance:
+Each workstream closes against acceptance criteria, not release dates. The dated first-checkpoint item above is an operator ceremony commitment, not a verifier property or a product-availability promise. Five workstreams have closed against the criteria that were stated here in advance:
 
 - **Public verifier release** closed: the offline verifier is published here under Apache-2.0 and runs on a published passport from a clean checkout with no network.
 - **Published demonstrations** closed: two real passports and their byte-tampered twins are published, continuous integration asserts PASS on each passport and BLOCK on each twin across every supported platform, and the corresponding claims are recorded as `public-reproducible`.
@@ -35,6 +59,8 @@ Each workstream closes against acceptance criteria, not dates. There are no cale
 ## Updates
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
+
+- **2026-08-08** — Product 1 now has one public design target and one finish line: a two-box platform at full working state, with the complete key ceremonies including a hardware root in weekly use and a working Owner cockpit. Seven capability rows name the target, today's evidence status, and the exact gate to a public demonstration. The statuses remain deliberately narrow: three are `engineering-reported`, the first hardware-root checkpoint has not started, the broker is declarative only, installation manifests lag the performed ceremonies, and no cockpit repository exists. The trusted-computing-base and human-gate boundaries remain adjacent to the table. No new implemented capability is claimed.
 
 - **2026-08-05** — The product direction is recorded as a design target: Deedseal is being built toward a self-hosted operations appliance in a two-box form — a storage box that holds the immutable record, and an operations box that executes the business runtime in disposable Linux virtual machines, with a derived graph memory and GitHub-native owner control. Per the publication policy this carries status `design-target` throughout: none of it is claimed as implemented, and each capability will arrive here only with its own published evidence. The core enforcement chain published above is unchanged by this direction.
 

@@ -33,6 +33,7 @@ from __future__ import annotations
 import argparse
 import difflib
 import hashlib
+import html
 import importlib.util
 import json
 import re
@@ -426,6 +427,70 @@ def envelope_commitment(status: str, published_version: str) -> str:
     )
 
 
+def product_target_capabilities(
+    status: str,
+) -> list[tuple[str, str, str, str, str]]:
+    """The seven Product 1 capability rows owned by ``docs/status.md``.
+
+    The landing is a projection of status, not a second status ledger. The
+    parser therefore accepts one deliberately small Markdown shape and refuses
+    a missing, duplicated, or reordered row rather than rendering a plausible
+    but stale finish line.
+    """
+    section = re.search(
+        r"^## Product 1 target\s*$\n(.*?)(?=^##\s|\Z)",
+        status,
+        re.MULTILINE | re.DOTALL,
+    )
+    if section is None:
+        raise PublicationError("docs/status.md has no 'Product 1 target' section")
+    rows = re.findall(
+        r"^\|\s*([1-7])\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$",
+        section.group(1),
+        re.MULTILINE,
+    )
+    observed = [row[0] for row in rows]
+    expected = [str(number) for number in range(1, 8)]
+    if observed != expected:
+        raise PublicationError(
+            "Product 1 capability rows must appear exactly once in order 1..7; "
+            f"observed {observed}"
+        )
+    return rows
+
+
+def product_target_rows_html(status: str) -> str:
+    """Render the status-owned Product 1 table as accessible landing rows."""
+    rendered: list[str] = []
+    for number, capability, target, today, public_gate in product_target_capabilities(
+        status
+    ):
+        if today.startswith("engineering-reported"):
+            tone = "reported"
+        elif today.startswith(("not started", "no repository")):
+            tone = "absent"
+        else:
+            tone = "pending"
+        state = re.split(r"\s*(?:—|;)\s*", today, maxsplit=1)[0]
+        rendered.append(
+            "\n".join(
+                (
+                    f'          <tr class="capability-row {tone}">',
+                    f'            <td class="capability-number mono" data-label="Gate">{html.escape(number)}</td>',
+                    "            <th scope=\"row\">",
+                    f'              <span class="capability-name display">{html.escape(capability)}</span>',
+                    f'              <span class="capability-state mono">{html.escape(state)}</span>',
+                    "            </th>",
+                    f'            <td data-label="Being built toward">{html.escape(target)}</td>',
+                    f'            <td data-label="Today">{html.escape(today)}</td>',
+                    f'            <td data-label="Public gate">{html.escape(public_gate)}</td>',
+                    "          </tr>",
+                )
+            )
+        )
+    return "\n" + "\n".join(rendered) + "\n          "
+
+
 def refusal_coverage() -> RefusalCoverage:
     """Return measured refusal coverage, or fail the publication closed."""
 
@@ -529,11 +594,13 @@ def landing_with_generated_regions(landing: str) -> str:
     """
     coverage = refusal_coverage()
     declared, demonstrated, not_reachable = coverage.counts
+    status = STATUS_PATH.read_text(encoding="utf-8")
     regions = {
         "verified-runs": verified_run_sentence(len(published_passports())),
         "envelope-commitment": envelope_commitment(
-            STATUS_PATH.read_text(encoding="utf-8"), published_envelope_version()
+            status, published_envelope_version()
         ),
+        "product-target-capabilities": product_target_rows_html(status),
         "refusal-declared": str(declared),
         "refusal-demonstrated": str(demonstrated),
         "refusal-not-reachable": str(not_reachable),
