@@ -50,6 +50,130 @@ class PublicRecordGateTests(unittest.TestCase):
         self.assertGreater(claims, 0)
         self.assertGreater(evidence, 0)
 
+    def _landing_inputs(self) -> tuple[str, str, str]:
+        return (
+            (gate.ROOT / "index.html").read_text(encoding="utf-8"),
+            (gate.ROOT / "docs" / "landing-claims-map-v0.1.md").read_text(
+                encoding="utf-8"
+            ),
+            (gate.ROOT / "docs" / "status.md").read_text(encoding="utf-8"),
+        )
+
+    def _validate_landing(
+        self, landing: str, mapping: str, status: str
+    ) -> None:
+        gate.validate_landing_claims(
+            self.claims,
+            landing_text=landing,
+            map_text=mapping,
+            status_text=status,
+            verified_run_count=2,
+        )
+
+    def test_landing_claim_map_passes_and_carries_positive_controls(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        self._validate_landing(landing, mapping, status)
+        rows = gate.parse_landing_claim_map(mapping)
+        self.assertIn("CLM-0008", rows["LND-PASSPORT-PROOF"]["claims"])
+        self.assertEqual(rows["LND-REFUSAL-COVERAGE"]["claims"], ["CLM-0010"])
+
+    def test_landing_refuses_edited_mapped_sentence(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changed = landing.replace("bounded write scope", "unbounded write scope", 1)
+        self.assertNotEqual(changed, landing)
+        with self.assertRaisesRegex(
+            gate.ValidationError, "LND-GITHUB-SPINE differs from claims map"
+        ):
+            self._validate_landing(changed, mapping, status)
+
+    def test_landing_refuses_unmapped_product_statement(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changed = landing.replace(
+            "</main>",
+            "<p>An unmapped product statement.</p></main>",
+            1,
+        )
+        with self.assertRaisesRegex(
+            gate.ValidationError,
+            "landing product statement is not mapped or fixed support copy",
+        ):
+            self._validate_landing(changed, mapping, status)
+
+    def test_landing_refuses_unknown_claim_id(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changed = mapping.replace(
+            "CLM-0004 | internally-verified", "CLM-9999 | internally-verified", 1
+        )
+        self.assertNotEqual(changed, mapping)
+        with self.assertRaisesRegex(
+            gate.ValidationError, "unknown CLM-9999"
+        ):
+            self._validate_landing(landing, changed, status)
+
+    def test_landing_refuses_missing_honest_boundary(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changed = re.sub(
+            r'\s*<p class="boundary" data-landing-statement="LND-INDEPENDENT-REVIEW">.*?</p>',
+            "",
+            landing,
+            count=1,
+            flags=re.DOTALL,
+        )
+        self.assertNotEqual(changed, landing)
+        with self.assertRaisesRegex(
+            gate.ValidationError, "honest-boundary line is missing"
+        ):
+            self._validate_landing(changed, mapping, status)
+
+    def test_landing_refuses_drifted_run_count(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changed = landing.replace("2 supervised runs", "9 supervised runs", 1)
+        self.assertNotEqual(changed, landing)
+        with self.assertRaisesRegex(
+            gate.ValidationError, "run count differs from tools/check_runs.py"
+        ):
+            self._validate_landing(changed, mapping, status)
+
+    def test_landing_graph_memory_refuses_implemented_tense(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        original = (
+            "Graph memory is planned as derived answers over the record and has no authority. "
+            "Design target — not shipped."
+        )
+        changed_text = "Graph memory is live and has authority. Design target — not shipped."
+        changed_landing = landing.replace(original, changed_text, 1)
+        changed_mapping = mapping.replace(original, changed_text, 1)
+        changed_status = status.replace(original, changed_text, 1)
+        self.assertNotEqual(changed_landing, landing)
+        self.assertNotEqual(changed_mapping, mapping)
+        self.assertNotEqual(changed_status, status)
+        with self.assertRaisesRegex(
+            gate.ValidationError, "graph memory uses implemented tense"
+        ):
+            self._validate_landing(changed_landing, changed_mapping, changed_status)
+
+    def test_landing_refuses_a_form_control(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changed = landing.replace("</body>", "<form></form></body>", 1)
+        with self.assertRaisesRegex(gate.ValidationError, "controls"):
+            self._validate_landing(changed, mapping, status)
+
+    def test_landing_refuses_external_resource_loads(self) -> None:
+        landing, mapping, status = self._landing_inputs()
+        changes = (
+            landing.replace(
+                "</head>",
+                '<link rel="stylesheet" href="https://example.invalid/page.css"></head>',
+                1,
+            ),
+            landing.replace("</style>", "@import url(https://example.invalid/page.css);</style>", 1),
+            landing.replace("</style>", ".fixture{background:url(https://example.invalid/pixel.png)}</style>", 1),
+        )
+        for changed in changes:
+            with self.subTest(changed=changed[-96:]):
+                with self.assertRaisesRegex(gate.ValidationError, "external resources"):
+                    self._validate_landing(changed, mapping, status)
+
     def test_disclosure_patterns_are_rejected(self) -> None:
         samples = (
             "https://github." + "com/" + "private-space/repository",
