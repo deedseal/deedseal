@@ -20,7 +20,9 @@ fi
 
 (
 	cd "$repo_root/verifiers/go"
-	GOOS=js GOARCH=wasm "$go_binary" build -trimpath -o "$temporary_wasm" .
+	# GitHub builds pull-request merge commits, so VCS metadata would otherwise
+	# make the same source produce a different transport from a branch checkout.
+	GOOS=js GOARCH=wasm "$go_binary" build -trimpath -buildvcs=false -o "$temporary_wasm" .
 )
 rm -f "$wasm_dir/deedseal-verifier.wasm.base64"
 shopt -s nullglob
