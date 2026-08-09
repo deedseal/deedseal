@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -210,10 +209,16 @@ func boundaryContract(c object,allowed []string,grant string) bool {
 	s,ok:=obj(b["runtime_scratch"]); if !ok||!keysExactly(s,"scratch_class","scratch_root_sha256","object_dev","object_ino","allowed_access_fs")||strv(s,"scratch_class")!="agent_runtime_scratch"||strv(s,"scratch_root_sha256")!="768f8b3b2a86cdbe6f711c61f47642ef334b113d22fdfee51ee28eb945e5ad8a"||!deepEqual(s["allowed_access_fs"],[]any{"write_file","make_dir","make_reg"}){return false}; d,dok:=integer(s,"object_dev"); ino,iok:=integer(s,"object_ino"); return dok&&iok&&d>=0&&ino>=0
 }
 
-func main(){
-	if len(os.Args)!=2{fmt.Fprintln(os.Stderr,"usage: verify_run_passport <passport-path>");fmt.Fprintln(os.Stderr,"verify exactly one Deedseal run passport");os.Exit(2)}
-	raw,err:=os.ReadFile(os.Args[1]); if err!=nil{fmt.Fprintf(os.Stderr,"RUN_PASSPORT_VERDICT: BLOCK passport_unreadable (%v)\n",err);os.Exit(1)}
-	v,err:=parseJSON(raw); if err!=nil{reason:="block_run_passport_unparseable";if errors.Is(err,errDuplicate){reason="block_run_passport_duplicate_key"}else if errors.Is(err,errTrailing){reason="block_run_passport_trailing_content"}; printVerdict(false,reason);return}
-	p,ok:=obj(v);if !ok{printVerdict(false,"block_run_passport_not_object");return}; pass,reason:=verify(p,raw);printVerdict(pass,reason)
+// verdict is the one result produced by the shared verifier core. Native and
+// WebAssembly entry points only acquire input and render this result; neither
+// re-implements any PASS/BLOCK decision.
+type verdict struct{pass bool;reason string}
+func verifyRaw(raw []byte) verdict{
+	v,err:=parseJSON(raw); if err!=nil{reason:="block_run_passport_unparseable";if errors.Is(err,errDuplicate){reason="block_run_passport_duplicate_key"}else if errors.Is(err,errTrailing){reason="block_run_passport_trailing_content"};return verdict{false,reason}}
+	p,ok:=obj(v);if !ok{return verdict{false,"block_run_passport_not_object"}};pass,reason:=verify(p,raw);return verdict{pass,reason}
 }
-func printVerdict(pass bool,reason string){owner:="unverified";if pass{owner=ownerKeyID};fmt.Println("owner_trust_anchor_key_id: "+owner);fmt.Println("custody_trust_anchor_key_id: "+custodyKeyID);if pass{fmt.Println("RUN_PASSPORT_VERDICT: PASS");return};fmt.Println("RUN_PASSPORT_VERDICT: BLOCK "+reason);os.Exit(1)}
+func verdictOwnerKeyID(result verdict) string{if result.pass{return ownerKeyID};return "unverified"}
+func verdictLine(result verdict) string{if result.pass{return "RUN_PASSPORT_VERDICT: PASS"};return "RUN_PASSPORT_VERDICT: BLOCK "+result.reason}
+func verdictOutput(result verdict) string{return "owner_trust_anchor_key_id: "+verdictOwnerKeyID(result)+"\ncustody_trust_anchor_key_id: "+custodyKeyID+"\n"+verdictLine(result)}
+func verdictExitCode(result verdict) int{if result.pass{return 0};return 1}
+func unreadableVerdict() verdict{return verdict{false,"passport_unreadable"}}

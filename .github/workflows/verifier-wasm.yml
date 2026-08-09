@@ -1,0 +1,58 @@
+name: Browser WebAssembly verifier
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/verifier-wasm.yml"
+      - "verifiers/go/**"
+      - "verifiers/wasm/**"
+      - "examples/verified/conformance/**"
+      - "examples/verified/run-passport.json"
+      - "examples/verified/run-passport.tampered.json"
+      - "examples/verified/run-002/**"
+  merge_group:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/verifier-wasm.yml"
+      - "verifiers/go/**"
+      - "verifiers/wasm/**"
+      - "examples/verified/conformance/**"
+      - "examples/verified/run-passport.json"
+      - "examples/verified/run-passport.tampered.json"
+      - "examples/verified/run-002/**"
+
+permissions:
+  contents: read
+
+jobs:
+  conformance:
+    name: Native and browser verifier agreement
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out the publication
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # The checked-in bundle is byte-checked after this build. Pinning the
+      # patch level prevents a future Go 1.24 release from silently changing it.
+      - name: Set up the pinned Go toolchain
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24.9"
+
+      - name: Rebuild the browser bundle
+        run: verifiers/wasm/build.sh
+
+      - name: Refuse a stale checked-in bundle
+        run: git diff --exit-code -- verifiers/wasm/deedseal-verifier.wasm.manifest.json verifiers/wasm/deedseal-verifier.wasm.base64.* verifiers/wasm/wasm_exec.js
+
+      - name: Compare every native and WebAssembly verdict
+        run: verifiers/wasm/run_checks.sh
+
+      - name: Exercise the offline browser page
+        run: verifiers/wasm/run_browser_ui.sh
