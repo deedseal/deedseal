@@ -42,9 +42,11 @@ if ! "$browser" --headless --no-sandbox --disable-gpu --disable-background-netwo
   exit 1
 fi
 
+pass_count="$( (grep -oF 'published passport: RUN_PASSPORT_VERDICT: PASS' "$page_dump" || true) | wc -l )"
+block_count="$( (grep -oF 'tampered twin: RUN_PASSPORT_VERDICT: BLOCK' "$page_dump" || true) | wc -l )"
 if ! grep -Fq 'Offline verification complete. No network service was used.' "$page_dump" || \
-  [[ "$(grep -Fc 'published passport: RUN_PASSPORT_VERDICT: PASS' "$page_dump")" -ne 2 ]] || \
-  [[ "$(grep -Fc 'tampered twin: RUN_PASSPORT_VERDICT: BLOCK' "$page_dump")" -ne 2 ]] || \
+  [[ "$pass_count" -ne 2 ]] || \
+  [[ "$block_count" -ne 2 ]] || \
   ! grep -Fq 'Self-selected one-byte probe:' "$page_dump" || \
   ! grep -Fq 'Restored published bytes: RUN_PASSPORT_VERDICT: PASS' "$page_dump"; then
   cat "$page_dump" >&2
