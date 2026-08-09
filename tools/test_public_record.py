@@ -451,6 +451,59 @@ class PublicationPackagerTests(unittest.TestCase):
                     landing,
                 )
 
+    def test_product_target_landing_is_derived_from_status(self) -> None:
+        status = (gate.ROOT / "docs" / "status.md").read_text(encoding="utf-8")
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        capabilities = self.packager.product_target_capabilities(status)
+        self.assertEqual([row[0] for row in capabilities], list("1234567"))
+        self.assertEqual(capabilities[0][1], "Owner authority")
+        self.assertEqual(capabilities[-1][1], "Owner cockpit")
+        rendered = self.packager.product_target_rows_html(status)
+        self.assertIn(
+            "<!-- generated:product-target-capabilities -->"
+            + rendered
+            + "<!-- /generated:product-target-capabilities -->",
+            landing,
+        )
+
+    def test_product_target_refuses_missing_or_reordered_rows(self) -> None:
+        status = (gate.ROOT / "docs" / "status.md").read_text(encoding="utf-8")
+        rows = [line for line in status.splitlines() if re.match(r"^\| [1-7] \|", line)]
+        self.assertEqual(len(rows), 7)
+        missing = status.replace(rows[3] + "\n", "")
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.product_target_capabilities(missing)
+        reordered = status.replace(
+            rows[3] + "\n" + rows[4], rows[4] + "\n" + rows[3]
+        )
+        with self.assertRaises(self.packager.PublicationError):
+            self.packager.product_target_capabilities(reordered)
+
+    def test_product_target_keeps_its_honest_boundary_adjacent(self) -> None:
+        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
+        direction = landing.split('Direction / design target', 1)[1].split(
+            'Honest status / dated', 1
+        )[0]
+        for required in (
+            "The operator, host root, and hypervisor",
+            "A human speaks every gate and carries",
+            "No independent review yet",
+            "Nothing in this target is for sale",
+            "The offline verifier reads no",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, direction)
+        for prohibited in (
+            "unattended",
+            "checkpointed",
+            "independently verified",
+            "production-ready",
+            "available now",
+            "%",
+        ):
+            with self.subTest(prohibited=prohibited):
+                self.assertNotIn(prohibited, direction.lower())
+
     def test_the_run_clause_is_grammatical_at_any_count(self) -> None:
         """A door that says "1 runs are published" is worse than the typed
         number it replaced."""
@@ -573,6 +626,10 @@ class PublicationPackagerTests(unittest.TestCase):
                 self.packager.published_envelope_version() + "</span>",
                 "deedseal-run-passport/9.9</span>",
             ),
+            (
+                "<span class=\"capability-name display\">Owner authority</span>",
+                "<span class=\"capability-name display\">Owner control</span>",
+            ),
         )
         for original, replacement in replacements:
             with self.subTest(original=original):
@@ -590,6 +647,7 @@ class PublicationPackagerTests(unittest.TestCase):
             "refusal-declared",
             "refusal-demonstrated",
             "refusal-not-reachable",
+            "product-target-capabilities",
         ):
             for marker in (
                 f"<!-- /generated:{name} -->",

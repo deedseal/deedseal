@@ -219,6 +219,61 @@
   .wrow p{color:var(--muted);font-size:16.5px;max-width:620px}
   @media (max-width:880px){ .wrow{grid-template-columns:1fr;gap:6px} }
 
+  /* ---------- product 1 finish line ---------- */
+  .direction-intro{display:grid;grid-template-columns:1.35fr .65fr;gap:30px;
+                   align-items:end;margin-bottom:28px}
+  .direction-intro .prose{margin:0}
+  .direction-note{border-left:2px solid var(--point);padding:4px 0 4px 16px;
+                  color:var(--muted);font-size:13.5px;line-height:1.55}
+  .direction-note b{color:var(--core);font-weight:600}
+  .capability-wrap{border:1px solid var(--ring);border-radius:12px;overflow:hidden;
+                   background:rgba(8,11,15,.5)}
+  .capability-table{border-collapse:collapse;width:100%;table-layout:fixed}
+  .capability-table col:nth-child(1){width:52px}
+  .capability-table col:nth-child(2){width:17%}
+  .capability-table col:nth-child(3){width:27%}
+  .capability-table col:nth-child(4){width:24%}
+  .capability-table col:nth-child(5){width:auto}
+  .capability-table thead th{background:#080b0f;color:var(--muted);font:400 9px/1.4 'Geist Mono',ui-monospace,monospace;
+                              letter-spacing:.12em;padding:13px 12px;text-align:left;text-transform:uppercase}
+  .capability-table thead th:first-child{text-align:center}
+  .capability-row th,.capability-row td{border-top:1px solid var(--hair);padding:17px 12px;
+                                        text-align:left;vertical-align:top}
+  .capability-row th{font-weight:400}
+  .capability-row td{color:var(--muted);font-size:12.5px;line-height:1.55}
+  .capability-number{color:var(--point)!important;font-size:11px!important;text-align:center!important}
+  .capability-name{color:var(--name);display:block;font-size:16px;line-height:1.15}
+  .capability-state{border:1px solid var(--ring);border-radius:99px;color:var(--muted);
+                    display:inline-block;font-size:8.5px;letter-spacing:.08em;line-height:1.2;
+                    margin-top:9px;padding:4px 7px;text-transform:uppercase}
+  .capability-row.reported .capability-state{border-color:rgba(52,168,115,.45);color:var(--core)}
+  .capability-row.absent .capability-state{border-color:rgba(224,112,90,.45);color:var(--warm-hi)}
+  .target-boundary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+                   border:1px solid var(--ring);border-radius:12px;margin-top:18px;overflow:hidden}
+  .target-boundary p{color:var(--muted);font-size:13.5px;line-height:1.6;padding:17px 19px}
+  .target-boundary p:nth-child(even){border-left:1px solid var(--hair)}
+  .target-boundary p:nth-child(n+3){border-top:1px solid var(--hair)}
+  .target-boundary b{color:var(--name);font-weight:600}
+  @media (max-width:800px){
+    .direction-intro{grid-template-columns:1fr;gap:18px}
+    .capability-table,.capability-table tbody{display:block}
+    .capability-table colgroup,.capability-table thead{display:none}
+    .capability-row{display:grid;grid-template-columns:44px minmax(0,1fr);padding:17px 16px}
+    .capability-row+.capability-row{border-top:1px solid var(--hair)}
+    .capability-row th,.capability-row td{border:0;display:block;padding:0}
+    .capability-number{grid-column:1;grid-row:1 / span 4;text-align:left!important}
+    .capability-row th,.capability-row td:not(.capability-number){grid-column:2}
+    .capability-row td:not(.capability-number){font-size:13px;margin-top:15px}
+    .capability-row td:not(.capability-number)::before{color:#65717b;content:attr(data-label);display:block;
+                                                       font:400 8.5px/1.4 'Geist Mono',ui-monospace,monospace;
+                                                       letter-spacing:.1em;margin-bottom:4px;text-transform:uppercase}
+  }
+  @media (max-width:560px){
+    .target-boundary{grid-template-columns:1fr}
+    .target-boundary p:nth-child(even){border-left:0}
+    .target-boundary p+p{border-top:1px solid var(--hair)}
+  }
+
   /* ---------- footer ---------- */
   footer{margin-top:26px}
   .slogan{font-size:clamp(34px,5.4vw,58px);letter-spacing:-.02em;padding:56px 0 8px}
@@ -412,17 +467,113 @@
     <div class="no mono">06</div>
     <div class="body">
       <div class="lab mono">Direction / design target</div>
-      <h2 class="display">From one enforced run to an operations appliance.</h2>
-      <p class="prose">The core above — a signed permission, a kernel-held
-      boundary, a passport anyone can verify — is being built out into a
-      self-hosted appliance of two boxes: a storage box that keeps the record,
-      and an operations box that runs the work in disposable Linux virtual
-      machines. Agents stay untrusted and interchangeable. A graph index over
-      the record answers questions but holds no authority. GitHub stays the
-      control surface, where every change waits for the owner's merge.
-      This is a design target, not a shipped capability: nothing in it is
-      claimed as implemented until it appears in the record with its own
-      evidence.</p>
+      <h2 class="display">One product. Seven gates to full working state.</h2>
+      <div class="direction-intro">
+        <p class="prose">Deedseal is being built toward a two-box platform with
+        complete key ceremonies — including a hardware root in weekly use — and
+        a working Owner cockpit. That is Product 1's finish line. Every row below
+        remains a design target until its own evidence enters the public record.</p>
+        <p class="direction-note"><b>Evidence status is not product status.</b><br>
+        “Engineering-reported” names an internal observation awaiting an
+        Owner-approved public disposition; it does not mean publicly demonstrated.</p>
+      </div>
+
+      <div class="capability-wrap">
+        <table class="capability-table">
+          <colgroup><col><col><col><col><col></colgroup>
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Capability</th>
+              <th scope="col">Being built toward</th>
+              <th scope="col">Today</th>
+              <th scope="col">Public gate</th>
+            </tr>
+          </thead>
+          <tbody><!-- generated:product-target-capabilities -->
+          <tr class="capability-row reported">
+            <td class="capability-number mono" data-label="Gate">1</td>
+            <th scope="row">
+              <span class="capability-name display">Owner authority</span>
+              <span class="capability-state mono">engineering-reported</span>
+            </th>
+            <td data-label="Being built toward">An Owner-signed grant is the only path to any effect; deny by default</td>
+            <td data-label="Today">engineering-reported — performed on real hardware</td>
+            <td data-label="Public gate">an Owner-approved statement and its claims-map disposition enter the public record</td>
+          </tr>
+          <tr class="capability-row reported">
+            <td class="capability-number mono" data-label="Gate">2</td>
+            <th scope="row">
+              <span class="capability-name display">Brokered model call</span>
+              <span class="capability-state mono">engineering-reported</span>
+            </th>
+            <td data-label="Being built toward">One live call is held to its run-only grant; the reply body reaches the asking cell only, while every durable surface retains its digest and nothing else</td>
+            <td data-label="Today">engineering-reported — performed once on 2026-08-08</td>
+            <td data-label="Public gate">the Owner approves the bounded statement and its disposition enters the public record</td>
+          </tr>
+          <tr class="capability-row reported">
+            <td class="capability-number mono" data-label="Gate">3</td>
+            <th scope="row">
+              <span class="capability-name display">Evidence closure</span>
+              <span class="capability-state mono">engineering-reported</span>
+            </th>
+            <td data-label="Being built toward">A signer service over a socket assigns an append-only log position; the sealed record verifies offline as service-attested and the store carries a debt clock</td>
+            <td data-label="Today">engineering-reported — performed on 2026-08-07 and 2026-08-08</td>
+            <td data-label="Public gate">the Owner-approved statement and its disposition enter the public record</td>
+          </tr>
+          <tr class="capability-row absent">
+            <td class="capability-number mono" data-label="Gate">4</td>
+            <th scope="row">
+              <span class="capability-name display">Weekly hardware root</span>
+              <span class="capability-state mono">not started</span>
+            </th>
+            <td data-label="Being built toward">A YubiKey ceremony checkpoints the append-only log with RFC 9162 inclusion proofs</td>
+            <td data-label="Today">not started — zero checkpoints; the operator committed to the first ceremony before 2026-08-14 21:21 UTC</td>
+            <td data-label="Public gate">the first checkpoint handoff and its disposition enter the public record</td>
+          </tr>
+          <tr class="capability-row pending">
+            <td class="capability-number mono" data-label="Gate">5</td>
+            <th scope="row">
+              <span class="capability-name display">Broker identity</span>
+              <span class="capability-state mono">declarative manifests only</span>
+            </th>
+            <td data-label="Being built toward">The broker runs under its own Unix identity with one socket, one key, and deliberate egress</td>
+            <td data-label="Today">declarative manifests only — this is the named standing weakness</td>
+            <td data-label="Public gate">the install ceremony and a live run through that installed broker are evidenced</td>
+          </tr>
+          <tr class="capability-row pending">
+            <td class="capability-number mono" data-label="Gate">6</td>
+            <th scope="row">
+              <span class="capability-name display">Reproducible install</span>
+              <span class="capability-state mono">manifests lag the performed ceremonies</span>
+            </th>
+            <td data-label="Being built toward">Committed manifests reproduce the two-box installation on clean hardware</td>
+            <td data-label="Today">manifests lag the performed ceremonies; deviations are recorded</td>
+            <td data-label="Public gate">the manifests catch up and install successfully on clean hardware</td>
+          </tr>
+          <tr class="capability-row absent">
+            <td class="capability-number mono" data-label="Gate">7</td>
+            <th scope="row">
+              <span class="capability-name display">Owner cockpit</span>
+              <span class="capability-state mono">no repository yet</span>
+            </th>
+            <td data-label="Being built toward">The Owner can see system state and carry the system&#x27;s gates without reading terminals</td>
+            <td data-label="Today">no repository yet</td>
+            <td data-label="Public gate">the cockpit publishes its own evidence</td>
+          </tr>
+          <!-- /generated:product-target-capabilities --></tbody>
+        </table>
+      </div>
+
+      <aside class="target-boundary" aria-label="Design target boundaries">
+        <p><b>Trusted computing base.</b> The operator, host root, and hypervisor
+        remain inside it; this design does not protect against them.</p>
+        <p><b>Human authority by design.</b> A human speaks every gate and carries
+        every signature.</p>
+        <p><b>No independent review yet.</b> Nothing in this target is for sale.</p>
+        <p><b>Cadence is an operator commitment.</b> The offline verifier reads no
+        clock and does not enforce the weekly ceremony.</p>
+      </aside>
     </div>
   </section>
 
