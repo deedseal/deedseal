@@ -53,3 +53,6 @@ jobs:
 
       - name: Compare every native and WebAssembly verdict
         run: verifiers/wasm/run_checks.sh
+
+      - name: Exercise the offline browser page
+        run: verifiers/wasm/run_browser_ui.sh
