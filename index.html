@@ -11,10 +11,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Deedseal — public record and product direction</title>
-<meta name="description" content="Deedseal's public record, product direction, verification walkthrough, and current limits.">
-<meta property="og:title" content="Deedseal — public record and product direction">
-<meta property="og:description" content="Published evidence, design direction, and limits for Deedseal.">
+<title>Deedseal — an enforcement layer for AI coding agents</title>
+<meta name="description" content="The owner signs a permission, the Linux kernel holds the boundary, and every run closes into a passport anyone can verify offline — trusting neither us nor the agent.">
+<meta property="og:title" content="Deedseal — proof over trust">
+<meta property="og:description" content="You let an AI agent into your code. Can you prove it did only what you allowed?">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://deedseal.com/">
 <style>
@@ -212,26 +212,12 @@
   .btn.primary{background:var(--point);border-color:var(--point);color:#06130c;font-weight:600}
   .btn.primary:hover{background:var(--core)}
 
-  /* ---------- product status ---------- */
-  .product-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
-  .product-card{border:1px solid var(--ring);border-radius:12px;background:var(--card);padding:22px;min-width:0}
-  .product-card h3{font-size:clamp(22px,2.6vw,29px);letter-spacing:-.012em;line-height:1.08;margin:13px 0 14px}
-  .product-card p{color:var(--muted);font-size:15.5px;line-height:1.6}
-  .product-card .status{border:1px solid var(--ring);border-radius:99px;color:var(--muted);display:inline-block;
-                        font-size:9px;letter-spacing:.12em;line-height:1.25;padding:4px 8px;text-transform:uppercase}
-  .product-card .status.public{border-color:rgba(52,168,115,.48);color:var(--core)}
-  .product-card .status.internal{border-color:rgba(140,152,163,.45);color:#b8c2cb}
-  .product-card .status.build{border-color:rgba(224,112,90,.55);color:var(--warm-hi)}
-  .product-card .status.target{border-color:rgba(140,152,163,.45);color:var(--muted)}
-  .product-card .status.reported{border-color:rgba(224,112,90,.55);color:var(--warm-hi)}
-  .hybrid{display:grid;grid-template-columns:1.15fr .85fr;border:1px solid var(--ring);border-radius:12px;overflow:hidden;background:var(--card)}
-  .hybrid>div{padding:23px 24px}
-  .hybrid>div+div{border-left:1px solid var(--hair)}
-  .hybrid h3{font-size:25px;line-height:1.1;margin-bottom:12px}
-  .hybrid p{color:var(--muted);font-size:15.5px}
-  .boundary{margin-top:18px;border-left:2px solid var(--warm);padding:6px 0 6px 17px;color:var(--muted);font-size:15px;max-width:700px}
-  .boundary b{color:var(--name);font-weight:600}
-  @media (max-width:700px){.product-grid{grid-template-columns:1fr}.hybrid{grid-template-columns:1fr}.hybrid>div+div{border-left:0;border-top:1px solid var(--hair)}}
+  /* ---------- who ---------- */
+  .wrow{display:grid;grid-template-columns:250px 1fr;gap:30px;padding:22px 0}
+  .wrow+.wrow{border-top:1px solid var(--hair)}
+  .wname{font-weight:600;font-size:17px}
+  .wrow p{color:var(--muted);font-size:16.5px;max-width:620px}
+  @media (max-width:880px){ .wrow{grid-template-columns:1fr;gap:6px} }
 
   /* ---------- footer ---------- */
   footer{margin-top:26px}
@@ -258,92 +244,69 @@
     </div>
     <div class="mastmeta mono">
       Public record / no script, no requests<br>
-      <b>Evidence with stated limits.</b>
+      <b>Proof over trust.</b>
     </div>
   </header>
   <div class="drule" aria-hidden="true"></div>
 
-  <main data-landing-copy-scope>
   <section class="hero">
-    <p class="kicker mono" data-landing-support="hero-kicker">Product direction / public evidence</p>
-    <h1 class="display" data-landing-support="hero-title"><span class="dim">Proof you can inspect.</span>
-      Limits you can <span class="u">read.</span></h1>
-    <p class="sub" data-landing-statement="LND-TWO-BOXES">Deedseal is being built toward a self-hosted two-box platform: a storage box keeps the record and an operations box runs governed work. Design target — not shipped.</p>
+    <p class="kicker mono">An enforcement layer for AI coding agents</p>
+    <h1 class="display"><span class="dim">You let an AI agent into your code.</span>
+      Can you <span class="u">prove</span> it did only what you allowed?</h1>
+    <p class="sub">The owner signs a permission, the Linux kernel holds the boundary,
+    and every run closes into a passport that anyone can verify offline —
+    <b>trusting neither us nor the agent</b>.</p>
   </section>
 
   <section class="entry">
     <div class="no mono">00</div>
     <div class="body">
-      <div class="lab mono">The platform / five named parts</div>
-      <h2 class="display" data-landing-support="status-heading">Each part carries its present status.</h2>
-      <p class="prose" data-landing-support="status-introduction">Every item below carries a status label.</p>
+      <div class="lab mono">The problem</div>
+      <h2 class="display">“What else could it have touched?”</h2>
+      <p class="prose">AI agents already write code and edit documents. But when someone
+      asks that question, today's only answer is <em>“trust the agent's logs.”</em>
+      For a client, an auditor, or a court — that is not an answer.</p>
     </div>
   </section>
 
-  <section class="entry">
+  <div class="groupcap mono"><span>The mechanism / three entries</span></div>
+
+  <section class="entry mech">
     <div class="no mono">01</div>
-    <div class="body">
-      <div class="product-grid">
-        <article class="product-card">
-          <span class="status internal mono">Current path / internally verified</span>
-          <h3 class="display" data-landing-support="github-title">GitHub spine</h3>
-          <p data-landing-statement="LND-GITHUB-SPINE">In the documented control path, repository files are the record: an owner-selected commit binds immutable task bytes, bounded write scope, and draft-only automation authority.</p>
-          <p class="boundary" data-landing-statement="LND-GITHUB-OWNER">Postflight leaves readiness, approval, and merge as Owner actions; draft-only automation has no merge authority.</p>
-        </article>
-        <article class="product-card">
-          <span class="status reported mono">Linux cells / engineering-reported</span>
-          <h3 class="display" data-landing-support="linux-title">Linux-native execution cells</h3>
-          <p data-landing-statement="LND-LINUX-CELLS">A 13-property live observation of Linux-native execution cells is engineering-reported; it is not a public capability claim.</p>
-          <p class="boundary" data-landing-statement="LND-LINUX-DIRECTION">For untrusted agents, disposable Linux execution cells are a design target — not shipped.</p>
-          <p class="boundary" data-landing-statement="LND-LINUX-BOUNDARY">The published Ubuntu probe permits the recorded file write and refuses file creation, directory creation, symbolic-link creation, and unlink.</p>
-        </article>
-        <article class="product-card">
-          <span class="status public mono">Public proof / published</span>
-          <h3 class="display" data-landing-support="passport-title">Seal / passport</h3>
-          <p data-landing-statement="LND-PASSPORT-RECORD">In the documented controlled path, a current run closes into a passport that binds authorization, custody outcome, execution identity, complete committed changes, artifact hashes, acceptance data, and final owner closure.</p>
-          <p class="boundary" data-landing-support="passport-pointer">The verification section below states the public proof and its limits.</p>
-        </article>
-        <article class="product-card">
-          <span class="status build mono">Control surface / active build</span>
-          <h3 class="display" data-landing-support="cockpit-title">Owner cockpit</h3>
-          <p data-landing-statement="LND-COCKPIT">The Owner cockpit is the human's control surface in active build; it is not yet a delivered product capability.</p>
-        </article>
-        <article class="product-card">
-          <span class="status target mono">Planned / design target</span>
-          <h3 class="display" data-landing-support="graph-title">Graph memory</h3>
-          <p data-landing-statement="LND-GRAPH-MEMORY">Graph memory is planned as derived answers over the record and has no authority. Design target — not shipped.</p>
-        </article>
-      </div>
+    <div class="body mrow">
+      <h3 class="display mname">Permission</h3>
+      <p class="mdesc">The owner signs a grant: <b>these files, this task, this time
+      window.</b> Nothing else is on the table.</p>
     </div>
   </section>
 
-  <section class="entry">
+  <section class="entry mech">
     <div class="no mono">02</div>
-    <div class="body">
-      <div class="lab mono">The hybrid operating model</div>
-      <h2 class="display" data-landing-support="hybrid-heading">The hybrid operating model.</h2>
-      <div class="hybrid">
-        <div>
-          <h3 class="display" data-landing-support="human-title">Human as governing element</h3>
-          <p data-landing-statement="LND-HYBRID-MODEL">The operating model is being built so the platform executes while the human is the governing element. Design target — not shipped.</p>
-        </div>
-        <div>
-          <h3 class="display" data-landing-support="control-title">Bounded current control</h3>
-          <p data-landing-statement="LND-HUMAN-CONTROL">In the documented controlled path, an owner-signed, scope-bound grant admits controlled effects; Owner action remains required for readiness, approval, and merge.</p>
-        </div>
-      </div>
+    <div class="body mrow">
+      <h3 class="display mname">Boundary</h3>
+      <p class="mdesc">The Linux kernel refuses every write outside the grant while the
+      agent works. <b>Not a request to the agent — a refusal by the operating
+      system.</b></p>
+    </div>
+  </section>
+
+  <section class="entry mech">
+    <div class="no mono">03</div>
+    <div class="body mrow">
+      <h3 class="display mname">Passport</h3>
+      <p class="mdesc">The run closes into a signed record of what was permitted and
+      what happened, byte for byte. <b>Checked in thirty seconds, offline, on your
+      machine.</b></p>
     </div>
   </section>
 
   <section class="entry">
-    <div class="no mono">03</div>
+    <div class="no mono">04</div>
     <div class="body">
-      <div class="lab mono">Verify it yourself / public proof</div>
-      <h2 class="display" data-landing-support="proof-heading">One byte, flipped.</h2>
-      <p class="prose" data-landing-statement="LND-PASSPORT-PROOF"><!-- generated:verified-runs -->2 supervised runs are
-      published, each with its passport, its tampered twin,
-      and the verifier<!-- /generated:verified-runs -->. A stranger can verify each published passport and its one-byte tampered twin offline with this repository's files and a Python interpreter.</p>
-      <p class="boundary" data-landing-statement="LND-VERIFY-YOURSELF">Run the published offline verifier against a passport and its one-byte tampered twin with this repository's files and a Python interpreter.</p>
+      <div class="lab mono">The exhibit / touch it yourself</div>
+      <h2 class="display">One byte, flipped.</h2>
+      <p class="prose">A real run passport and a copy of it with exactly <b>one byte</b>
+      changed are published. Flip between them and watch the verdict turn.</p>
 
       <div class="flip">
         <input type="radio" name="flip" id="fa" checked>
@@ -377,7 +340,9 @@
 }</pre>
           </div>
         </div>
-        <p class="cardfoot" data-landing-support="proof-cardfoot">The walkthrough gives file paths, commands, expected verdicts, and limits.</p>
+        <div class="cardfoot">Both files sit in the public repository exactly as
+        excerpted above. The verifier is <b>one Python file</b>, standard library only,
+        no network — you can run the same check offline, on your machine.</div>
       </div>
 
       <div class="proof">
@@ -393,10 +358,11 @@
         <div class="coverageintro">
           <div>
             <div class="lab mono">Refusal coverage / mechanically surveyed</div>
-            <h3 class="display coveragetitle" id="refusal-coverage-title" data-landing-support="refusal-title">Beyond one broken signature.</h3>
+            <h3 class="display coveragetitle" id="refusal-coverage-title">Beyond one broken signature.</h3>
           </div>
-          <p class="coveragecopy" data-landing-statement="LND-REFUSAL-COVERAGE">The published verifier declares 39 refusal reasons; the published mutation corpus demonstrates 35 exact refusal verdicts and classifies 4 as not reachable by mutation of the published bytes.</p>
-          <p class="coveragecopy" data-landing-support="refusal-link"><a href="https://github.com/deedseal/deedseal/blob/main/demo/refusals/README.md">Inspect every case and the explicit boundary.</a></p>
+          <p class="coveragecopy">The public corpus maps every verifier refusal it
+          can reach from published bytes — and names the gap it cannot.
+          <a href="https://github.com/deedseal/deedseal/blob/main/demo/refusals/README.md">Inspect every case and the explicit boundary.</a></p>
         </div>
         <dl class="coveragemetrics">
           <div class="coveragemetric">
@@ -415,31 +381,71 @@
       </aside>
 
       <div class="actions">
-        <a class="btn primary" href="https://github.com/deedseal/deedseal/blob/main/docs/verify.md">Read the verification walkthrough</a>
+        <a class="btn primary" href="https://github.com/deedseal/deedseal/blob/main/docs/verify.md">Read the walkthrough</a>
         <a class="btn" href="https://github.com/deedseal/deedseal">Browse the record on GitHub</a>
       </div>
     </div>
   </section>
 
   <section class="entry">
-    <div class="no mono">04</div>
+    <div class="no mono">05</div>
     <div class="body">
-      <div class="lab mono">Record compatibility / current status</div>
-      <h2 class="display" data-landing-support="record-heading">Current record. Current limits.</h2>
-      <p class="prose" data-landing-statement="LND-ENVELOPE-COMMITMENT">The published record format is <!-- generated:envelope-commitment -->frozen at <span class="mono">deedseal-run-passport/1.0</span> —
-      a passport that verifies today keeps verifying, and new capability
-      arrives as a new version, never as a silent change to this one<!-- /generated:envelope-commitment -->.</p>
-      <p class="boundary" data-landing-statement="LND-VERIFY-BOUNDARY">This check verifies published signed bytes and tamper detection; it does not reproduce a run, prove semantic correctness, or make the owner-controlled keys independent.</p>
-      <p class="boundary" data-landing-statement="LND-INDEPENDENT-REVIEW"><b>Honest boundary:</b> no part of this work has had independent human review.</p>
-      <p class="prose" data-landing-statement="LND-COMMERCIAL-STATUS">Deedseal is in active development. Pricing and sales are not open; they will open only after the full working state is reached.</p>
-      <p class="boundary" data-landing-support="status-link">Current dated status: <a href="https://github.com/deedseal/deedseal/blob/main/docs/status.md">docs/status.md</a>.</p>
+      <div class="lab mono">Who this is for</div>
+      <div class="wrow">
+        <div class="wname">Engineers</div>
+        <p>who let agents change real repositories and want the allowed scope
+        enforced and recorded — not assumed.</p>
+      </div>
+      <div class="wrow">
+        <div class="wname">Reviewers and auditors</div>
+        <p>handed machine-made changes, who need “what else could it have touched?”
+        answered without trusting the agent's account.</p>
+      </div>
+      <div class="wrow">
+        <div class="wname">Anyone who must stand behind AI-made work</div>
+        <p>before a client, an auditor, or a court.</p>
+      </div>
     </div>
   </section>
-  </main>
+
+  <section class="entry">
+    <div class="no mono">06</div>
+    <div class="body">
+      <div class="lab mono">Direction / design target</div>
+      <h2 class="display">From one enforced run to an operations appliance.</h2>
+      <p class="prose">The core above — a signed permission, a kernel-held
+      boundary, a passport anyone can verify — is being built out into a
+      self-hosted appliance of two boxes: a storage box that keeps the record,
+      and an operations box that runs the work in disposable Linux virtual
+      machines. Agents stay untrusted and interchangeable. A graph index over
+      the record answers questions but holds no authority. GitHub stays the
+      control surface, where every change waits for the owner's merge.
+      This is a design target, not a shipped capability: nothing in it is
+      claimed as implemented until it appears in the record with its own
+      evidence.</p>
+    </div>
+  </section>
+
+  <section class="entry">
+    <div class="no mono">07</div>
+    <div class="body">
+      <div class="lab mono">Honest status / dated</div>
+      <h2 class="display">We publish the record, not promises.</h2>
+      <p class="prose">Deedseal is in active development. The core is demonstrated
+      publicly and verifiably — <!-- generated:verified-runs -->2 supervised runs are
+      published, each with its passport, its tampered twin,
+      and the verifier<!-- /generated:verified-runs -->, re-proved on three operating systems on
+      every change. The published record format is <!-- generated:envelope-commitment -->frozen at <span class="mono">deedseal-run-passport/1.0</span> —
+      a passport that verifies today keeps verifying, and new capability
+      arrives as a new version, never as a silent change to this one<!-- /generated:envelope-commitment -->.
+      <b>The product is not for sale yet.</b> Current state, dated:
+      <a href="https://github.com/deedseal/deedseal/blob/main/docs/status.md">status</a>.</p>
+    </div>
+  </section>
 
   <footer>
     <div class="drule" aria-hidden="true"></div>
-    <div class="slogan display">Proof, with limits<span class="dot2">.</span></div>
+    <div class="slogan display">Proof over trust<span class="dot2">.</span></div>
     <div class="fmeta mono">Content CC-BY-4.0 / Verifier Apache-2.0 / Deedseal, 2026</div>
     <div class="fend mono">END OF RECORD</div>
   </footer>
