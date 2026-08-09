@@ -1,0 +1,13 @@
+{
+  "schema_version": "deedseal-wasm-bundle/1",
+  "raw_bytes": 3622397,
+  "base64_bytes": 4829864,
+  "chunks": [
+    "deedseal-verifier.wasm.base64.000",
+    "deedseal-verifier.wasm.base64.001",
+    "deedseal-verifier.wasm.base64.002",
+    "deedseal-verifier.wasm.base64.003",
+    "deedseal-verifier.wasm.base64.004",
+    "deedseal-verifier.wasm.base64.005"
+  ]
+}

@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: CC-BY-4.0 -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deedseal browser verifier</title>
+    <style>
+      :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+      body { line-height: 1.5; margin: 2rem auto; max-width: 52rem; padding: 0 1rem; }
+      button { font: inherit; padding: .5rem .8rem; }
+      li { margin: .45rem 0; overflow-wrap: anywhere; }
+      #hex-view { display: grid; gap: .3rem; grid-template-columns: repeat(auto-fill, minmax(6.5rem, 1fr)); margin: 1rem 0; }
+      .hex-byte { font-family: ui-monospace, monospace; font-size: .8rem; text-align: left; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Deedseal browser verifier</h1>
+      <p>This page loads only files from this checkout: the Go WebAssembly verifier and two published run passports with their one-byte tampered twins.</p>
+      <p id="status" role="status">Preparing offline verification…</p>
+      <button id="rerun" type="button">Run local verification again</button>
+      <ul id="results" aria-live="polite"></ul>
+      <section aria-labelledby="hex-heading">
+        <h2 id="hex-heading">Flip a byte yourself</h2>
+        <p>Choose an offset, select a byte from the hex view, and inspect the actual WebAssembly verdict. Restore returns to the published bytes and verifies them again.</p>
+        <label for="byte-offset">Hex byte offset</label>
+        <input id="byte-offset" type="number" inputmode="numeric" disabled>
+        <button id="show-byte" type="button" disabled>Show byte</button>
+        <button id="restore" type="button" disabled>Restore published bytes</button>
+        <p id="hex-range"></p>
+        <div id="hex-view" aria-label="Published passport hexadecimal bytes"></div>
+        <p id="interactive-verdict" role="status"></p>
+      </section>
+    </main>
+    <script src="../wasm_exec.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
