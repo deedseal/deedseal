@@ -14,10 +14,20 @@ publishing private source or operational detail.
 - `public-reproducible` — public source and artifacts are sufficient to repeat
   the check.
 
-The `DS-2026.08.1` snapshot was prepared on 2026-08-04. It contains both
+The `DS-2026.08.1` snapshot was prepared on 2026-08-04. It contained both
 internal attestations and five public-reproducible evidence records: two
 published passport demonstrations, the refusal-coverage survey, the Ubuntu
 filesystem-boundary replay, and the cross-implementation conformance result.
+
+The current snapshot `DS-2026.08.2` was prepared on 2026-08-12 and is a
+**review candidate**, not a published snapshot. It preserves every record of
+`DS-2026.08.1` unchanged and adds seven sanitized `internal-ci-attestation`
+records, `EVD-OFFICE-0002` through `EVD-OFFICE-0008`, for one night of live
+work on the read side of a derived graph memory. Those seven are summarized for
+a reader by the [proof index](../docs/proof/2026-08-12-neural-memory.md); six of
+them record a refusal or a correction. None of them is publicly reproducible,
+and the publication gate refuses a review-candidate snapshot on the default
+branch.
 
 ## What the hashes prove
 

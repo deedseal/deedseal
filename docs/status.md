@@ -19,6 +19,7 @@ Deedseal is in active development. The authorization, signing, quarantine, custo
 | Published demonstrations | Two real passports, their byte-tampered twins, and the verifier, re-checked by CI on every change | closed — [verify.md](verify.md) and [run index](../examples/verified/runs.md) |
 | Second controlled run | A byte-frozen public target moved from seed to precommitted result | closed — EVD-CORE-0004, no published passport |
 | Operations appliance (two-box product form) | A storage box holding the record, and an operations box running the business runtime in disposable Linux virtual machines; derived graph memory; GitHub-native owner gates | draft — design target; no implemented capability is claimed |
+| Derived graph memory, read side | A bounded live read into quarantine: owner-granted request, brokered call, digest-only cell receipt, and a proposal contract enforced on the way in | active — seven bounded observations published ([proof index](proof/2026-08-12-neural-memory.md)); six of them refusals or corrections. No customer-grade capability, no customer deployment, no appliance-variant deployment, and no accepted candidate output is claimed |
 
 States are drawn from a fixed set: `active`, `draft`, `planned`, `paused`, `closed`. A state may carry a short qualifier after an em dash; the state is the leading token. `closed` means the workstream's acceptance criteria are met; closed rows stay in the table.
 
@@ -35,6 +36,8 @@ Each workstream closes against acceptance criteria, not dates. There are no cale
 ## Updates
 
 This file is the single source of status for Deedseal's public documentation. Entries are dated, latest first.
+
+- **2026-08-12** — Seven bounded facts from one night of live work on the read side of a derived graph memory are published as sanitized records (`CLM-0014` through `CLM-0020`, `EVD-OFFICE-0002` through `EVD-OFFICE-0008`), indexed by a stable [proof index](proof/2026-08-12-neural-memory.md). All seven are `internally-verified` over a frozen private source snapshot: a reader here cannot re-execute any of them, and none is publicly reproducible. Six are refusals or corrections, including one live call that exposed a retrieval client reading the model's answer from the wrong response field while its test double answered in the same wrong shape and reported the client as working; the false green is preserved in `EVD-OFFICE-0005` rather than replaced by the corrected result. Snapshot `DS-2026.08.2` is prepared as a review candidate. Customer-grade derived graph memory, customer deployment, appliance-variant deployment and any accepted candidate output remain unproven and unclaimed.
 
 - **2026-08-05** — The product direction is recorded as a design target: Deedseal is being built toward a self-hosted operations appliance in a two-box form — a storage box that holds the immutable record, and an operations box that executes the business runtime in disposable Linux virtual machines, with a derived graph memory and GitHub-native owner control. Per the publication policy this carries status `design-target` throughout: none of it is claimed as implemented, and each capability will arrive here only with its own published evidence. The core enforcement chain published above is unchanged by this direction.
 

@@ -1,0 +1,66 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-OFFICE-0007",
+  "component": "OFFICE",
+  "source_snapshot": "OFFICE-2026-08-12-A",
+  "observed_on": "2026-08-12",
+  "kind": "sanitized-retrieval-boundary-suite-summary",
+  "assurance": "internal-ci-attestation",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "transport-unwrapping",
+        "result": "one balanced structured object is extracted from an answer that arrives inside a code fence or after a preamble; the extraction reads the transport and does not edit the object's contents"
+      },
+      {
+        "check": "truncated-refusal",
+        "result": "an object that never closes is refused rather than guessed shut, and no run document is written"
+      },
+      {
+        "check": "prose-refusal",
+        "result": "an answer carrying no balanced object is refused, and the raw words are retained for owner review rather than discarded"
+      },
+      {
+        "check": "contract-still-applied",
+        "result": "every extracted candidate still faces the committed contract and is dropped by name when refused; identity is stamped and nothing else"
+      },
+      {
+        "check": "focused-suite-result",
+        "result": "the focused retrieval suite reported 17/17 checks at the frozen source snapshot"
+      },
+      {
+        "check": "suite-assertion-sites",
+        "result": "17 assertion sites are present in the frozen focused-suite source artifact, matching the reported count"
+      },
+      {
+        "check": "frozen-source-digest",
+        "result": "sha256 ab8ea1be8107880e942d639972d633f8d9488398044d94dddd712b9fecd2aa0b over the frozen focused-suite source artifact, and sha256 b2483ccd2ebed67abf840c2b2e90e633e08b4641f111f2a8e67e70de56ba252f over the frozen retrieval-client source artifact"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "private",
+    "redactions": [
+      "R-IP",
+      "R-OPS",
+      "R-PRIV",
+      "R-SEC",
+      "R-VULN"
+    ],
+    "omitted": [
+      "private source coordinates, repository and change identifiers, and internal file paths",
+      "host, machine, account, kernel, socket and transport identities",
+      "raw grants, prompt bytes, completion bodies and refusal receipts",
+      "exact configured limits, exact refusal codes and unpublished schema detail"
+    ]
+  },
+  "limitations": [
+    "The 17/17 result is a recorded internal suite outcome over a frozen private source snapshot. A reader of this repository cannot re-execute it, and this record does not present it as publicly reproducible.",
+    "The suite exercises the retrieval boundary against an in-process double, not against a live model. Agreement with the installed broker is a separate property, recorded by EVD-OFFICE-0005.",
+    "Extracting one balanced object is a transport behaviour. It does not establish that the extracted content is true, useful, or accepted.",
+    "The SHA-256 values in this record bind this public sanitized record and the named frozen source artifacts only. They do not bind private source truth, do not establish immutability, and are not independent certification.",
+    "This is a sanitized internal attestation over a frozen private source snapshot. It is not independently reproducible, is not independently reviewed, and is not independently audited.",
+    "No customer-grade capability, no customer deployment, and no accepted candidate output is claimed by this record."
+  ]
+}

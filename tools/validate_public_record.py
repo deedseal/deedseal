@@ -103,6 +103,106 @@ DISCLOSURE_PATTERNS = (
 
 MARKDOWN_LINK_RE = re.compile(r"\[[^\]]*\]\(([^()\s]+)\)")
 
+# ---------------------------------------------------------------------------
+# The proof surface
+#
+# A claim used to be documented in exactly one place, `docs/engineering-
+# properties.md`. A dated proof index under `docs/proof/` is the second, and a
+# claim documented there is held to a stricter disclosure rule than the rest of
+# the public tree: the sanitized records behind such a claim summarize private
+# live work, so the vocabulary of that private work must not survive the
+# summary. The rules below are structural, not a review of judgement -- they
+# fail closed on shapes, and a human reviewer still reads the prose.
+# ---------------------------------------------------------------------------
+
+PROOF_ROOT = ROOT / "docs/proof"
+
+PROOF_BLOCK_RE = re.compile(
+    r"^###[ \t]+(CLM-[0-9]{4})\b[^\n]*\n(.*?)(?=^###[ \t]|\Z)",
+    re.MULTILINE | re.DOTALL,
+)
+PROOF_BAND_RE = re.compile(r"^- Band: `([a-z-]+)`[ \t]*$", re.MULTILINE)
+PROOF_EVIDENCE_RE = re.compile(
+    r"^- Evidence: \[`(EVD-[A-Z]+-[0-9]{4})`\]\(([^()\s]+)\)[ \t]*$", re.MULTILINE
+)
+PROOF_DIGEST_RE = re.compile(r"^- Record digest: `([0-9a-f]{64})`[ \t]*$", re.MULTILINE)
+PROOF_LIMITATION_RE = re.compile(r"^- Limitation: (\S.*)$", re.MULTILINE)
+
+# Symbols that exist only in the private engineering source. A sanitized record
+# describes a component by its role; naming the module is a source coordinate.
+INTERNAL_SOURCE_MARKERS = (
+    "neural_run",
+    "retrieve_run",
+    "shadow_run",
+    "model_access",
+    "check_neural_retrieval",
+    "live_cell_suite",
+    "cell_init",
+    "run_cell",
+    "bound_run",
+    "build_graph",
+    "execution_fabric",
+    "hardware_signer",
+    "appliance_host",
+    "graph_memory",
+)
+INTERNAL_SOURCE_RE = re.compile(
+    r"\b(?:" + "|".join(re.escape(item) for item in INTERNAL_SOURCE_MARKERS) + r")\b"
+)
+
+# Anything path-shaped that carries source, configuration or unit extensions.
+# A repository-relative public path resolves in this tree and is allowed; one
+# that does not resolve is a coordinate of somewhere else.
+SOURCE_PATH_RE = re.compile(
+    r"\b[A-Za-z0-9_][A-Za-z0-9_./-]*\."
+    r"(?:py|sh|bash|yml|yaml|json|toml|cfg|ini|service|socket|sock|unit)\b"
+)
+
+PROOF_SURFACE_PATTERNS = (
+    (INTERNAL_SOURCE_RE, "internal source symbol"),
+    (
+        re.compile(r"(?:^|[\s`'\"(\[])/(?:Users|var|opt|srv|etc|tmp|usr|mnt|media|proc|sys)/"),
+        "machine path",
+    ),
+    (re.compile(r"\b[A-Za-z]:\\"), "machine path"),
+    (re.compile(r"\\\\[A-Za-z0-9_.-]+\\"), "network share path"),
+    (
+        re.compile(r"\b[0-9]+\.[0-9]+\.[0-9]+-[A-Za-z0-9][A-Za-z0-9.-]*\b"),
+        "kernel or build identity",
+    ),
+    (
+        re.compile(r"\b[a-z0-9][a-z0-9-]*\.(?:local|internal|lan|corp|intranet|invalid)\b"),
+        "host identity",
+    ),
+    (re.compile(r"\bkbp\.[a-z0-9.-]+"), "private protocol identifier"),
+    (
+        re.compile(r"\b(?:kbp|construction)-[a-z0-9-]+\b", re.IGNORECASE),
+        "private repository name",
+    ),
+    (re.compile(r"\bsession_[A-Za-z0-9]{6,}\b"), "worker session identity"),
+    (re.compile(r"\bclaude\.ai/code\b", re.IGNORECASE), "worker session URL"),
+    (re.compile(r"\brefused_[a-z][a-z_]{2,}\b"), "exact refusal code"),
+    (re.compile(r"\bcompleted_model_response\b"), "internal outcome code"),
+    (re.compile(r"\b[A-Z][A-Z0-9]*_[A-Z0-9_]{2,}\b"), "internal constant name"),
+)
+
+# Words this project does not use as a positive claim. They are allowed only
+# where the sentence denies them, which is exactly how an honest limitation
+# reads: "not independently audited".
+POSITIVE_CLAIM_TERMS = re.compile(
+    r"\b(?:secure|secured|securely|certified|audited|production-ready|"
+    r"customer-deployed|generally[ \t]+available)\b",
+    re.IGNORECASE,
+)
+NEGATION_RE = re.compile(
+    r"\b(?:not|never|no|none|nothing|nor|neither|without|cannot)\b", re.IGNORECASE
+)
+NEGATION_WINDOW = 48
+# A denial only counts inside the same clause. A line break does not end one --
+# public prose is wrapped -- but a sentence terminator or a JSON string boundary
+# does, so a "not" from the sentence before cannot launder the next sentence.
+NEGATION_BOUNDARY = ".!?;\"'"
+
 README_CLAIM_ROW_RE = re.compile(
     r"^\|\s*`(CLM-[0-9]{4})`\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*`([a-z-]+)`\s*\|\s*$",
     re.MULTILINE,
@@ -661,8 +761,255 @@ def internal_link_violations(path: Path, text: str) -> list[str]:
     return violations
 
 
+def proof_index_paths() -> list[Path]:
+    """Every dated proof index, or an empty list when none is published yet."""
+    if not PROOF_ROOT.is_dir():
+        return []
+    return sorted(path for path in PROOF_ROOT.glob("*.md") if path.is_file())
+
+
+def parse_proof_blocks(text: str) -> dict[str, dict[str, Any]]:
+    """Parse one proof index into {claim_id: fields}.
+
+    The shape is fixed rather than free prose, because every field below is
+    checked against the ledger. A block the reader can see but the gate cannot
+    parse would be a claim nobody is holding to the record.
+    """
+    blocks: dict[str, dict[str, Any]] = {}
+    for match in PROOF_BLOCK_RE.finditer(text):
+        claim_id, body = match.group(1), match.group(2)
+        statement_lines: list[str] = []
+        for line in body.splitlines():
+            if line.startswith("- "):
+                break
+            if line.strip():
+                statement_lines.append(line.strip())
+        band = PROOF_BAND_RE.search(body)
+        evidence = PROOF_EVIDENCE_RE.search(body)
+        digest = PROOF_DIGEST_RE.search(body)
+        limitation = PROOF_LIMITATION_RE.search(body)
+        blocks[claim_id] = {
+            "statement": " ".join(statement_lines),
+            "band": band.group(1) if band else None,
+            "evidence_id": evidence.group(1) if evidence else None,
+            "evidence_link": evidence.group(2) if evidence else None,
+            "digest": digest.group(1) if digest else None,
+            "limitation": limitation.group(1).strip() if limitation else None,
+            "order": len(blocks),
+        }
+    return blocks
+
+
+def proof_block_failures(
+    label: str,
+    block: dict[str, Any],
+    claims_by_id: dict[str, dict[str, Any]],
+    evidence_by_id: dict[str, dict[str, Any]],
+    base: Path,
+) -> list[str]:
+    """Every way one proof-index block can disagree with the ledger.
+
+    A displayed digest is the one thing on that page a reader could carry away
+    and compare, so it is not allowed to be a number someone typed: it must
+    equal the digest the ledger indexes for that record. This returns failures
+    rather than raising, so the negative tests can drive it directly.
+    """
+    claim_id = label.rsplit(":", 1)[-1]
+    if claim_id not in claims_by_id:
+        return [f"{label}: documents a claim the ledger does not carry"]
+    claim = claims_by_id[claim_id]
+
+    failures = [
+        f"{label}: missing the {field} line"
+        for field in ("band", "evidence_id", "digest", "limitation")
+        if not block.get(field)
+    ]
+    if not block.get("statement"):
+        failures.append(f"{label}: missing the claim statement")
+    if failures:
+        return failures
+
+    if block["statement"] != claim["statement"]:
+        failures.append(f"{label}: statement differs from the ledger statement")
+    if block["band"] != claim["status"]:
+        failures.append(
+            f"{label}: band {block['band']} differs from ledger status {claim['status']}"
+        )
+    if block["evidence_id"] not in claim["evidence_ids"]:
+        return failures + [
+            f"{label}: {block['evidence_id']} is not evidence for this claim"
+        ]
+
+    evidence = evidence_by_id[block["evidence_id"]]
+    expected_path = evidence["artifact"]["path"]
+    if (base / block["evidence_link"]).resolve() != (ROOT / expected_path).resolve():
+        failures.append(f"{label}: evidence link does not point at {expected_path}")
+    if block["digest"] != evidence["artifact"]["sha256"]:
+        failures.append(
+            f"{label}: displayed digest differs from the ledger digest for "
+            f"{block['evidence_id']}"
+        )
+    return failures
+
+
+def validate_proof_indexes(
+    claims: list[dict[str, Any]], evidence_by_id: dict[str, dict[str, Any]]
+) -> dict[str, str]:
+    """Check every proof-index block against the ledger. Returns {claim_id: doc}."""
+    claims_by_id = {claim["id"]: claim for claim in claims}
+    documented: dict[str, str] = {}
+    for path in proof_index_paths():
+        relative = path.relative_to(ROOT).as_posix()
+        blocks = parse_proof_blocks(guarded_bytes(path).decode("utf-8"))
+        if not blocks:
+            fail(f"{relative}: a proof index must document at least one claim")
+        for claim_id, block in sorted(blocks.items(), key=lambda item: item[1]["order"]):
+            label = f"{relative}:{claim_id}"
+            if claim_id in documented:
+                fail(f"{label}: documented twice, in {documented[claim_id]} as well")
+            failures = proof_block_failures(
+                label, block, claims_by_id, evidence_by_id, path.parent
+            )
+            if failures:
+                fail(failures[0])
+            documented[claim_id] = relative
+    return documented
+
+
+def unresolved_source_paths(text: str, base: Path) -> list[str]:
+    """Path-shaped tokens that name no file in this repository.
+
+    A repository-relative public path is allowed and resolves here. One that
+    does not resolve is a coordinate of somewhere else, which is exactly what
+    a sanitized record must not carry.
+    """
+    unresolved: list[str] = []
+    for match in SOURCE_PATH_RE.finditer(text):
+        token = match.group(0)
+        trimmed = token
+        while trimmed.startswith(("./", "../")):
+            trimmed = trimmed.split("/", 1)[1]
+        if (ROOT / trimmed).exists() or (base / token).exists():
+            continue
+        unresolved.append(token)
+    return unresolved
+
+
+def unnegated_positive_claims(text: str) -> list[str]:
+    """Banned words used as a positive claim, rather than denied."""
+    offences: list[str] = []
+    for match in POSITIVE_CLAIM_TERMS.finditer(text):
+        window = text[max(0, match.start() - NEGATION_WINDOW) : match.start()]
+        boundary = max(window.rfind(character) for character in NEGATION_BOUNDARY)
+        if boundary >= 0:
+            window = window[boundary + 1 :]
+        if NEGATION_RE.search(window) is None:
+            offences.append(match.group(0))
+    return offences
+
+
+def proof_surface_violation(text: str, base: Path) -> str | None:
+    """The stricter scan applied to proof-documented public bytes.
+
+    It is a superset of the tree-wide scan on purpose. A fragment is checked as
+    a fragment rather than as a file, so nothing here may lean on the fact that
+    the whole file gets scanned too -- the point is that these bytes fail
+    closed wherever they are assembled from.
+    """
+    for match in GITHUB_REPOSITORY_URL_RE.finditer(text):
+        if PUBLIC_GITHUB_URL_RE.match(match.group(0)) is None:
+            return "non-public GitHub repository URL"
+    commit = FULL_COMMIT_RE.search(text)
+    if commit is not None:
+        return f"private commit identifier ({commit.group(0)!r})"
+    for pattern, label in (*DISCLOSURE_PATTERNS, *PROOF_SURFACE_PATTERNS):
+        found = pattern.search(text)
+        if found is not None:
+            return f"{label} ({found.group(0).strip()!r})"
+    unresolved = unresolved_source_paths(text, base)
+    if unresolved:
+        return f"source path that does not resolve here ({unresolved[0]!r})"
+    positive = unnegated_positive_claims(text)
+    if positive:
+        return f"unnegated positive-claim term ({positive[0]!r})"
+    return None
+
+
+def proof_surface_fragments(
+    documented: dict[str, str],
+    claims: list[dict[str, Any]],
+    evidence_by_id: dict[str, dict[str, Any]],
+) -> list[tuple[str, str, Path]]:
+    """Every public byte a proof-documented claim is responsible for.
+
+    Derived from the ledger rather than listed by hand, so a claim added to a
+    proof index tomorrow is scanned tomorrow without editing this function.
+    """
+    fragments: list[tuple[str, str, Path]] = []
+    for path in proof_index_paths():
+        relative = path.relative_to(ROOT).as_posix()
+        fragments.append((relative, guarded_bytes(path).decode("utf-8"), path.parent))
+    if not documented:
+        return fragments
+
+    evidence_ids: set[str] = set()
+    for claim in claims:
+        if claim["id"] not in documented:
+            continue
+        fragments.append(
+            (
+                f"evidence/ledger-v1.json:{claim['id']}",
+                json.dumps(claim, ensure_ascii=False),
+                ROOT,
+            )
+        )
+        evidence_ids.update(claim["evidence_ids"])
+
+    for evidence_id in sorted(evidence_ids):
+        evidence = evidence_by_id[evidence_id]
+        fragments.append(
+            (
+                f"evidence/ledger-v1.json:{evidence_id}",
+                json.dumps(evidence, ensure_ascii=False),
+                ROOT,
+            )
+        )
+        record_path = ROOT / evidence["artifact"]["path"]
+        fragments.append(
+            (
+                evidence["artifact"]["path"],
+                guarded_bytes(record_path).decode("utf-8"),
+                record_path.parent,
+            )
+        )
+
+    readme = guarded_bytes(ROOT / "README.md").decode("utf-8")
+    for match in README_CLAIM_ROW_RE.finditer(readme):
+        if match.group(1) in documented:
+            fragments.append((f"README.md:{match.group(1)}", match.group(0), ROOT))
+
+    status = guarded_bytes(ROOT / "docs/status.md").decode("utf-8")
+    named = set(documented) | evidence_ids
+    for number, line in enumerate(status.splitlines(), start=1):
+        if any(identifier in line for identifier in named):
+            fragments.append((f"docs/status.md:{number}", line, ROOT / "docs"))
+    return fragments
+
+
+def validate_proof_surface(
+    documented: dict[str, str],
+    claims: list[dict[str, Any]],
+    evidence_by_id: dict[str, dict[str, Any]],
+) -> None:
+    for label, text, base in proof_surface_fragments(documented, claims, evidence_by_id):
+        violation = proof_surface_violation(text, base)
+        if violation is not None:
+            fail(f"{label}: contains forbidden {violation}")
+
+
 REQUIRED_PUBLIC_FILES = {
     "README.md",
+    "docs/proof/2026-08-12-neural-memory.md",
     "SECURITY.md",
     "CONTRIBUTING.md",
     "NOTICE.md",
@@ -760,17 +1107,26 @@ def readme_claim_rows(readme: str) -> dict[str, tuple[str, list[str], str]]:
     return rows
 
 
-def validate_document_links(claims: list[dict[str, Any]], evidence_ids: set[str]) -> None:
+def validate_document_links(
+    claims: list[dict[str, Any]],
+    evidence_ids: set[str],
+    documented: dict[str, str] | None = None,
+) -> None:
     """The README claim table is a restatement of the ledger, so it must match it
-    exactly. A drifted statement or a flipped status is a validation failure."""
+    exactly. A drifted statement or a flipped status is a validation failure.
+
+    Every claim must also be written out for a human somewhere: in the engineering
+    properties, or in a dated proof index. Two surfaces are allowed; none is not.
+    """
     readme = guarded_bytes(ROOT / "README.md").decode("utf-8")
     properties = guarded_bytes(ROOT / "docs/engineering-properties.md").decode("utf-8")
     rows = readme_claim_rows(readme)
+    documented = documented or {}
 
     for claim in claims:
         claim_id = claim["id"]
-        if claim_id not in properties:
-            fail(f"{claim_id}: missing from engineering properties")
+        if claim_id not in properties and claim_id not in documented:
+            fail(f"{claim_id}: missing from engineering properties and every proof index")
         if claim_id not in rows:
             fail(f"{claim_id}: missing from the README claim table")
         statement, evidence, status = rows[claim_id]
@@ -844,7 +1200,9 @@ def validate_repository(*, require_published: bool = False) -> tuple[str, int, i
         item["id"]: validate_record(item, record_schema) for item in evidence
     }
     validate_evidence_graph(claims, evidence_by_id, records_by_id)
-    validate_document_links(claims, set(evidence_ids))
+    documented = validate_proof_indexes(claims, evidence_by_id)
+    validate_document_links(claims, set(evidence_ids), documented)
+    validate_proof_surface(documented, claims, evidence_by_id)
     validate_public_text()
     return snapshot_id, len(claims), len(evidence)
 
