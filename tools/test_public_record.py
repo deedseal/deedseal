@@ -308,6 +308,257 @@ class PublicRecordGateTests(unittest.TestCase):
         self.assertEqual(declared.group(1), "Apache-2.0")
 
 
+class ProofSurfaceTests(unittest.TestCase):
+    """The proof surface carries sanitized summaries of private live work.
+
+    These tests hold two lines. The first is structural: what a proof index
+    displays about a claim -- its statement, its band, its evidence link and
+    that record's digest -- must equal what the ledger carries, so a reader can
+    never be shown a number nobody derived. The second is the disclosure gate:
+    a recognizable private marker injected into any of the new public bytes has
+    to fail the build, not slip through because that particular file was not on
+    somebody's list.
+    """
+
+    # Recognizable markers of the private engineering source and of host
+    # identity. None of these is real; each is the *shape* the gate refuses.
+    NEGATIVE_CORPUS = (
+        ("internal source symbol", "the retrieve_run leg was corrected"),
+        ("internal source path", "see tools/neural/shadow_run.py for the ask"),
+        ("machine path", "written to /var/lib/fixture/output.txt"),
+        ("windows machine path", "copied from C:\\Fixture\\run.json"),
+        ("network share path", "staged on \\\\fixture-box\\share"),
+        ("kernel identity", "observed on kernel 9.99.1-fx-v42"),
+        ("host identity", "reached the broker on fixture-box.internal"),
+        ("private protocol identifier", "the envelope declared kbp.fixture/v0.9"),
+        ("private repository name", "recorded in kbp-fixture-office"),
+        ("worker session identity", "session_01FIXTUREabcdefghij"),
+        ("exact refusal code", "the broker answered refused_fixture_bound"),
+        ("internal outcome code", "the journal recorded completed_model_response"),
+        ("internal constant name", "the ceiling constant MAX_FIXTURE_BYTES moved"),
+        ("service unit", "started by fixture-runner.service"),
+        # Assembled rather than spelt out: the tree-wide scan reads this file
+        # too, and a literal address here would fail the gate it is testing.
+        ("network address", "the broker listened on " + "203.0." + "113.7"),
+        ("unnegated positive claim", "this path is production-ready today"),
+    )
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.ledger, _raw = gate.load_json(gate.LEDGER_PATH)
+        cls.claims = [
+            gate.validate_claim(value, cls.ledger["snapshot"]["id"])
+            for value in cls.ledger["claims"]
+        ]
+        cls.evidence_by_id = {
+            item["id"]: gate.validate_evidence_index(item)
+            for item in cls.ledger["evidence"]
+        }
+        cls.claims_by_id = {claim["id"]: claim for claim in cls.claims}
+        cls.documented = gate.validate_proof_indexes(cls.claims, cls.evidence_by_id)
+        cls.fragments = gate.proof_surface_fragments(
+            cls.documented, cls.claims, cls.evidence_by_id
+        )
+
+    def _block_for(self, claim_id: str) -> tuple[dict, Path]:
+        path = gate.ROOT / self.documented[claim_id]
+        blocks = gate.parse_proof_blocks(path.read_text(encoding="utf-8"))
+        return blocks[claim_id], path.parent
+
+    # ------------------------------------------------------------------
+    # the structural line: the page may not say what the ledger does not
+    # ------------------------------------------------------------------
+
+    def test_the_committed_proof_indexes_agree_with_the_ledger(self) -> None:
+        self.assertTrue(self.documented, "no claim is documented by a proof index")
+        for claim_id, document in self.documented.items():
+            with self.subTest(claim=claim_id):
+                block, base = self._block_for(claim_id)
+                self.assertEqual(
+                    gate.proof_block_failures(
+                        f"{document}:{claim_id}",
+                        block,
+                        self.claims_by_id,
+                        self.evidence_by_id,
+                        base,
+                    ),
+                    [],
+                )
+
+    def test_a_typed_digest_statement_or_band_is_refused(self) -> None:
+        """The three ways a proof index could quietly stop describing the record."""
+        claim_id = sorted(self.documented)[0]
+        block, base = self._block_for(claim_id)
+        label = f"{self.documented[claim_id]}:{claim_id}"
+        drifts = {
+            "digest": "0" * 64,
+            "statement": "A statement the ledger does not carry.",
+            "band": "public-reproducible",
+            "evidence_link": "../../README.md",
+        }
+        for field, value in drifts.items():
+            with self.subTest(field=field):
+                tampered = dict(block)
+                tampered[field] = value
+                self.assertTrue(
+                    gate.proof_block_failures(
+                        label, tampered, self.claims_by_id, self.evidence_by_id, base
+                    )
+                )
+
+    def test_a_block_missing_a_required_line_is_refused(self) -> None:
+        claim_id = sorted(self.documented)[0]
+        block, base = self._block_for(claim_id)
+        label = f"{self.documented[claim_id]}:{claim_id}"
+        for field in ("band", "evidence_id", "digest", "limitation", "statement"):
+            with self.subTest(field=field):
+                tampered = dict(block)
+                tampered[field] = None
+                self.assertTrue(
+                    gate.proof_block_failures(
+                        label, tampered, self.claims_by_id, self.evidence_by_id, base
+                    )
+                )
+
+    def test_every_claim_is_written_out_for_a_human_somewhere(self) -> None:
+        """Two documentation surfaces are allowed. None is not."""
+        gate.validate_document_links(
+            self.claims,
+            {item for claim in self.claims for item in claim["evidence_ids"]},
+            self.documented,
+        )
+        with self.assertRaises(gate.ValidationError):
+            gate.validate_document_links(
+                self.claims,
+                {item for claim in self.claims for item in claim["evidence_ids"]},
+                {},
+            )
+
+    # ------------------------------------------------------------------
+    # the disclosure line: the corpus, and the surfaces it is injected into
+    # ------------------------------------------------------------------
+
+    def test_the_committed_proof_surface_is_clean(self) -> None:
+        for label, text, base in self.fragments:
+            with self.subTest(fragment=label):
+                self.assertIsNone(gate.proof_surface_violation(text, base))
+
+    def test_every_negative_marker_is_refused(self) -> None:
+        for name, sample in self.NEGATIVE_CORPUS:
+            with self.subTest(marker=name):
+                self.assertIsNotNone(
+                    gate.proof_surface_violation(sample, gate.ROOT),
+                    f"{name} was not refused",
+                )
+
+    def test_injection_into_every_new_public_surface_fails_closed(self) -> None:
+        """One real fragment per surface, each carrying each marker.
+
+        This is the property the packet asks for: it is not enough that the
+        scanner recognizes a marker, the marker has to be refused in the exact
+        files the new claims are published through.
+        """
+        surfaces = {
+            "proof index": lambda label: label.startswith("docs/proof/"),
+            "evidence record": lambda label: label.startswith("evidence/records/"),
+            "ledger claim row": lambda label: ":CLM-" in label,
+            "ledger evidence row": lambda label: ":EVD-" in label,
+            "README row": lambda label: label.startswith("README.md:"),
+            "status update": lambda label: label.startswith("docs/status.md:"),
+        }
+        for surface, matches in surfaces.items():
+            fragment = next(
+                (item for item in self.fragments if matches(item[0])), None
+            )
+            self.assertIsNotNone(fragment, f"no fragment covers the {surface}")
+            label, text, base = fragment
+            self.assertIsNone(gate.proof_surface_violation(text, base), label)
+            for name, sample in self.NEGATIVE_CORPUS:
+                with self.subTest(surface=surface, marker=name):
+                    self.assertIsNotNone(
+                        gate.proof_surface_violation(f"{text}\n{sample}\n", base),
+                        f"{name} survived injection into the {surface}",
+                    )
+
+    def test_public_paths_resolve_and_private_ones_do_not(self) -> None:
+        """The rule is not a word list: a path is allowed because it exists."""
+        self.assertEqual(
+            gate.unresolved_source_paths(
+                "see tools/validate_public_record.py and evidence/ledger-v1.json",
+                gate.ROOT,
+            ),
+            [],
+        )
+        self.assertEqual(
+            gate.unresolved_source_paths("../../evidence/ledger-v1.json", gate.ROOT),
+            [],
+        )
+        self.assertEqual(
+            gate.unresolved_source_paths("tools/broker/model_access.py", gate.ROOT),
+            ["tools/broker/model_access.py"],
+        )
+
+    def test_banned_words_are_allowed_only_where_they_are_denied(self) -> None:
+        self.assertEqual(
+            gate.unnegated_positive_claims(
+                "It is not independently audited and not production-ready."
+            ),
+            [],
+        )
+        self.assertEqual(
+            gate.unnegated_positive_claims("none of it is customer-deployed"), []
+        )
+        for positive in (
+            "the path is secure",
+            "the record is certified",
+            "this build is production-ready",
+            "the appliance is generally available",
+        ):
+            with self.subTest(text=positive):
+                self.assertTrue(gate.unnegated_positive_claims(positive))
+
+    def test_the_scan_covers_the_records_and_rows_of_every_documented_claim(self) -> None:
+        labels = {label for label, _text, _base in self.fragments}
+        for claim_id, document in self.documented.items():
+            with self.subTest(claim=claim_id):
+                self.assertIn(document, labels)
+                self.assertIn(f"evidence/ledger-v1.json:{claim_id}", labels)
+                self.assertIn(f"README.md:{claim_id}", labels)
+                for evidence_id in self.claims_by_id[claim_id]["evidence_ids"]:
+                    self.assertIn(f"evidence/ledger-v1.json:{evidence_id}", labels)
+                    self.assertIn(
+                        self.evidence_by_id[evidence_id]["artifact"]["path"], labels
+                    )
+
+    def test_the_night_publishes_seven_office_facts_and_no_eighth(self) -> None:
+        """The count is part of the claim: seven, all in the weakest band."""
+        documented = sorted(self.documented)
+        self.assertEqual(
+            documented, [f"CLM-{number:04d}" for number in range(14, 21)]
+        )
+        records = []
+        for claim_id in documented:
+            claim = self.claims_by_id[claim_id]
+            self.assertEqual(claim["status"], "internally-verified")
+            self.assertEqual(claim["component"], "OFFICE")
+            self.assertEqual(len(claim["evidence_ids"]), 1)
+            records.extend(claim["evidence_ids"])
+        self.assertEqual(
+            records, [f"EVD-OFFICE-{number:04d}" for number in range(2, 9)]
+        )
+        for evidence_id in records:
+            evidence = self.evidence_by_id[evidence_id]
+            self.assertEqual(evidence["assurance"], "internal-ci-attestation")
+            self.assertEqual(evidence["source_snapshot"], "OFFICE-2026-08-12-A")
+            self.assertLessEqual(
+                {"R-IP", "R-OPS", "R-PRIV", "R-SEC"}, set(evidence["redactions"])
+            )
+            digest = hashlib.sha256(
+                (gate.ROOT / evidence["artifact"]["path"]).read_bytes()
+            ).hexdigest()
+            self.assertEqual(digest, evidence["artifact"]["sha256"])
+
+
 class PublicationPackagerTests(unittest.TestCase):
     """The packager's job is to make hand-typed facts impossible.
 

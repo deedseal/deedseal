@@ -1,0 +1,61 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-OFFICE-0008",
+  "component": "OFFICE",
+  "source_snapshot": "OFFICE-2026-08-12-A",
+  "observed_on": "2026-08-12",
+  "kind": "sanitized-live-output-bound-observation",
+  "assurance": "internal-ci-attestation",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "overflow-observed",
+        "result": "a structured live answer exceeded the admitted model's output bound and arrived incomplete"
+      },
+      {
+        "check": "refusal",
+        "result": "the incomplete object was refused rather than guessed complete, and no run document was written"
+      },
+      {
+        "check": "vocabulary-defect",
+        "result": "the closing request showed one example instead of the whole closed vocabulary, and the answer used kinds outside the closed set"
+      },
+      {
+        "check": "correction",
+        "result": "the request envelope was narrowed so that a complete, closed object fits inside the admitted output bound, and the closing request now carries the full closed kind list with hard per-field bounds"
+      },
+      {
+        "check": "no-success-claimed",
+        "result": "no later successful accepted candidate set is claimed; this record stops at the refusal and the narrowing that followed it"
+      },
+      {
+        "check": "frozen-source-digest",
+        "result": "sha256 293a978023f4d124b55c58dc3ed05738f188b32727ee8cd648fa7fe2d7b630f2 over the frozen request-composer source artifact"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "private",
+    "redactions": [
+      "R-IP",
+      "R-OPS",
+      "R-PRIV",
+      "R-SEC",
+      "R-VULN"
+    ],
+    "omitted": [
+      "private source coordinates, repository and change identifiers, and internal file paths",
+      "host, machine, account, kernel, socket and transport identities",
+      "raw grants, prompt bytes, completion bodies and refusal receipts",
+      "exact configured limits, exact refusal codes and unpublished schema detail"
+    ]
+  },
+  "limitations": [
+    "The observation covers one truncated answer and the request narrowing that followed. It does not establish that a narrowed request produces a complete answer, and no such outcome is recorded here.",
+    "Refusing a truncated object is a boundary behaviour. It is not evidence that the retrieval path has produced any accepted result.",
+    "The SHA-256 values in this record bind this public sanitized record and the named frozen source artifacts only. They do not bind private source truth, do not establish immutability, and are not independent certification.",
+    "This is a sanitized internal attestation over a frozen private source snapshot. It is not independently reproducible, is not independently reviewed, and is not independently audited.",
+    "No customer-grade capability, no customer deployment, and no accepted candidate output is claimed by this record."
+  ]
+}

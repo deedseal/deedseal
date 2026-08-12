@@ -1,0 +1,57 @@
+{
+  "schema_version": "deedseal.public-evidence-record/v1",
+  "id": "EVD-OFFICE-0002",
+  "component": "OFFICE",
+  "source_snapshot": "OFFICE-2026-08-12-A",
+  "observed_on": "2026-08-12",
+  "kind": "sanitized-live-authorization-boundary-observation",
+  "assurance": "internal-ci-attestation",
+  "verification": {
+    "verdict": "PASS",
+    "observations": [
+      {
+        "check": "live-path-traversal",
+        "result": "one controlled request composed on 2026-08-12 was admitted by the owner-grant check and reached the effect broker in a single pass"
+      },
+      {
+        "check": "input-bound-refusal",
+        "result": "the broker refused the request at its configured input bound before any model call was admitted"
+      },
+      {
+        "check": "completion-acceptance",
+        "result": "no completion was accepted; no response body entered the run record"
+      },
+      {
+        "check": "bound-is-read-not-copied",
+        "result": "the admission bound is read from a single named definition at request time, and the bound probes read that same definition rather than a copied literal, so a changed bound cannot leave a stale probe passing"
+      },
+      {
+        "check": "frozen-source-digest",
+        "result": "sha256 696fb8a77706f060d658a2f3ed9eb3c1cfee4ec2fe3161b5b0cb0d965428be16 over the frozen broker admission-policy source artifact"
+      }
+    ]
+  },
+  "disclosure": {
+    "source_visibility": "private",
+    "redactions": [
+      "R-IP",
+      "R-OPS",
+      "R-PRIV",
+      "R-SEC",
+      "R-VULN"
+    ],
+    "omitted": [
+      "private source coordinates, repository and change identifiers, and internal file paths",
+      "host, machine, account, kernel, socket and transport identities",
+      "raw grants, prompt bytes, completion bodies and refusal receipts",
+      "exact configured limits, exact refusal codes and unpublished schema detail"
+    ]
+  },
+  "limitations": [
+    "The observation covers one controlled request on one day. It does not establish that every oversized input is refused, and it makes no statement about model quality, throughput or availability.",
+    "A refusal at the input bound is evidence that the bound was applied. It is not evidence that any downstream stage of the path is correct.",
+    "The SHA-256 values in this record bind this public sanitized record and the named frozen source artifacts only. They do not bind private source truth, do not establish immutability, and are not independent certification.",
+    "This is a sanitized internal attestation over a frozen private source snapshot. It is not independently reproducible, is not independently reviewed, and is not independently audited.",
+    "No customer-grade capability, no customer deployment, and no accepted candidate output is claimed by this record."
+  ]
+}

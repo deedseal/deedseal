@@ -1,8 +1,8 @@
 {
   "schema_version": "deedseal.public-evidence-ledger/v1",
   "snapshot": {
-    "id": "DS-2026.08.1",
-    "prepared_on": "2026-08-04",
+    "id": "DS-2026.08.2",
+    "prepared_on": "2026-08-12",
     "publication_status": "published"
   },
   "claims": [
@@ -12,7 +12,7 @@
       "component": "CORE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0001"
       ],
@@ -26,7 +26,7 @@
       "component": "CORE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0001"
       ],
@@ -40,7 +40,7 @@
       "component": "CORE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0001"
       ],
@@ -54,7 +54,7 @@
       "component": "OFFICE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-OFFICE-0001"
       ],
@@ -68,7 +68,7 @@
       "component": "OFFICE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-OFFICE-0001"
       ],
@@ -82,7 +82,7 @@
       "component": "OFFICE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-OFFICE-0001"
       ],
@@ -96,7 +96,7 @@
       "component": "CORE",
       "status": "internally-verified",
       "observed_on": "2026-08-01",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0002"
       ],
@@ -110,7 +110,7 @@
       "component": "CORE",
       "status": "public-reproducible",
       "observed_on": "2026-08-02",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0003"
       ],
@@ -126,7 +126,7 @@
       "component": "CORE",
       "status": "internally-verified",
       "observed_on": "2026-08-03",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0004"
       ],
@@ -141,7 +141,7 @@
       "component": "PUBLIC",
       "status": "public-reproducible",
       "observed_on": "2026-08-03",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-PUBLIC-0001"
       ],
@@ -157,7 +157,7 @@
       "component": "PUBLIC",
       "status": "public-reproducible",
       "observed_on": "2026-08-03",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-PUBLIC-0002"
       ],
@@ -173,7 +173,7 @@
       "component": "CORE",
       "status": "public-reproducible",
       "observed_on": "2026-08-04",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-CORE-0005"
       ],
@@ -188,7 +188,7 @@
       "component": "PUBLIC",
       "status": "public-reproducible",
       "observed_on": "2026-08-04",
-      "scope": "DS-2026.08.1",
+      "scope": "DS-2026.08.2",
       "evidence_ids": [
         "EVD-PUBLIC-0003"
       ],
@@ -196,6 +196,112 @@
         "Both implementations come from this project; this is agreement between two implementations, not two parties checking each other.",
         "Agreement covers the 48 published vectors and does not establish correctness for inputs outside them.",
         "Four declared refusal reasons cannot be reached by mutating the published bytes and are absent from the vectors."
+      ]
+    },
+    {
+      "id": "CLM-0014",
+      "statement": "A live controlled request traversed the owner-grant and broker path and was refused at the configured input bound; no completion was accepted.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0002"
+      ],
+      "limitations": [
+        "The refusal was observed for one controlled request on one day; it does not establish that every oversized input is refused.",
+        "A refusal at the input bound is evidence that the bound was applied, not evidence that any later stage of the path is correct."
+      ]
+    },
+    {
+      "id": "CLM-0015",
+      "statement": "A live model-read receipt retained digests rather than the response body in the disposable cell; retaining words required a separate bounded retrieval step into quarantine.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0003"
+      ],
+      "limitations": [
+        "The receipt is digest-bound rather than signed; it detects drift against the bytes it covers and is not offered as forgery resistance.",
+        "The statement describes what the disposable cell retains; it is not a statement about retention anywhere else in the system."
+      ]
+    },
+    {
+      "id": "CLM-0016",
+      "statement": "A one-byte mismatch between grant-covered prompt bytes and transmitted prompt bytes was refused; one normalized byte source now feeds both legs.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0004"
+      ],
+      "limitations": [
+        "The refusal was correct before the correction; the defect was in the caller, and no boundary was relaxed to admit the request.",
+        "One shared byte source removes one class of disagreement between the two legs; it is not a proof of end-to-end byte custody."
+      ]
+    },
+    {
+      "id": "CLM-0017",
+      "statement": "A live call exposed that the retrieval client and its passing test double read the completion from the wrong response field; both were corrected to the actual broker contract.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0005"
+      ],
+      "limitations": [
+        "The suite result recorded before the correction was a false green; it is preserved here rather than replaced by the corrected result.",
+        "The correction removes one observed disagreement between a test double and the component it stands in for; it does not establish fidelity in any other respect."
+      ]
+    },
+    {
+      "id": "CLM-0018",
+      "statement": "Quarantine refused prose when the committed candidate contract required structured JSON; the request was corrected to state the enforced shape.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0006"
+      ],
+      "limitations": [
+        "The observation covers one refusal of an unstructured answer; it does not establish that every malformed answer is refused.",
+        "Stating the enforced shape in the request does not guarantee a conforming answer; the loader remains the only thing that decides."
+      ]
+    },
+    {
+      "id": "CLM-0019",
+      "statement": "The retrieval boundary can extract one balanced JSON object without editing its contents and refuses truncated objects or unstructured prose; the focused source-snapshot suite passed 17/17.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0007"
+      ],
+      "limitations": [
+        "The 17/17 result is a recorded internal suite outcome over a frozen private source snapshot; a reader of this repository cannot re-execute it, and it is not presented as publicly reproducible.",
+        "The suite exercises the retrieval boundary against an in-process double rather than a live model; agreement with the installed broker is recorded separately by CLM-0017.",
+        "Extracting one balanced object is a transport behaviour; it does not establish that the extracted content is true, useful or accepted."
+      ]
+    },
+    {
+      "id": "CLM-0020",
+      "statement": "A structured live answer that exceeded the admitted output bound was refused rather than guessed complete; the request envelope was narrowed to fit the bound. No later successful accepted candidate set is claimed.",
+      "component": "OFFICE",
+      "status": "internally-verified",
+      "observed_on": "2026-08-12",
+      "scope": "DS-2026.08.2",
+      "evidence_ids": [
+        "EVD-OFFICE-0008"
+      ],
+      "limitations": [
+        "No accepted candidate set is claimed by this snapshot; the record stops at the refusal and the narrowing that followed it.",
+        "Refusing a truncated object is a boundary behaviour, not evidence that the retrieval path has produced any accepted result."
       ]
     }
   ],
@@ -369,6 +475,165 @@
       "limitations": [
         "The vectors are derived from one published passport; the private system that produced it is not published.",
         "Agreement is observed on committed inputs, not on arbitrary passports."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0002",
+      "component": "OFFICE",
+      "kind": "sanitized-live-authorization-boundary-observation",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0002.json",
+        "sha256": "020fae20542b1a6c11b3d10aa50fc96ef064737b5e7501de577086347e47d112"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC",
+        "R-VULN"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "One controlled request was observed; the record is not a coverage statement."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0003",
+      "component": "OFFICE",
+      "kind": "sanitized-live-receipt-content-observation",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0003.json",
+        "sha256": "fdaad3be1e64bf7ed739a9938bd3f1fd474997792e4d6ceb668cf3374276c4ea"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "The receipt is digest-bound rather than signed."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0004",
+      "component": "OFFICE",
+      "kind": "sanitized-live-grant-binding-correction-observation",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0004.json",
+        "sha256": "a12a53fbf9d226c8693e230d8c949b3add6aabd9d0e996431a3645ac51584dfa"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC",
+        "R-VULN"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "The byte distance is published; the byte values and the covering grant are not."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0005",
+      "component": "OFFICE",
+      "kind": "sanitized-live-false-green-correction-observation",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0005.json",
+        "sha256": "e51b7361e45934165b3a73e07f048fb3ff2b172b803596e0837ec053e823b6c6"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "The corrected response shape is described by role, not by field name."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0006",
+      "component": "OFFICE",
+      "kind": "sanitized-live-contract-alignment-observation",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0006.json",
+        "sha256": "d7b44934a0fac1b320a58b0d13773193cbe8560ac29bccb2258c503d95c78e30"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC",
+        "R-VULN"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "The enforced contract is summarized; the committed schema is not published."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0007",
+      "component": "OFFICE",
+      "kind": "sanitized-retrieval-boundary-suite-summary",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0007.json",
+        "sha256": "067d75c40f4ef27b2873ef4e03267507f298a848b5bab26fe3722c57dc453c3d"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC",
+        "R-VULN"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "The suite outcome is a recorded internal result, not a public reproduction."
+      ]
+    },
+    {
+      "id": "EVD-OFFICE-0008",
+      "component": "OFFICE",
+      "kind": "sanitized-live-output-bound-observation",
+      "assurance": "internal-ci-attestation",
+      "observed_on": "2026-08-12",
+      "source_snapshot": "OFFICE-2026-08-12-A",
+      "artifact": {
+        "path": "evidence/records/EVD-OFFICE-0008.json",
+        "sha256": "9d5f22d1617d7d4d504ad8fa4fda88b17ee7a3da256848df9577f4dfee730956"
+      },
+      "redactions": [
+        "R-IP",
+        "R-OPS",
+        "R-PRIV",
+        "R-SEC",
+        "R-VULN"
+      ],
+      "limitations": [
+        "The private source is identified only by its opaque snapshot identifier.",
+        "The admitted output bound is named as a bound; its value is not published."
       ]
     }
   ]
