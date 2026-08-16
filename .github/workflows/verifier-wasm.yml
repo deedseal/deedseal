@@ -41,7 +41,7 @@ jobs:
       # The checked-in bundle is byte-checked after this build. Pinning the
       # patch level prevents a future Go 1.24 release from silently changing it.
       - name: Set up the pinned Go toolchain
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "1.24.9"
 
