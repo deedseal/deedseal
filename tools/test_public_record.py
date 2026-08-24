@@ -576,8 +576,11 @@ class PublicationPackagerTests(unittest.TestCase):
         cls.counter = counter
         cls.ledger, _raw = gate.load_json(gate.LEDGER_PATH)
 
-    def test_check_passes_on_the_committed_tree(self) -> None:
+    def test_packager_check_passes_without_retired_root_claimants(self) -> None:
         self.assertEqual(self.packager.command_check(None), 0)
+        planned = set(self.packager.derived_plan())
+        self.assertNotIn(gate.ROOT / "index.html", planned)
+        self.assertNotIn(gate.ROOT / "CNAME", planned)
 
     def test_readme_table_is_what_the_ledger_derives(self) -> None:
         readme = (gate.ROOT / "README.md").read_text(encoding="utf-8")
@@ -603,7 +606,7 @@ class PublicationPackagerTests(unittest.TestCase):
         )
         self.assertNotEqual(entry["artifact"]["sha256"], "0" * 64)
 
-    def test_derived_plan_covers_every_generated_public_artifact(self) -> None:
+    def test_derived_plan_covers_only_active_generated_public_artifacts(self) -> None:
         planned = {
             path.relative_to(gate.ROOT).as_posix()
             for path in self.packager.derived_plan()
@@ -615,9 +618,9 @@ class PublicationPackagerTests(unittest.TestCase):
                 "docs/passport-spec-v1.md",
                 "examples/verified/conformance/manifest.json",
                 "examples/verified/runs.md",
-                "index.html",
             },
         )
+        self.assertTrue({"index.html", "CNAME"}.isdisjoint(planned))
 
     def test_passport_refusal_section_is_generated_and_idempotent(self) -> None:
         specification = self.packager.PASSPORT_SPEC_PATH.read_text(encoding="utf-8")
@@ -627,22 +630,19 @@ class PublicationPackagerTests(unittest.TestCase):
             self.packager.passport_spec_with_refusal_reasons(generated), generated
         )
 
-    def test_landing_regions_equal_what_the_tree_derives(self) -> None:
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertEqual(
-            self.packager.landing_with_generated_regions(landing), landing
-        )
+    def test_retired_root_landing_must_remain_absent(self) -> None:
+        self.assertFalse((gate.ROOT / "index.html").exists())
 
-    def test_landing_generation_is_idempotent(self) -> None:
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        once = self.packager.landing_with_generated_regions(landing)
-        self.assertEqual(self.packager.landing_with_generated_regions(once), once)
+    def test_retired_root_domain_claimant_must_remain_absent(self) -> None:
+        self.assertFalse((gate.ROOT / "CNAME").exists())
 
-    def test_landing_count_equals_the_published_passports(self) -> None:
-        count = len(self.counter.published_passports())
-        expected = self.packager.verified_run_sentence(count)
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn(expected, landing)
+    def test_publication_plan_excludes_retired_root_claimants(self) -> None:
+        planned = {
+            path.relative_to(gate.ROOT).as_posix()
+            for path in self.packager.derived_plan()
+        }
+        self.assertNotIn("index.html", planned)
+        self.assertNotIn("CNAME", planned)
 
     def test_refusal_claim_and_record_equal_the_measured_coverage(self) -> None:
         coverage = self.packager.refusal_coverage()
@@ -688,19 +688,14 @@ class PublicationPackagerTests(unittest.TestCase):
             any("declared-refusal-reasons" in failure for failure in failures)
         )
 
-    def test_landing_refusal_counts_equal_the_measured_coverage(self) -> None:
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        declared, demonstrated, not_reachable = self.packager.refusal_coverage().counts
-        for name, value in (
-            ("refusal-declared", declared),
-            ("refusal-demonstrated", demonstrated),
-            ("refusal-not-reachable", not_reachable),
-        ):
-            with self.subTest(region=name):
-                self.assertIn(
-                    f"<!-- generated:{name} -->{value}<!-- /generated:{name} -->",
-                    landing,
-                )
+    def test_readme_remains_an_active_publication_input(self) -> None:
+        plan = self.packager.derived_plan()
+        self.assertIn(self.packager.README_PATH, plan)
+        self.assertIn("README.md", gate.REQUIRED_PUBLIC_FILES)
+        self.assertIn(
+            gate.ROOT / "README.md",
+            gate.all_public_files(),
+        )
 
     def test_the_run_clause_is_grammatical_at_any_count(self) -> None:
         """A door that says "1 runs are published" is worse than the typed
@@ -727,13 +722,7 @@ class PublicationPackagerTests(unittest.TestCase):
                 self.assertIn("each with its passport", clause)
                 self.assertNotIn("published, with its", clause)
 
-    def test_the_landing_promise_names_the_version_the_bytes_carry(self) -> None:
-        """The one thing on that page a reader acts on later.
-
-        Someone downloads the verifier today and verifies a passport next year.
-        The clause that tells them they can is derived from the published bytes,
-        not from a sentence someone was confident about.
-        """
+    def test_published_passports_name_one_version_the_bytes_carry(self) -> None:
         version = self.packager.published_envelope_version()
         for passport in self.counter.published_passports():
             with self.subTest(passport=passport.name):
@@ -741,11 +730,7 @@ class PublicationPackagerTests(unittest.TestCase):
                     json.loads(passport.read_text(encoding="utf-8"))["schema_version"],
                     version,
                 )
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertIn(
-            f'<!-- generated:envelope-commitment -->frozen at <span class="mono">{version}</span>',
-            landing,
-        )
+        self.assertEqual(version, "deedseal-run-passport/1.0")
 
     def test_a_status_freeze_the_bytes_do_not_carry_is_refused(self) -> None:
         """Status is hand-written and dated. It does not get the last word on
@@ -797,68 +782,44 @@ class PublicationPackagerTests(unittest.TestCase):
                     finally:
                         self.packager.published_passports = real
 
-    def test_a_hand_edited_landing_number_is_refused(self) -> None:
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        # Derived, never spelt out: the clause changes with the published run
-        # count, and a test that hard-codes today's wording stops testing
-        # anything the day another run is published.
-        run_count = len(self.counter.published_passports())
-        replacements = (
-            (
-                self.packager.verified_run_sentence(run_count),
-                self.packager.verified_run_sentence(run_count + 3),
-            ),
-            (
-                ">39<!-- /generated:refusal-declared -->",
-                ">99<!-- /generated:refusal-declared -->",
-            ),
-            (
-                ">35<!-- /generated:refusal-demonstrated -->",
-                ">39<!-- /generated:refusal-demonstrated -->",
-            ),
-            (
-                ">4<!-- /generated:refusal-not-reachable -->",
-                ">0<!-- /generated:refusal-not-reachable -->",
-            ),
-            (
-                self.packager.published_envelope_version() + "</span>",
-                "deedseal-run-passport/9.9</span>",
-            ),
-        )
-        for original, replacement in replacements:
-            with self.subTest(original=original):
-                tampered = landing.replace(original, replacement)
-                self.assertNotEqual(tampered, landing)
-                self.assertNotEqual(
-                    self.packager.landing_with_generated_regions(tampered), tampered
-                )
-
-    def test_a_missing_region_marker_is_an_error_not_a_silent_skip(self) -> None:
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        for name in (
-            "verified-runs",
-            "envelope-commitment",
-            "refusal-declared",
-            "refusal-demonstrated",
-            "refusal-not-reachable",
-        ):
-            for marker in (
-                f"<!-- /generated:{name} -->",
-                f"<!-- generated:{name} -->",
-            ):
-                with self.subTest(marker=marker):
-                    broken = landing.replace(marker, "")
-                    with self.assertRaises(self.packager.PublicationError):
-                        self.packager.landing_with_generated_regions(broken)
-
-    def test_landing_makes_no_external_request_and_carries_no_script(self) -> None:
-        landing = (gate.ROOT / "index.html").read_text(encoding="utf-8")
-        self.assertEqual(landing.lower().count("<script"), 0)
-        hosts = {
-            match.split("/")[2]
-            for match in re.findall(r"https?://[^\s\"')]+", landing)
+    def test_proof_indexes_remain_active_public_record_inputs(self) -> None:
+        proof = "docs/proof/2026-08-12-neural-memory.md"
+        public_paths = {
+            path.relative_to(gate.ROOT).as_posix()
+            for path in gate.all_public_files()
         }
-        self.assertEqual(hosts, {"deedseal.com", "github.com"})
+        self.assertIn(proof, gate.REQUIRED_PUBLIC_FILES)
+        self.assertIn(proof, public_paths)
+        self.assertIn(gate.ROOT / proof, gate.proof_index_paths())
+
+    def test_verifier_and_examples_remain_active_public_record_inputs(self) -> None:
+        active = {
+            "tools/verify_run_passport.py",
+            "examples/passport.example.json",
+            "examples/verified/run-passport.json",
+            "examples/verified/run-passport.tampered.json",
+            "examples/verified/conformance/manifest.json",
+        }
+        public_paths = {
+            path.relative_to(gate.ROOT).as_posix()
+            for path in gate.all_public_files()
+        }
+        self.assertLessEqual(active, gate.REQUIRED_PUBLIC_FILES)
+        self.assertLessEqual(active, public_paths)
+
+    def test_publication_records_remain_active_public_record_inputs(self) -> None:
+        public_paths = {
+            path.relative_to(gate.ROOT).as_posix()
+            for path in gate.all_public_files()
+        }
+        records = {
+            entry["artifact"]["path"]
+            for entry in self.ledger["evidence"]
+        }
+        self.assertIn("evidence/ledger-v1.json", gate.REQUIRED_PUBLIC_FILES)
+        self.assertIn("evidence/ledger-v1.json", public_paths)
+        self.assertGreater(len(records), 0)
+        self.assertLessEqual(records, public_paths)
 
     def test_twin_derivation_is_deterministic_and_one_byte(self) -> None:
         original = (
