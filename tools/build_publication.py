@@ -53,7 +53,6 @@ RECORDS_DIR = REPO_ROOT / "evidence" / "records"
 PUBLISHED_ROOT = REPO_ROOT / "examples" / "verified"
 README_PATH = REPO_ROOT / "README.md"
 RUNS_INDEX = PUBLISHED_ROOT / "runs.md"
-LANDING_PATH = REPO_ROOT / "index.html"
 PASSPORT_SPEC_PATH = REPO_ROOT / "docs" / "passport-spec-v1.md"
 STATUS_PATH = REPO_ROOT / "docs" / "status.md"
 CONFORMANCE_ROOT = PUBLISHED_ROOT / "conformance"
@@ -683,9 +682,6 @@ def derived_plan() -> dict[Path, str]:
             README_PATH.read_text(encoding="utf-8"), ledger
         ),
         RUNS_INDEX: runs_index_text(),
-        LANDING_PATH: landing_with_generated_regions(
-            LANDING_PATH.read_text(encoding="utf-8")
-        ),
         PASSPORT_SPEC_PATH: passport_spec_with_refusal_reasons(
             PASSPORT_SPEC_PATH.read_text(encoding="utf-8")
         ),
