@@ -985,5 +985,138 @@ class ConformanceSuiteTests(unittest.TestCase):
         )
 
 
+class BrandIdentityGateTests(unittest.TestCase):
+    """The identity packet is part of the public record, so this suite runs its check.
+
+    The brand checker's own hostile corpus lives in `tools/test_brand_identity.py`.
+    What is proven here is narrower and belongs to the public gate: the committed
+    packet passes, the check is reachable from this suite the way continuous
+    integration reaches it, and it still refuses when a reviewer breaks the
+    packet under it.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        import check_brand_identity as brand
+
+        cls.brand = brand
+
+    @contextlib.contextmanager
+    def _packet(self):
+        """A throwaway copy of the identity packet."""
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "packet"
+            (root / "assets").mkdir(parents=True)
+            shutil.copytree(ROOT / "assets/svg", root / "assets/svg")
+            for name in (
+                "assets/brand-manifest.v1.json",
+                "assets/BRAND-IDENTITY-v1.0.md",
+                "assets/README.md",
+            ):
+                shutil.copyfile(ROOT / name, root / name)
+            yield root
+
+    def _manifest(self, root: Path) -> dict:
+        return json.loads(
+            (root / "assets/brand-manifest.v1.json").read_text(encoding="utf-8")
+        )
+
+    def _write_manifest(self, root: Path, manifest: dict) -> None:
+        (root / "assets/brand-manifest.v1.json").write_text(
+            json.dumps(manifest, indent=2, ensure_ascii=True) + "\n", encoding="utf-8"
+        )
+
+    def _refuse(self, root: Path, fragment: str) -> None:
+        with self.assertRaises(self.brand.BrandIdentityError) as caught:
+            self.brand.check_identity(root)
+        self.assertIn(fragment, str(caught.exception))
+
+    def test_the_committed_identity_passes_its_own_check(self) -> None:
+        identity_version, count = self.brand.check_identity(ROOT)
+        self.assertEqual(identity_version, "1.0")
+        self.assertEqual(count, 8)
+
+    def test_the_checker_exits_zero_on_the_committed_tree(self) -> None:
+        stdout = io.StringIO()
+        with contextlib.redirect_stdout(stdout):
+            code = self.brand.main([])
+        self.assertEqual(code, 0)
+        self.assertIn("BRAND_IDENTITY_CHECK: PASS", stdout.getvalue())
+
+    def test_the_checker_exits_one_and_names_its_refusal(self) -> None:
+        with self._packet() as root:
+            (root / "assets/svg/deedseal-icon.svg").unlink()
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                code = self.brand.main(["--root", str(root)])
+            self.assertEqual(code, 1)
+            self.assertIn("BRAND_IDENTITY_CHECK: FAIL", stderr.getvalue())
+
+    def test_a_stale_asset_digest_is_refused(self) -> None:
+        with self._packet() as root:
+            manifest = self._manifest(root)
+            for entry in manifest["assets"]:
+                if entry["path"] == "assets/svg/deedseal-mark.svg":
+                    entry["sha256"] = "0" * 64
+            self._write_manifest(root, manifest)
+            self._refuse(root, "digest is stale")
+
+    def test_a_scripted_asset_is_refused(self) -> None:
+        with self._packet() as root:
+            path = root / "assets/svg/deedseal-mark.svg"
+            text = path.read_text(encoding="utf-8").replace(
+                "</svg>", "<script>1</script></svg>"
+            )
+            path.write_text(text, encoding="utf-8")
+            manifest = self._manifest(root)
+            for entry in manifest["assets"]:
+                if entry["path"] == "assets/svg/deedseal-mark.svg":
+                    entry["sha256"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            self._write_manifest(root, manifest)
+            self._refuse(root, "forbidden <script> element")
+
+    def test_a_runtime_verdict_colour_in_a_brand_asset_is_refused(self) -> None:
+        with self._packet() as root:
+            path = root / "assets/svg/deedseal-mark.svg"
+            manifest = self._manifest(root)
+            green = manifest["palette"]["runtime_states"]["roles"]["state-pass"]["value"]
+            text = path.read_text(encoding="utf-8").replace('fill="#141414"', f'fill="{green}"')
+            path.write_text(text, encoding="utf-8")
+            for entry in manifest["assets"]:
+                if entry["path"] == "assets/svg/deedseal-mark.svg":
+                    entry["sha256"] = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            self._write_manifest(root, manifest)
+            self._refuse(root, "runtime verdict colour into a brand asset")
+
+    def test_a_wrong_product_name_is_refused(self) -> None:
+        with self._packet() as root:
+            manifest = self._manifest(root)
+            manifest["product_name"] = "DeedSeal"
+            self._write_manifest(root, manifest)
+            self._refuse(root, "must be exactly 'Deedseal'")
+
+    def test_a_retired_generator_may_not_come_back(self) -> None:
+        self.assertFalse((ROOT / "assets/src/build_card.py").exists())
+        self.assertFalse((ROOT / "assets/src/build_mark.py").exists())
+        with self._packet() as root:
+            (root / "assets/src").mkdir(parents=True)
+            (root / "assets/src/build_card.py").write_text("# retired\n", encoding="utf-8")
+            self._refuse(root, "retired generator is still present")
+
+    def test_every_declared_asset_is_inside_the_public_tree(self) -> None:
+        manifest = self._manifest(ROOT)
+        public = {path.relative_to(gate.ROOT).as_posix() for path in gate.all_public_files()}
+        for entry in manifest["assets"]:
+            self.assertIn(entry["path"], public)
+            self.assertTrue((ROOT / entry["path"]).is_file())
+
+    def test_the_identity_packet_carries_no_binary_file(self) -> None:
+        for path in sorted((ROOT / "assets").rglob("*")):
+            if "__pycache__" in path.parts or not path.is_file():
+                continue
+            self.assertIsInstance(path.read_text(encoding="utf-8"), str)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
