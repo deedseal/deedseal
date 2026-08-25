@@ -8,14 +8,15 @@ This section is preparation for a later GitHub prerelease. No `v0.2.0` tag or Re
 
 ### Product presentation
 
-- Lead the public front door with Deedseal's adopted owner-governed AI business-platform category and owner/operator promise.
+- Lead the public front door with Deedseal's owner-governed AI business-platform category and owner/operator promise.
 - Separate the wider platform direction from current, published capability and state the prerelease / design-partner availability boundary.
 - Link visibly to [deedseal.com](https://deedseal.com).
 
 ### Brand
 
-- Carry the canonical Deedseal Brand Identity v1.0: one generated construction, one closed manifest and eight digest-bound SVG assets.
-- Preserve the identity's measured stepped corridor and light-surface-only icon rule without altering or redrawing the accepted assets.
+- Carry Deedseal Brand Identity v1.0 as a mechanically qualified review candidate and engineering design study: one generated construction, one closed manifest and eight digest-bound SVG assets.
+- Preserve the study's measured stepped corridor and light-surface-only icon rule without altering or redrawing its assets; the packet authorizes no downstream placement.
+- Keep the existing Deedseal wordmark and one green point on the public release surface pending a later Owner brand decision; no permanent asset specification for that lockup is published here.
 
 ### Evidence
 

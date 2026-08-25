@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
 import validate_public_record as gate
+import check_brand_identity as brand
 
 
 class PublicRecordGateTests(unittest.TestCase):
@@ -1246,6 +1247,89 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase.lower(), front.lower())
+
+    def test_public_identity_prose_keeps_the_review_candidate_boundary(self) -> None:
+        scanned = []
+        for path in gate.all_public_files():
+            relative = path.relative_to(ROOT)
+            if relative.suffix.lower() != ".md" and relative.as_posix() != brand.MANIFEST_PATH:
+                continue
+            text = path.read_text(encoding="utf-8")
+            scanned.append(relative.as_posix())
+            self.assertIsNone(
+                brand.identity_alignment_violation(text, relative.as_posix()),
+                relative.as_posix(),
+            )
+        self.assertIn("README.md", scanned)
+        self.assertIn("docs/releases/v0.2.0-prerelease-notes.md", scanned)
+        self.assertIn(brand.MANIFEST_PATH, scanned)
+
+    def test_review_candidate_assets_cannot_be_promoted_by_public_prose(self) -> None:
+        hostile = {
+            "Owner-selected": "Brand Identity v1.0 is the Owner-selected identity.",
+            "adopted": "Brand Identity v1.0 is the adopted identity.",
+            "deployed": "Brand Identity v1.0 is the deployed identity.",
+            "canonical": "Brand Identity v1.0 is the canonical identity.",
+            "current": "Brand Identity v1.0 is the current public identity.",
+        }
+        for name, sentence in hostile.items():
+            with self.subTest(claim=name):
+                self.assertIsNotNone(brand.identity_alignment_violation(sentence))
+
+    def test_downstream_placement_cannot_be_authorized_by_public_prose(self) -> None:
+        self.assertEqual(
+            brand.identity_alignment_violation(
+                "These assets authorize downstream placement."
+            ),
+            "an authorization of downstream placement",
+        )
+
+    def test_live_wordmark_and_green_point_cannot_become_a_permanent_canon(self) -> None:
+        self.assertEqual(
+            brand.identity_alignment_violation(
+                "The Deedseal wordmark and one green point form the permanent identity."
+            ),
+            "the live wordmark and green point settled as a specified permanent canon",
+        )
+
+    def test_faq_matches_the_frozen_envelope_and_release_history(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        self.assertIsNone(brand.faq_alignment_violation(faq))
+
+    def test_faq_calling_the_1_0_envelope_unfrozen_is_refused_by_name(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        hostile = faq.replace(
+            "envelope is frozen",
+            "envelope is not frozen",
+            1,
+        )
+        self.assertNotEqual(hostile, faq)
+        self.assertEqual(
+            brand.faq_alignment_violation(hostile),
+            "the 1.0 passport envelope called unfrozen",
+        )
+
+    def test_faq_denying_the_historical_public_release_is_refused_by_name(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        hostile = faq.replace(
+            "A historical `v0.1.0` tag and Release exist and remain public",
+            "There is no public release",
+            1,
+        )
+        self.assertNotEqual(hostile, faq)
+        self.assertEqual(
+            brand.faq_alignment_violation(hostile),
+            "no public release, while v0.1.0 is preserved as historical",
+        )
+
+    def test_faq_losing_a_required_release_coordinate_is_refused_by_name(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        hostile = faq.replace("`v0.1.0`", "the first historical version", 1)
+        self.assertNotEqual(hostile, faq)
+        self.assertEqual(
+            brand.faq_alignment_violation(hostile),
+            "missing FAQ alignment coordinate 'v0.1.0'",
+        )
 
     def test_release_policy_carries_every_immutable_tag_boundary(self) -> None:
         policy = self.policy

@@ -176,7 +176,9 @@ Questions are welcome as GitHub issues. Pull requests are accepted for correctio
 
 ## Brand
 
-The name, the mark, the wordmark, the lockup, the type system and the colour roles are defined in [assets/BRAND-IDENTITY-v1.0.md](assets/BRAND-IDENTITY-v1.0.md). Every asset is generated from one committed construction and bound by digest in [assets/brand-manifest.v1.json](assets/brand-manifest.v1.json); the sources are text with integer coordinates and no font, script or external reference, so each one renders from its own bytes. `python3 tools/check_brand_identity.py` re-proves the files against the manifest offline. Where the assets live and how to regenerate them: [assets/README.md](assets/README.md).
+[Brand Identity v1.0](assets/BRAND-IDENTITY-v1.0.md) is a mechanically qualified review candidate and engineering design study, not an Owner-selected, adopted, deployed or current public identity. Its generated assets remain bound by digest in [assets/brand-manifest.v1.json](assets/brand-manifest.v1.json), and `python3 tools/check_brand_identity.py` re-proves those files against the manifest offline. The packet authorizes no downstream placement.
+
+The public release surface continues to use the existing Deedseal wordmark and one green point, pending a later Owner brand decision. This repository does not specify, version or publish an asset for that lockup.
 
 ## License
 

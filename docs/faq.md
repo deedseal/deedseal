@@ -22,7 +22,7 @@ Honest answer: they solve neighboring problems well. Sigstore signs and transpar
 
 **Can I use Deedseal today?**
 
-No. Deedseal is in active development, the passport format is not frozen, and there is no public release. The honest state of each workstream is in [status.md](status.md).
+No. Deedseal remains at the prerelease / design-partner stage and is not generally available. The `deedseal-run-passport/1.0` envelope is frozen under the compatibility commitment recorded in [status.md](status.md). A historical `v0.1.0` tag and Release exist and remain public; no `v0.2.0` tag or Release exists yet.
 
 **What does a passing verification actually prove?**
 
