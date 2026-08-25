@@ -35,6 +35,7 @@ WORDMARK = "assets/svg/deedseal-wordmark.svg"
 LOCKUP = "assets/svg/deedseal-lockup.svg"
 ICON = "assets/svg/deedseal-icon.svg"
 BOARD = "assets/svg/deedseal-identity-board.svg"
+BUILDER = "assets/src/build_brand_assets.py"
 
 
 @contextmanager
@@ -42,9 +43,9 @@ def sandbox():
     """A throwaway copy of the packet, so no test can touch the real tree."""
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary) / "packet"
-        (root / "assets").mkdir(parents=True)
+        (root / "assets/src").mkdir(parents=True)
         shutil.copytree(ROOT / "assets/svg", root / "assets/svg")
-        for name in (MANIFEST, DOCUMENT, ASSETS_README):
+        for name in (MANIFEST, DOCUMENT, ASSETS_README, BUILDER):
             shutil.copyfile(ROOT / name, root / name)
         yield root
 
@@ -564,11 +565,317 @@ class BrandIdentityCheckerTests(unittest.TestCase):
             write_manifest(root, manifest)
             self.refuse(root, "16 px favicon")
 
+    # -- the identity's one-sentence argument -------------------------------
+    #
+    # The argument is the deliverable a reader selects on, and it names a
+    # measurable fact. An earlier candidate said the two forms met along a seam
+    # "of constant width" while the drawn corridor is six units at the feet and
+    # eleven across the reaches, and nothing in the packet could catch it. These
+    # are the cases that must stay caught.
+
+    def test_the_old_constant_width_statement_is_refused(self) -> None:
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["visual_idea"]["statement"] = (
+                "Two congruent forms, each the other turned half a turn, meet along "
+                "one stepped seam of constant width and never touch, because Deedseal "
+                "binds one bounded authority before an action to one matching record "
+                "after it and keeps the two apart so the correspondence can be checked."
+            )
+            write_manifest(root, manifest)
+            self.refuse(root, "claims a corridor of constant width")
+
+    def test_a_padlock_and_rings_statement_is_refused(self) -> None:
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["visual_idea"]["statement"] = (
+                "Three concentric rings in a padlock, because Deedseal is a padlock."
+            )
+            write_manifest(root, manifest)
+            self.refuse(root, "names the rejected shorthand")
+
+    def test_a_shield_and_checkmark_statement_is_refused(self) -> None:
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["visual_idea"]["statement"] = (
+                "A shield carrying a checkmark, because Deedseal protects your work."
+            )
+            write_manifest(root, manifest)
+            self.refuse(root, "names the rejected shorthand")
+
+    def test_an_unreviewed_edit_to_the_statement_is_refused(self) -> None:
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["visual_idea"]["statement"] = (
+                "Two congruent forms that never touch, because Deedseal binds an "
+                "authority recorded before an action to the record produced after it."
+            )
+            write_manifest(root, manifest)
+            self.refuse(root, "is not the canonical statement")
+
+    def test_a_statement_claiming_a_uniform_corridor_is_refused(self) -> None:
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["visual_idea"]["statement"] = brand.CANONICAL_STATEMENT.replace(
+                "a six-unit closest approach", "a uniform width of six units"
+            )
+            write_manifest(root, manifest)
+            self.refuse(root, "claims a uniform corridor")
+
+    def test_the_document_losing_the_canonical_statement_is_refused(self) -> None:
+        with sandbox() as root:
+            text = (root / DOCUMENT).read_text(encoding="utf-8")
+            changed = text.replace("face across a\n> stepped corridor", "sit beside a\n> stepped corridor", 1)
+            self.assertNotEqual(changed, text)
+            (root / DOCUMENT).write_text(changed, encoding="utf-8")
+            self.refuse(root, "does not carry the canonical statement verbatim")
+
+    def test_the_builder_reasserting_a_constant_width_is_refused(self) -> None:
+        with sandbox() as root:
+            text = (root / BUILDER).read_text(encoding="utf-8")
+            changed = text.replace(
+                "The corridor is a staircase, so it has no single width.",
+                "The corridor is of constant width.",
+                1,
+            )
+            self.assertNotEqual(changed, text)
+            (root / BUILDER).write_text(changed, encoding="utf-8")
+            self.refuse(root, "claims a corridor of constant width")
+
+    def test_the_builder_losing_the_canonical_statement_is_refused(self) -> None:
+        with sandbox() as root:
+            text = (root / BUILDER).read_text(encoding="utf-8")
+            changed = text.replace("face across a stepped", "sit beside a stepped", 1)
+            self.assertNotEqual(changed, text)
+            (root / BUILDER).write_text(changed, encoding="utf-8")
+            self.refuse(root, "does not carry the canonical statement verbatim")
+
+    def test_the_committed_packet_carries_the_canonical_statement_everywhere(self) -> None:
+        manifest = read_manifest(ROOT)
+        self.assertEqual(manifest["visual_idea"]["statement"], brand.CANONICAL_STATEMENT)
+        for relative in (DOCUMENT, BUILDER):
+            text = (ROOT / relative).read_text(encoding="utf-8")
+            self.assertIn(brand.CANONICAL_STATEMENT, brand.unwrapped(text))
+
+    # -- the manifest's geometry, against the drawing ------------------------
+    #
+    # `check_geometry` re-solves the manifest's own table. That proves the table
+    # is consistent, not that it describes this mark. An earlier candidate could
+    # move a token, recompute everything that depends on it, leave every SVG
+    # untouched, and pass. These mutations are internally consistent by
+    # construction; each must still be refused against the art.
+
+    def _resolved(self, manifest: dict, **overrides) -> dict:
+        """A geometry table with a token moved and every dependent value re-solved."""
+        geometry = manifest["geometry"]
+        geometry.update(overrides)
+        field = geometry["field"]
+        bar = geometry["bar"]
+        seam = geometry["seam"]
+        margin = geometry["margin"]
+        geometry["top_bar"] = field - 2 * margin - bar - seam
+        geometry["stem_height"] = (field + bar) // 2 - margin
+        geometry["foot_width"] = (field - seam) // 2 - margin
+        geometry["foot_top"] = (field - bar) // 2
+        geometry["stroke"] = bar
+        return manifest
+
+    def test_a_consistent_manifest_only_bar_mutation_is_refused_against_the_art(self) -> None:
+        with sandbox() as root:
+            manifest = self._resolved(read_manifest(root), bar=12)
+            write_manifest(root, manifest)
+            # the table itself is beyond reproach; only the drawing disagrees
+            brand.check_geometry(manifest["geometry"])
+            self.refuse(root, "the drawn pen is 10 units wide, but geometry.bar declares 12")
+
+    def test_a_consistent_manifest_only_margin_mutation_is_refused_against_the_art(self) -> None:
+        with sandbox() as root:
+            manifest = self._resolved(read_manifest(root), margin=7)
+            write_manifest(root, manifest)
+            brand.check_geometry(manifest["geometry"])
+            self.refuse(root, "the drawn ink is inset [6] from the field, but geometry.margin declares 7")
+
+    def test_a_consistent_manifest_only_field_mutation_is_refused_against_the_art(self) -> None:
+        # The field reaches the art through the half turn: turning form A about
+        # a centre the drawing does not have cannot land on form B.
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["geometry"]["half_turn_centre"] = [36, 36]
+            manifest = self._resolved(manifest, field=72)
+            manifest["geometry"]["cap_height"] = 72
+            write_manifest(root, manifest)
+            brand.check_geometry(manifest["geometry"])
+            self.refuse(root, "not the first turned half a turn")
+
+    def test_a_seam_token_the_drawing_does_not_hold_is_refused(self) -> None:
+        with sandbox() as root:
+            manifest = read_manifest(root)
+            manifest["geometry"]["minimum_separation"]["mark"] = 5
+            manifest = self._resolved(manifest, seam=5)
+            write_manifest(root, manifest)
+            brand.check_geometry(manifest["geometry"])
+            self.refuse(root, "closest approach")
+
+    def test_a_band_the_mark_stopped_drawing_is_refused(self) -> None:
+        # The mutation is on the other side: the drawing moves and the manifest
+        # does not. The top bar is shortened by two units in both forms, so the
+        # half turn, the pen, the inset and the six-unit approach all survive --
+        # and `geometry.top_bar` is now a number nothing draws.
+        with sandbox() as root:
+            write_pair(root, "deedseal-mark", "M6 6H42V16H6Z", "M6 6H40V16H6Z")
+            write_pair(root, "deedseal-mark", "M22 48H58V58H22Z", "M24 48H58V58H24Z")
+            self.refuse(root, "geometry.top_bar: declares 36, but the committed mark draws 34")
+
+    def test_a_second_pen_width_in_the_mark_is_refused(self) -> None:
+        # Thickened on both sides of the half turn, so the symmetry survives and
+        # the figure simply stops being one pen.
+        with sandbox() as root:
+            write_pair(root, "deedseal-mark", "M6 6H42V16H6Z", "M6 6H42V18H6Z")
+            write_pair(root, "deedseal-mark", "M22 48H58V58H22Z", "M22 46H58V58H22Z")
+            self.refuse(root, "more than one pen width")
+
+    def test_the_committed_geometry_is_what_the_mark_draws(self) -> None:
+        manifest = read_manifest(ROOT)
+        geometry = manifest["geometry"]
+        mark = brand.Asset(MARK, (ROOT / MARK).read_text(encoding="utf-8"))
+        measured = brand.measure_forms(mark, geometry["half_turn_centre"])
+        self.assertEqual(measured["bar"], geometry["bar"])
+        self.assertEqual(measured["closest_approach"], geometry["seam"])
+        self.assertEqual(measured["closest_approach"], 6)
+        self.assertEqual(measured["left"], geometry["margin"])
+        bands = brand.measure_mark_bands(mark)
+        for name, drawn in bands.items():
+            self.assertEqual(geometry[name], drawn, name)
+
+    # -- the identity board, read as the claim it is -------------------------
+    #
+    # The manifest publishes no inverse icon, and an earlier candidate's board
+    # painted the icon in inverse ink on a dark panel anyway. Recomputing the
+    # board's digest hid it, because nothing read what the board drew.
+
+    def _board_with(self, root: Path, before: str, insertion: str) -> None:
+        text = (root / BOARD).read_text(encoding="utf-8")
+        self.assertIn(before, text)
+        write_asset(root, BOARD, text.replace(before, before + insertion, 1))
+
+    def _icon_figure(self, root: Path, ink: str, x: int, y: int) -> str:
+        geometry = re.search(r'd="([^"]+)"', (root / ICON).read_text(encoding="utf-8")).group(1)
+        return (
+            f'<g transform="translate({x} {y}) scale(1)">'
+            f'<path fill="{ink}" fill-rule="nonzero" d="{geometry}"/></g>'
+        )
+
+    def test_a_reintroduced_inverse_icon_board_panel_is_refused(self) -> None:
+        with sandbox() as root:
+            text = (root / BOARD).read_text(encoding="utf-8")
+            panel = (
+                '<g data-panel="icon-sizes-dark">'
+                '<path fill="#141414" d="M800 800H1600V1080H800Z"/>'
+                + "".join(
+                    self._icon_figure(root, "#FAFAF7", 900 + index * 90, 860)
+                    for index in range(3)
+                )
+                + "</g>"
+            )
+            # the digest is recomputed, exactly as a careless repair would
+            write_asset(root, BOARD, text.replace("</svg>", panel + "</svg>", 1))
+            self.refuse(root, "not the reviewed board")
+
+    def test_an_inverse_icon_smuggled_into_an_existing_dark_panel_is_refused(self) -> None:
+        with sandbox() as root:
+            self._board_with(
+                root,
+                '<g data-panel="lockup-dark"><path fill="#141414" d="M0 1360H1600V1640H0Z"/>',
+                self._icon_figure(root, "#FAFAF7", 1200, 1420),
+            )
+            self.refuse(root, "paints assets/svg/deedseal-icon.svg in the inverse ink")
+
+    def test_the_icon_on_a_dark_panel_in_its_own_ink_is_refused(self) -> None:
+        with sandbox() as root:
+            self._board_with(
+                root,
+                '<g data-panel="mark-sizes-dark"><path fill="#141414" d="M0 800H1600V1080H0Z"/>',
+                self._icon_figure(root, "#141414", 1200, 860),
+            )
+            self.refuse(root, "on the dark surface")
+
+    def test_the_icon_repainted_in_the_inverse_ink_is_refused(self) -> None:
+        with sandbox() as root:
+            geometry = re.search(
+                r'd="([^"]+)"', (root / ICON).read_text(encoding="utf-8")
+            ).group(1)
+            text = (root / BOARD).read_text(encoding="utf-8")
+            changed = text.replace(
+                f'<path fill="#141414" fill-rule="nonzero" d="{geometry}"/>',
+                f'<path fill="#FAFAF7" fill-rule="nonzero" d="{geometry}"/>',
+                1,
+            )
+            self.assertNotEqual(changed, text)
+            write_asset(root, BOARD, changed)
+            self.refuse(root, "in the inverse ink")
+
+    def test_a_figure_drawn_before_a_panel_lays_its_surface_is_refused(self) -> None:
+        with sandbox() as root:
+            self._board_with(
+                root,
+                '<g data-panel="lockup-dark">',
+                self._icon_figure(root, "#FAFAF7", 1200, 1420),
+            )
+            self.refuse(root, "does not lay its surface down first")
+
+    def test_a_dropped_board_panel_is_refused(self) -> None:
+        with sandbox() as root:
+            text = (root / BOARD).read_text(encoding="utf-8")
+            start = text.index('<g data-panel="palette">')
+            write_asset(root, BOARD, text[:start] + text[text.index("</svg>"):])
+            self.refuse(root, "not the reviewed board")
+
+    def test_a_reordered_board_is_refused(self) -> None:
+        with sandbox() as root:
+            text = (root / BOARD).read_text(encoding="utf-8")
+            swapped = {
+                "mark-sizes-light": "icon-sizes-light",
+                "icon-sizes-light": "mark-sizes-light",
+            }
+            changed = re.sub(
+                r'data-panel="(mark-sizes-light|icon-sizes-light)"',
+                lambda found: f'data-panel="{swapped[found.group(1)]}"',
+                text,
+            )
+            self.assertNotEqual(changed, text)
+            write_asset(root, BOARD, changed)
+            self.refuse(root, "not the reviewed board")
+
+    def test_the_committed_board_demonstrates_no_inverse_icon(self) -> None:
+        board = brand.Asset(BOARD, (ROOT / BOARD).read_text(encoding="utf-8"))
+        manifest = read_manifest(ROOT)
+        signature = brand.figure_signature(
+            brand.Asset(ICON, (ROOT / ICON).read_text(encoding="utf-8")).geometry
+        )
+        inverse_surface = manifest["palette"]["roles"]["surface-inverse"]["value"]
+        inverse_ink = manifest["palette"]["roles"]["ink-inverse"]["value"]
+        names = []
+        for name, surface, drawn in brand.board_panels(board):
+            names.append(name)
+            for fill, data in drawn:
+                if brand.figure_signature(data) == signature:
+                    self.assertNotEqual(surface, inverse_surface, name)
+                    self.assertNotEqual(fill, inverse_ink, name)
+        self.assertEqual(tuple(names), brand.REQUIRED_BOARD_PANELS)
+        self.assertNotIn("icon-sizes-dark", names)
+
+    def test_no_inverse_icon_asset_was_added(self) -> None:
+        self.assertFalse((ROOT / "assets/svg/deedseal-icon-inverse.svg").exists())
+        present = sorted(
+            path.name for path in (ROOT / "assets/svg").glob("*.svg")
+        )
+        self.assertEqual(len(present), 8)
+        self.assertNotIn("deedseal-icon-inverse.svg", present)
+
     # -- the non-donor and legal boundaries --------------------------------
 
     def test_a_restored_retired_generator_is_refused(self) -> None:
         with sandbox() as root:
-            (root / "assets/src").mkdir(parents=True)
             (root / "assets/src/build_mark.py").write_text("# retired\n", encoding="utf-8")
             self.refuse(root, "retired generator is still present")
 

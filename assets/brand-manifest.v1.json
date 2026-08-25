@@ -11,7 +11,7 @@
     "non_donor_statement": "No property of this identity is inherited from any coordinate listed in the legacy exclusions register, nor from the retired assets this packet removes."
   },
   "visual_idea": {
-    "statement": "Two congruent forms, each the other turned half a turn, meet along one stepped seam of constant width and never touch, because Deedseal binds one bounded authority before an action to one matching record after it and keeps the two apart so the correspondence can be checked.",
+    "statement": "Two congruent forms, each the other turned half a turn, face across a stepped corridor with a six-unit closest approach and never touch — because Deedseal binds bounded authority recorded before an action to a matching record after it, while keeping authority and evidence distinct so the correspondence can be checked.",
     "construction": "One 64-unit square field. Form A is a bar across the top, a stem down the left and a foot back to the right. Form B is form A rotated 180 degrees about the centre of the field. Every dimension is forced by the field, the bar and the seam.",
     "rejected_shorthand": [
       "ring",
@@ -169,7 +169,7 @@
     },
     {
       "path": "assets/svg/deedseal-identity-board.svg",
-      "sha256": "0f4d14c9023cd240c02bd26abda59740946cd009ebdf5e59de534fdf8eb33b90",
+      "sha256": "388e9905fa43449379a6a059b39328e67c8e6c1ecea74cc1771412042c072bc8",
       "asset": "identity-board",
       "geometry_group": "board",
       "view_box": [

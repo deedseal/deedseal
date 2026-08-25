@@ -21,18 +21,25 @@ The checker refuses any other spelling in this packet.
 
 ## The idea
 
-> Two congruent forms, each the other turned half a turn, meet along one
-> stepped seam of constant width and never touch.
-
-Because Deedseal binds one bounded authority recorded before an action to one
-matching record produced after it, and keeps the two apart so that the
-correspondence between them can be checked rather than assumed.
+> Two congruent forms, each the other turned half a turn, face across a
+> stepped corridor with a six-unit closest approach and never touch — because
+> Deedseal binds bounded authority recorded before an action to a matching
+> record after it, while keeping authority and evidence distinct so the
+> correspondence can be checked.
 
 That is the whole argument, and it is the reason for every decision below.
 Turning one form onto the other is what verification is: not a resemblance, an
 equality. Holding them apart is what independence is: a passport that had to
-touch the run to mean anything would prove nothing about the run. The seam is
-the boundary the gate holds while work happens.
+touch the run to mean anything would prove nothing about the run. The corridor
+is the boundary the gate holds while work happens.
+
+The corridor is a staircase, so it has no single width, and this document
+claims none. Measured from the committed bytes, the two forms come closest
+where their feet face each other, at six units across `x 29 → 35` over
+`y 27–37`; across the two horizontal reaches the same corridor opens to eleven
+units. Six is the closest approach, it is the `seam` token, and it is the only
+separation figure this identity asserts. The checker measures it from the art
+rather than taking it from this page.
 
 ### What this identity refuses
 
@@ -84,8 +91,8 @@ forced value and refuses a manifest that declares any of them by hand.
 
 ## The icon
 
-At 16 px the mark's foot and its two 6-unit seams fall below one and a half
-device pixels and grey out. The icon exists for exactly that reason, and it is
+At 16 px the mark's foot and the six-unit closest approach beside it fall below
+one and a half device pixels and grey out. The icon exists for exactly that reason, and it is
 the only simplification this identity authorises.
 
 [`assets/svg/deedseal-icon.svg`](svg/deedseal-icon.svg) is the mark with the
@@ -311,16 +318,25 @@ fixed renderer version; byte equality across renderer versions is not claimed.
 ## The identity board
 
 [`assets/svg/deedseal-identity-board.svg`](svg/deedseal-identity-board.svg) is
-one specimen sheet, 1600 by 2400, carrying every asset at every declared size
-on both surfaces, the clearspace construction drawn rather than asserted, and
-the palette.
+one specimen sheet, 1600 by 2400, carrying every asset at every declared size,
+the clearspace construction drawn rather than asserted, and the palette.
+
+The board demonstrates the mark, the wordmark and the lockup on both surfaces.
+It demonstrates the icon only on its supported light surface, because that is
+the only surface this identity gives the icon: there is no inverse icon here,
+and a specimen sheet may not show an asset the manifest does not publish. The
+dark size row therefore carries the mark alone, centred across the full width.
+The checker enforces that: a board panel that paints a single-ink asset in the
+inverse ink, or onto the dark surface, is refused even if its digest is
+recomputed.
 
 It sets no type it cannot draw. The size labels are constructed numerals from
 the same pen as the wordmark, which is why the board carries the same guarantee
 as the assets it displays. Its panels are named in the file itself, as
-`data-panel` attributes: `mark-light`, `mark-dark`, `mark-sizes-light`,
-`icon-sizes-light`, `mark-sizes-dark`, `icon-sizes-dark`, `lockup-light`,
-`lockup-dark`, `wordmark-light`, `clearspace` and `palette`.
+`data-panel` attributes, and the checker holds the board to exactly this list
+in exactly this order: `mark-light`, `mark-dark`, `mark-sizes-light`,
+`icon-sizes-light`, `mark-sizes-dark`, `lockup-light`, `lockup-dark`,
+`wordmark-light`, `clearspace` and `palette`.
 
 ## The manifest and the checks
 
@@ -357,10 +373,33 @@ digest; an unpinned raster renderer or a wrong derivative dimension; a missing
 clearspace or minimum-size rule; and a malformed downstream pin record.
 
 It also checks the identity's own argument: that form B is form A turned half a
-turn, that the two forms never intersect, that their closest approach is the
-declared seam, that every coordinate is an integer, that the wordmark spells
-the product's name by its repeat structure, and that the lockup is its
-components rather than a redrawing of them.
+turn about the declared centre, that the two forms never intersect, that their
+closest approach is the declared seam, that every coordinate is an integer,
+that the wordmark spells the product's name by its repeat structure, and that
+the lockup is its components rather than a redrawing of them.
+
+Three of those bindings exist because an earlier candidate passed without them.
+
+The sentence at the top of this document is held as data inside
+`tools/check_brand_identity.py` and compared with `visual_idea.statement`, with
+this document and with the builder's own documentation. A statement that
+reaches for the shorthand this identity rejects, that claims a separation the
+drawing does not have, or that has simply been edited is refused by name. No
+file in the packet may say the corridor holds one width; six is a closest
+approach, and it is the only separation figure this identity asserts.
+
+The geometry table is measured off the drawing rather than re-solved from
+itself. The field, the pen, the inset on all four sides, the half turn, the
+non-intersection, the six-unit closest approach and the mark's four bands are
+each read from the committed path data and compared with what the manifest
+declares. A manifest that moves `bar` or `margin` and recomputes every
+dependent token consistently is still refused, because the art did not move.
+
+The board is read as the claim it is. Its panels must be exactly the reviewed
+list, in order, each laying its own surface down before it draws; and an asset
+this identity publishes in one ink only -- the icon -- may not be painted in
+the inverse ink or onto the dark surface anywhere on the sheet. Recomputing the
+board's digest does not help, because the check reads what the board draws.
 
 ## Adopting this identity downstream
 

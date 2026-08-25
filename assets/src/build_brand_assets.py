@@ -2,11 +2,18 @@
 # SPDX-License-Identifier: CC-BY-4.0
 """Generate every Deedseal brand asset from one deterministic construction.
 
-The identity is one idea drawn one way. Two congruent forms -- each the other
-turned half a turn -- meet along a single stepped seam of constant width and
-never touch. That is the product: a bounded authority recorded before an action
-and a matching record produced after it, held apart so the correspondence
-between them can be checked rather than assumed.
+The identity is one idea drawn one way:
+
+Two congruent forms, each the other turned half a turn, face across a stepped
+corridor with a six-unit closest approach and never touch — because Deedseal
+binds bounded authority recorded before an action to a matching record after
+it, while keeping authority and evidence distinct so the correspondence can be
+checked.
+
+The corridor is a staircase, so it has no single width. It closes to six units
+where the two feet face each other and opens to eleven across the horizontal
+reaches. Six is the closest the two forms ever come, and six is the number the
+checker holds them to.
 
 Everything downstream of that idea is arithmetic. Every coordinate this file
 emits is an integer on a 64-unit field, so the same source produces the same
@@ -50,7 +57,7 @@ MUTED = "#5C5C57"
 
 FIELD = 64          # the mark's square field
 BAR = 10            # one bar thickness, shared by the mark and the wordmark
-SEAM = 6            # the constant gap between the two forms
+SEAM = 6            # the closest the two forms ever come
 MARGIN = 6          # the mark's built-in inset inside its field
 
 CAP = 64            # wordmark cap height, equal to the mark's field
@@ -447,14 +454,14 @@ def ladder(parts: list[tuple], sizes: list[int], x: int, y: int, ink: str) -> st
     """A size ladder: each specimen on one baseline, its size set beneath it."""
     body = []
     pen = x
-    baseline = y + 60 + max(sizes)
+    baseline = y + LADDER_GAP + max(sizes)
     for size in sizes:
         body.append(placed(parts, pen, baseline - size, size / FIELD, ink))
         glyph, glyph_width = numeral(str(size))
         label_scale = 24 / CAP
         label_x = pen + (size - glyph_width * label_scale) / 2
         body.append(placed(glyph, label_x, baseline + 40, label_scale, ink))
-        pen += size + 60
+        pen += size + LADDER_GAP
     return "".join(body)
 
 
@@ -462,11 +469,26 @@ BOARD_WIDTH = 1600
 BOARD_HEIGHT = 2400
 MARK_LADDER = [64, 32, 24, 16]
 ICON_LADDER = [32, 24, 16]
+LADDER_GAP = 60
+
+
+def ladder_width(sizes: list[int]) -> int:
+    """How wide a size ladder draws, so a panel can centre one."""
+    return sum(sizes) + LADDER_GAP * (len(sizes) - 1)
+
+
+# The dark mark ladder sits in a full-width band, so it is centred in it.
+DARK_LADDER_X = (BOARD_WIDTH - ladder_width(MARK_LADDER)) // 2
 SWATCHES = [("ink", INK), ("surface", SURFACE), ("muted", MUTED)]
 
 
 def identity_board() -> str:
-    """One specimen sheet: every asset, every declared size, both surfaces.
+    """One specimen sheet: every asset at every declared size.
+
+    The mark, the wordmark and the lockup are shown on both surfaces. The icon
+    is shown only on the light surface, because that is the only surface this
+    identity gives it: there is no inverse icon, and a specimen sheet may not
+    demonstrate an asset the manifest does not publish.
 
     The board sets no type it cannot draw, so it carries the same guarantee as
     the assets it displays -- open it anywhere and it renders identically.
@@ -480,10 +502,13 @@ def identity_board() -> str:
               ladder(MARK_PARTS, MARK_LADDER, 100, 520, INK)),
         panel(800, 520, 800, 280, SURFACE, "icon-sizes-light",
               ladder(ICON_PARTS, ICON_LADDER, 900, 520, INK)),
-        panel(0, 800, 800, 280, SURFACE_INVERSE, "mark-sizes-dark",
-              ladder(MARK_PARTS, MARK_LADDER, 100, 800, INK_INVERSE)),
-        panel(800, 800, 800, 280, SURFACE_INVERSE, "icon-sizes-dark",
-              ladder(ICON_PARTS, ICON_LADDER, 900, 800, INK_INVERSE)),
+        # The dark size row carries the mark alone, across the full width.
+        # There is no inverse icon in this identity, so there is no dark icon
+        # ladder to set beside it: drawing one would put on the specimen sheet
+        # an asset the manifest says does not exist. The band is centred so the
+        # absence reads as the rule it is rather than as a missing panel.
+        panel(0, 800, 1600, 280, SURFACE_INVERSE, "mark-sizes-dark",
+              ladder(MARK_PARTS, MARK_LADDER, DARK_LADDER_X, 800, INK_INVERSE)),
         panel(0, 1080, 1600, 280, SURFACE, "lockup-light",
               placed(LOCKUP_PARTS, 276, 1156, 2, INK)),
         panel(0, 1360, 1600, 280, SURFACE_INVERSE, "lockup-dark",

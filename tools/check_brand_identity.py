@@ -29,6 +29,61 @@ ROOT = Path(__file__).resolve().parent.parent
 MANIFEST_PATH = "assets/brand-manifest.v1.json"
 DOCUMENT_PATH = "assets/BRAND-IDENTITY-v1.0.md"
 ASSETS_README = "assets/README.md"
+BUILDER_PATH = "assets/src/build_brand_assets.py"
+BOARD_PATH = "assets/svg/deedseal-identity-board.svg"
+
+# --------------------------------------------------------------------------
+# the sentence this identity is reviewed under
+#
+# The identity's one-sentence argument is the deliverable a reader selects on,
+# and it names a measurable geometric fact. An earlier candidate said the two
+# forms met along a seam "of constant width"; the drawn corridor is six units
+# where the feet face and eleven across the horizontal reaches, so the sentence
+# asserted a property the bytes do not have and nothing could catch it, because
+# the statement was the one manifest field no check read.
+#
+# It is read now. The canonical text lives here as data -- never imported from
+# the builder or the manifest this file is judging -- so that changing the
+# sentence anywhere in the packet, in either direction, is a change that has to
+# come back through review.
+# --------------------------------------------------------------------------
+
+CANONICAL_STATEMENT = (
+    "Two congruent forms, each the other turned half a turn, face across a "
+    "stepped corridor with a six-unit closest approach and never touch \u2014 "
+    "because Deedseal binds bounded authority recorded before an action to a "
+    "matching record after it, while keeping authority and evidence distinct "
+    "so the correspondence can be checked."
+)
+
+# Claims about the corridor that measurement refuses. The corridor is a
+# staircase; it has one closest approach, not one width.
+FALSE_SEPARATION_CLAIMS = (
+    (re.compile(r"constant[\s-]+(?:width|gap|corridor|seam|separation)", re.I),
+     "a corridor of constant width"),
+    (re.compile(r"(?:seam|corridor|gap)\s+of\s+constant\s+width", re.I),
+     "a seam of constant width"),
+    (re.compile(r"uniform[\s-]+(?:width|gap|corridor|seam|separation)", re.I),
+     "a uniform corridor"),
+    (re.compile(r"(?:corridor|seam|gap)\s+is\s+(?:constant|uniform|even)\b", re.I),
+     "a corridor of even width"),
+    (re.compile(r"equidistant", re.I), "an equidistant boundary"),
+)
+
+# The board's panels, in the order a reviewer read them. A board that grows,
+# loses or reorders a panel is a board nobody has looked at yet.
+REQUIRED_BOARD_PANELS = (
+    "mark-light",
+    "mark-dark",
+    "mark-sizes-light",
+    "icon-sizes-light",
+    "mark-sizes-dark",
+    "lockup-light",
+    "lockup-dark",
+    "wordmark-light",
+    "clearspace",
+    "palette",
+)
 
 MANIFEST_VERSION = "deedseal.brand-identity-manifest/v1"
 PIN_VERSION = "deedseal.brand-pin-record/v1"
@@ -389,6 +444,225 @@ def check_half_turn(asset: Asset, field: int, expected_gap: int) -> None:
 
 
 # --------------------------------------------------------------------------
+# the manifest's geometry, measured off the drawing
+#
+# `check_geometry` proves the manifest's numbers agree with one another. That
+# is not the same as proving they describe this drawing: a table can re-solve
+# perfectly and still be the table for some other mark. An earlier candidate
+# could move `bar` from 10 to 12, or `margin` from 6 to 7, recompute every
+# derived token, leave every SVG untouched, and pass -- because only `field`
+# and the closest approach ever reached the art.
+#
+# Everything below is read off the committed path data and compared with what
+# the manifest declares. A token that does not describe the drawing is refused
+# whether or not the rest of the table agrees with it.
+# --------------------------------------------------------------------------
+
+def turn_about(part: tuple[int, int, int, int], centre: list[int]) -> tuple[int, int, int, int]:
+    """One rectangle turned half a turn about a point."""
+    x0, y0, x1, y1 = part
+    cx, cy = centre
+    return (2 * cx - x1, 2 * cy - y1, 2 * cx - x0, 2 * cy - y0)
+
+
+def measure_forms(asset: Asset, centre: list[int]) -> dict[str, int]:
+    """The pen, the inset and the closest approach, read off the drawing itself."""
+    parts = rectangles(asset)
+    if not parts or len(parts) % 2:
+        fail(f"{asset.path}: the figure must be two forms of equal part count")
+    half = len(parts) // 2
+    form_a, form_b = parts[:half], parts[half:]
+    if sorted(turn_about(part, centre) for part in form_a) != sorted(form_b):
+        fail(
+            f"{asset.path}: the second form is not the first turned half a turn "
+            f"about the declared centre {centre}"
+        )
+    pens = {min(x1 - x0, y1 - y0) for x0, y0, x1, y1 in parts}
+    if len(pens) != 1:
+        fail(f"{asset.path}: is drawn with more than one pen width: {sorted(pens)}")
+    gaps = [separation(a, b) for a in form_a for b in form_b]
+    if min(gaps) < 0:
+        fail(f"{asset.path}: the two forms intersect; they must never touch")
+    return {
+        "bar": pens.pop(),
+        "left": min(x0 for x0, _y0, _x1, _y1 in parts),
+        "top": min(y0 for _x0, y0, _x1, _y1 in parts),
+        "right": max(x1 for _x0, _y0, x1, _y1 in parts),
+        "bottom": max(y1 for _x0, _y0, _x1, y1 in parts),
+        "closest_approach": min(gaps),
+    }
+
+
+def measure_mark_bands(asset: Asset) -> dict[str, int]:
+    """The mark's four bands, read off the three rectangles of its first form."""
+    parts = rectangles(asset)
+    form_a = parts[: len(parts) // 2]
+    horizontals = sorted(
+        (part for part in form_a if part[2] - part[0] > part[3] - part[1]),
+        key=lambda part: part[1],
+    )
+    verticals = [part for part in form_a if part[3] - part[1] > part[2] - part[0]]
+    if len(horizontals) != 2 or len(verticals) != 1:
+        fail(
+            f"{asset.path}: the mark is a top bar, a stem and a foot, not "
+            f"{len(horizontals)} horizontal and {len(verticals)} vertical bands"
+        )
+    top_bar, foot = horizontals
+    stem = verticals[0]
+    return {
+        "top_bar": top_bar[2] - top_bar[0],
+        "stem_height": stem[3] - stem[1],
+        "foot_width": foot[2] - foot[0],
+        "foot_top": foot[1],
+    }
+
+
+def check_geometry_against_art(
+    geometry: dict[str, Any], assets: dict[str, Asset], boxes: dict[str, list[int]]
+) -> None:
+    """Refuse a manifest whose geometry does not describe the committed drawing."""
+    field = geometry["field"]
+    centre = geometry["half_turn_centre"]
+    square_assets = (
+        "assets/svg/deedseal-mark.svg",
+        "assets/svg/deedseal-mark-inverse.svg",
+        "assets/svg/deedseal-icon.svg",
+    )
+    for relative in square_assets:
+        asset = assets[relative]
+        box = boxes[relative]
+        if [box[2], box[3]] != [field, field]:
+            fail(
+                f"{relative}: is drawn on a {box[2]} by {box[3]} field, but "
+                f"geometry.field declares {field}"
+            )
+        measured = measure_forms(asset, centre)
+        if measured["bar"] != geometry["bar"]:
+            fail(
+                f"{relative}: the drawn pen is {measured['bar']} units wide, but "
+                f"geometry.bar declares {geometry['bar']}"
+            )
+        insets = {
+            measured["left"],
+            measured["top"],
+            field - measured["right"],
+            field - measured["bottom"],
+        }
+        if insets != {geometry["margin"]}:
+            fail(
+                f"{relative}: the drawn ink is inset {sorted(insets)} from the field, "
+                f"but geometry.margin declares {geometry['margin']}"
+            )
+
+    mark = assets["assets/svg/deedseal-mark.svg"]
+    approach = measure_forms(mark, centre)["closest_approach"]
+    if approach != geometry["seam"]:
+        fail(
+            f"assets/svg/deedseal-mark.svg: the two forms come closest at "
+            f"{approach} units, but geometry.seam declares {geometry['seam']}"
+        )
+    for name, drawn in measure_mark_bands(mark).items():
+        if geometry[name] != drawn:
+            fail(
+                f"geometry.{name}: declares {geometry[name]}, but the committed "
+                f"mark draws {drawn}"
+            )
+
+
+# --------------------------------------------------------------------------
+# the identity board
+#
+# The board is a specimen sheet, so it is also a claim: every panel says "this
+# asset exists, on this surface". An earlier candidate painted the icon in the
+# inverse ink on a dark panel while the manifest, the document and the packet's
+# own rules all said no inverse icon exists. Recomputing the board's digest hid
+# nothing, because no check read what the board actually drew.
+# --------------------------------------------------------------------------
+
+def figure_signature(geometry: str) -> frozenset[str]:
+    """One drawn figure, reduced to the set of subpaths that make it up."""
+    return frozenset(part.strip() for part in geometry.split("Z") if part.strip())
+
+
+def board_panels(board: Asset) -> list[tuple[str, str, list[tuple[str, str]]]]:
+    """Every panel of the board: its name, the surface it lays down, what it paints.
+
+    A panel lays its surface down first and draws onto it afterwards. That order
+    is load-bearing rather than stylistic: it is how the surface a figure sits on
+    is known at all, so a panel that opens with anything but its own background
+    rectangle is refused rather than guessed at.
+    """
+    tag = f"{{{SVG_NAMESPACE}}}path"
+    panels = []
+    for group in board.root:
+        name = group.get("data-panel")
+        if name is None:
+            fail(f"{board.path}: carries a top-level group that names no panel")
+        children = list(group)
+        if not children or children[0].tag != tag:
+            fail(f"{board.path}: panel {name!r} does not lay its surface down first")
+        background = children[0]
+        if RECT_SUBPATH_RE.fullmatch(background.get("d", "").strip().rstrip("Z")) is None:
+            fail(f"{board.path}: panel {name!r} opens with a figure rather than a surface")
+        drawn = [
+            (element.get("fill", ""), element.get("d", ""))
+            for element in group.iter()
+            if element.tag == tag and element is not background
+        ]
+        if not drawn:
+            fail(f"{board.path}: panel {name!r} paints nothing onto its surface")
+        panels.append((name, background.get("fill", ""), drawn))
+    return panels
+
+
+def check_board(
+    board: Asset, assets: dict[str, Asset], groups: dict[str, Any], palette: dict[str, Any]
+) -> None:
+    """Refuse a board that demonstrates an asset this identity does not publish."""
+    panels = board_panels(board)
+    names = tuple(name for name, _surface, _drawn in panels)
+    if names != REQUIRED_BOARD_PANELS:
+        fail(
+            f"{board.path}: draws panels {list(names)}, not the reviewed board "
+            f"{list(REQUIRED_BOARD_PANELS)}"
+        )
+
+    roles = palette["roles"]
+    for role in ("ink-inverse", "surface-inverse"):
+        if role not in roles:
+            fail(f"palette.roles.{role}: the board needs it to judge a dark panel")
+    inverse_ink = roles["ink-inverse"]["value"]
+    inverse_surface = roles["surface-inverse"]["value"]
+
+    # Any geometry group with a single member has no inverse twin to draw with.
+    # The board is itself such a group and is excluded: it is the sheet, not a
+    # figure placed on one.
+    single_ink = {}
+    for name, group in groups.items():
+        if name == "board" or len(group["members"]) != 1:
+            continue
+        member = group["members"][0]
+        single_ink[name] = (member, figure_signature(assets[member].geometry))
+
+    for panel_name, surface, drawn in panels:
+        for group_name, (member, signature) in single_ink.items():
+            for fill, data in drawn:
+                if figure_signature(data) != signature:
+                    continue
+                if fill == inverse_ink:
+                    fail(
+                        f"{board.path}: panel {panel_name!r} paints {member} in the "
+                        f"inverse ink, but this identity publishes no inverse {group_name}"
+                    )
+                if surface == inverse_surface:
+                    fail(
+                        f"{board.path}: panel {panel_name!r} demonstrates {member} on "
+                        f"the dark surface, but this identity publishes no inverse "
+                        f"{group_name}"
+                    )
+
+
+# --------------------------------------------------------------------------
 # the wordmark's own argument
 #
 # A wordmark is a claim about a string. This checker cannot read letterforms,
@@ -554,6 +828,55 @@ def check_non_donor(root: Path, texts: dict[str, str]) -> None:
         for family in RETIRED_FAMILIES:
             if family.lower() in text.lower():
                 fail(f"{relative}: carries the retired type family {family}")
+
+
+def unwrapped(text: str) -> str:
+    """One long line, so a sentence is found however its file happened to wrap it."""
+    lines = [re.sub(r"^\s*>\s?", "", line) for line in text.splitlines()]
+    return re.sub(r"\s+", " ", " ".join(lines)).strip()
+
+
+def check_no_false_separation(relative: str, text: str) -> None:
+    """Refuse any file in this packet that claims a separation the art does not have."""
+    for pattern, claim in FALSE_SEPARATION_CLAIMS:
+        found = pattern.search(text)
+        if found is not None:
+            fail(
+                f"{relative}: claims {claim} ({found.group(0)!r}); the corridor is a "
+                f"staircase and has one closest approach, not one width"
+            )
+
+
+def check_visual_idea(idea: dict[str, Any], texts: dict[str, str]) -> None:
+    """Bind the identity's one-sentence argument to the sentence under review.
+
+    Three refusals, in the order a reviewer would meet them: a statement that
+    reaches for the shorthand this identity rejects; a statement that claims a
+    separation the drawing does not have; and any other unreviewed edit.
+    """
+    statement = text_of(idea["statement"], "visual_idea.statement")
+    for shorthand in idea["rejected_shorthand"]:
+        if not isinstance(shorthand, str) or not shorthand.strip():
+            fail("visual_idea.rejected_shorthand: every entry must be a named motif")
+        if re.search(rf"\b{re.escape(shorthand)}\b", statement, re.IGNORECASE):
+            fail(
+                f"visual_idea.statement: names the rejected shorthand {shorthand!r}"
+            )
+    check_no_false_separation("visual_idea.statement", statement)
+    if statement != CANONICAL_STATEMENT:
+        fail(
+            "visual_idea.statement: is not the canonical statement this identity is "
+            "reviewed under; changing the argument is a change that comes back "
+            "through review"
+        )
+    for relative, text in texts.items():
+        check_no_false_separation(relative, text)
+    for relative in (DOCUMENT_PATH, BUILDER_PATH):
+        text = texts.get(relative)
+        if text is None:
+            continue
+        if CANONICAL_STATEMENT not in unwrapped(text):
+            fail(f"{relative}: does not carry the canonical statement verbatim")
 
 
 def prose_only(relative: str, text: str) -> str:
@@ -949,10 +1272,21 @@ def check_identity(root: Path = ROOT) -> tuple[str, int]:
         {"statement", "construction", "rejected_shorthand"},
         "manifest.visual_idea",
     )
-    text_of(idea["statement"], "visual_idea.statement")
     text_of(idea["construction"], "visual_idea.construction")
     if not isinstance(idea["rejected_shorthand"], list) or len(idea["rejected_shorthand"]) < 8:
         fail("visual_idea.rejected_shorthand: name the shorthand this identity refuses")
+
+    # The prose this packet publishes, read once. The builder is optional here
+    # only because a caller may check an assets-only copy of the packet; when it
+    # is present it is held to the same sentence as everything else.
+    texts = {
+        MANIFEST_PATH: read_text(root, MANIFEST_PATH),
+        DOCUMENT_PATH: read_text(root, DOCUMENT_PATH),
+        ASSETS_README: read_text(root, ASSETS_README),
+    }
+    if (root / BUILDER_PATH).is_file():
+        texts[BUILDER_PATH] = read_text(root, BUILDER_PATH)
+    check_visual_idea(idea, texts)
 
     check_geometry(manifest["geometry"])
     geometry = manifest["geometry"]
@@ -960,6 +1294,7 @@ def check_identity(root: Path = ROOT) -> tuple[str, int]:
     # every declared asset, read once
     entries: dict[str, dict[str, Any]] = {}
     assets: dict[str, Asset] = {}
+    boxes: dict[str, list[int]] = {}
     for index, entry in enumerate(manifest["assets"]):
         exact_fields(entry, ASSET_FIELDS, f"manifest.assets[{index}]")
         relative = text_of(entry["path"], f"assets[{index}].path")
@@ -994,6 +1329,7 @@ def check_identity(root: Path = ROOT) -> tuple[str, int]:
             fail(f"{relative}: digest is stale")
         inspect_asset(asset)
         box = view_box(asset)
+        boxes[relative] = box
         if entry["view_box"] != box:
             fail(f"{relative}: declared viewBox {entry['view_box']} is not the file's {box}")
         if (box[2] == box[3]) is not bool(entry["square"]):
@@ -1050,6 +1386,10 @@ def check_identity(root: Path = ROOT) -> tuple[str, int]:
     check_half_turn(assets["assets/svg/deedseal-mark.svg"], geometry["field"], separations["mark"])
     check_half_turn(assets["assets/svg/deedseal-mark-inverse.svg"], geometry["field"], separations["mark"])
     check_half_turn(assets["assets/svg/deedseal-icon.svg"], geometry["field"], separations["icon"])
+    check_geometry_against_art(geometry, assets, boxes)
+    check_board(
+        assets[BOARD_PATH], assets, manifest["geometry_groups"], manifest["palette"]
+    )
 
     wordmark = exact_fields(manifest["wordmark"], {"name", "glyphs"}, "manifest.wordmark")
     if wordmark["name"] != PRODUCT_NAME:
@@ -1138,13 +1478,8 @@ def check_identity(root: Path = ROOT) -> tuple[str, int]:
     if legal["governing_notice"] != "NOTICE.md":
         fail("legal.governing_notice: the repository's own notice governs names and marks")
 
-    texts = {
-        MANIFEST_PATH: read_text(root, MANIFEST_PATH),
-        DOCUMENT_PATH: read_text(root, DOCUMENT_PATH),
-        ASSETS_README: read_text(root, ASSETS_README),
-    }
-    for relative, text in texts.items():
-        check_prose(relative, text)
+    for relative in (MANIFEST_PATH, DOCUMENT_PATH, ASSETS_README):
+        check_prose(relative, texts[relative])
     check_non_donor(root, {**texts, **{name: asset.raw for name, asset in assets.items()}})
 
     for relative in (DOCUMENT_PATH, ASSETS_README):
