@@ -16,6 +16,7 @@ import tempfile
 import unittest
 from datetime import date, timedelta
 from pathlib import Path
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -1523,6 +1524,208 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertEqual(workflow.count("tools/test_release_manifest.py"), 1)
+
+
+# ----------------------------------------------------------------------
+# additive public-story contradictions, mutated in disposable public trees
+# ----------------------------------------------------------------------
+
+class AdditivePublicClaimGuardTests(unittest.TestCase):
+    """Every Issue #67 claim class fails closed on a real Markdown surface."""
+
+    def _copy_public_tree(self, destination: Path) -> Path:
+        root = destination / "repo"
+        shutil.copytree(
+            ROOT,
+            root,
+            ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"),
+        )
+        return root
+
+    def _prove_hostile_and_limited(
+        self,
+        relative: str,
+        hostile: str,
+        limited: str,
+        reason: str,
+    ) -> None:
+        """Land each mutation, run the real tree scan, then discard the copy."""
+        source = ROOT / relative
+        source_bytes = source.read_bytes()
+        for label, sentence, expected in (
+            ("hostile", hostile, reason),
+            ("limited", limited, None),
+        ):
+            with self.subTest(form=label), tempfile.TemporaryDirectory() as temporary:
+                copy_root = self._copy_public_tree(Path(temporary))
+                path = copy_root / relative
+                before = path.read_bytes()
+                mutation = f"\n{sentence}\n".encode("utf-8")
+                path.write_bytes(before + mutation)
+
+                # Prove the mutation landed before interpreting the validator.
+                self.assertNotEqual(path.read_bytes(), before)
+                self.assertIn(mutation, path.read_bytes())
+
+                with mock.patch.object(gate, "ROOT", copy_root):
+                    if expected is None:
+                        gate.validate_public_text()
+                    else:
+                        with self.assertRaisesRegex(
+                            gate.ValidationError,
+                            rf"{re.escape(relative)}: contains forbidden "
+                            rf"{re.escape(expected)}",
+                        ):
+                            gate.validate_public_text()
+
+            # The disposable copy is gone; the candidate source is unchanged.
+            self.assertEqual(source.read_bytes(), source_bytes)
+
+    def test_invented_live_lockup_geometry_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "The live wordmark and green point lockup has a 64-by-64 geometry.",
+            "The live lockup has no specified geometry.",
+            "manufactured live-lockup geometry specification",
+        )
+
+    def test_invented_live_lockup_colour_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "assets/README.md",
+            "The live wordmark and green point lockup uses colour #00FF00.",
+            "The live lockup has no published colour.",
+            "manufactured live-lockup colour specification",
+        )
+
+    def test_invented_live_lockup_digest_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "CHANGELOG.md",
+            "The live wordmark and green point lockup has digest sha256:deadbeef.",
+            "The live lockup has no published digest.",
+            "manufactured live-lockup digest specification",
+        )
+
+    def test_invented_live_lockup_filename_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/releases/v0.2.0-prerelease-notes.md",
+            "The live wordmark and green point lockup is file assets/live-lockup.svg.",
+            "The live lockup has no published filename.",
+            "manufactured live-lockup filename specification",
+        )
+
+    def test_invented_live_lockup_version_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "The live wordmark and green point lockup is version 1.0.",
+            "The live lockup has no assigned version.",
+            "manufactured live-lockup version specification",
+        )
+
+    def test_v0_2_0_available_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/faq.md",
+            "`v0.2.0` is available.",
+            "No `v0.2.0` tag or Release exists.",
+            "manufactured v0.2.0 publication claim",
+        )
+
+    def test_general_availability_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/status.md",
+            "Deedseal is generally available.",
+            "Deedseal is not generally available.",
+            "manufactured general-availability claim",
+        )
+
+    def test_public_price_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "Deedseal costs $99.",
+            "No public price is stated.",
+            "unapproved public price claim",
+        )
+
+    def test_savings_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "CHANGELOG.md",
+            "Deedseal saves customers 40%.",
+            "No savings of 40% are claimed.",
+            "unapproved savings claim",
+        )
+
+    def test_customer_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "West Coast KBP is a Deedseal customer.",
+            "West Coast KBP is not a customer.",
+            "unapproved customer claim",
+        )
+
+    def test_partner_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "West Coast KBP is a Deedseal partner.",
+            "West Coast KBP is not a partner.",
+            "unapproved partner claim",
+        )
+
+    def test_deployment_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/faq.md",
+            "Deedseal is deployed with West Coast KBP.",
+            "Deedseal is not deployed with West Coast KBP.",
+            "unapproved deployment claim",
+        )
+
+    def test_business_outcome_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "Deedseal has delivered a business outcome.",
+            "Deedseal has not delivered a business outcome.",
+            "unapproved business-outcome claim",
+        )
+
+    def test_zero_egress_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/faq.md",
+            "Deedseal guarantees zero-egress.",
+            "Deedseal makes no zero-egress claim.",
+            "unapproved zero-egress claim",
+        )
+
+    def test_fully_local_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/releases/v0.2.0-prerelease-notes.md",
+            "Deedseal runs fully local.",
+            "Deedseal is not fully local.",
+            "unapproved fully-local claim",
+        )
+
+    def test_audit_logging_and_signed_evidence_outcomes_remain_separate(self) -> None:
+        accepted = (
+            "An audit log records a deployment outcome.",
+            "A signed run passport carries an offline-verifiable custody outcome.",
+        )
+        for sentence in accepted:
+            with self.subTest(sentence=sentence):
+                self.assertIsNone(gate.public_markdown_claim_violation(sentence))
+
+    def test_every_committed_public_markdown_surface_is_clean(self) -> None:
+        scanned = []
+        for path in gate.all_public_files():
+            relative = path.relative_to(ROOT)
+            if relative.suffix.lower() != ".md":
+                continue
+            scanned.append(relative.as_posix())
+            self.assertIsNone(
+                gate.public_markdown_claim_violation(
+                    path.read_text(encoding="utf-8")
+                ),
+                relative.as_posix(),
+            )
+        self.assertIn("README.md", scanned)
+        self.assertIn("docs/faq.md", scanned)
+        self.assertIn("docs/releases/v0.2.0-prerelease-notes.md", scanned)
 
 
 # ----------------------------------------------------------------------
