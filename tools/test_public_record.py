@@ -1118,5 +1118,116 @@ class BrandIdentityGateTests(unittest.TestCase):
             self.assertIsInstance(path.read_text(encoding="utf-8"), str)
 
 
+class BusinessFirstReleasePreflightTests(unittest.TestCase):
+    """Hold the adopted public story and release preparation in repository bytes."""
+
+    def test_readme_front_door_has_the_adopted_order_and_exact_frame(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        coordinates = [
+            "Deedseal is an owner-governed AI business platform for deploying and operating a business.",
+            "Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner.",
+            "## For owners and operators",
+            "## Platform direction",
+            "## Current availability",
+            "## What is published today",
+            "## Verify it yourself",
+        ]
+        positions = [readme.index(value) for value in coordinates]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("[deedseal.com](https://deedseal.com)", readme[:positions[-1]])
+        self.assertIn("product direction, not a claim", readme[:positions[-1]].lower())
+        self.assertIn("not generally available", readme[:positions[-1]].lower())
+        self.assertIn("not represented as production-qualified", readme[:positions[-1]].lower())
+
+    def test_readme_keeps_direction_proof_and_nonclaims_separate(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        front = readme[:readme.index("## Verify it yourself")]
+        for phrase in (
+            "modules, bounded adapters and bounded AI workers",
+            "owner-held business memory",
+            "two real run passports and their one-byte tampered twins",
+            "48 conformance vectors",
+            "Python/Go verdict agreement",
+            "does not prove the wider business-platform capability",
+            "Owner-operated first reference use and product direction only",
+            "No trademark-clearance claim",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase.lower(), front.lower())
+
+    def test_release_policy_carries_every_immutable_tag_boundary(self) -> None:
+        policy = (ROOT / "docs/decisions/release-and-tagging-policy.md").read_text(
+            encoding="utf-8"
+        )
+        for phrase in (
+            "annotated and signed",
+            "prerelease: true",
+            "published tag target is immutable",
+            "corrected by a new tag and Release",
+            "DS-2026.08.2",
+            "evidence-snapshot identifier",
+            "v0.1.0",
+            "must not be moved, replaced, deleted or retroactively signed",
+            "OWNER_ACTION_REQUIRED",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, policy)
+
+    def test_candidate_notes_use_one_exact_source_placeholder_for_proof_links(self) -> None:
+        notes = (ROOT / "docs/releases/v0.2.0-prerelease-notes.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertGreaterEqual(notes.count("SOURCE_SHA_PLACEHOLDER"), 12)
+        self.assertNotIn("/blob/main/", notes)
+        for heading in (
+            "## Status boundary",
+            "## Exact source",
+            "## Changes",
+            "## Proof links",
+            "## Verification",
+            "## Release manifest, assets and checksums",
+            "## Known limitations",
+            "## Non-claims",
+        ):
+            self.assertIn(heading, notes)
+
+    def test_changelog_separates_the_four_candidate_concerns(self) -> None:
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("[Unreleased] — v0.2.0 prerelease candidate", changelog)
+        for heading in ("Product presentation", "Brand", "Evidence", "Tooling"):
+            self.assertIn(f"### {heading}", changelog)
+
+    def test_codeowners_names_the_owner_for_the_complete_surface(self) -> None:
+        codeowners = (ROOT / ".github/CODEOWNERS").read_text(encoding="utf-8")
+        self.assertEqual(codeowners, "* @avoroncov971-maker\n")
+
+    def test_browser_verifier_actions_match_the_existing_immutable_pins(self) -> None:
+        pattern = re.compile(
+            r"uses:\s+actions/(?P<action>checkout|setup-go)@(?P<sha>[0-9A-Fa-f]{40})"
+        )
+        validation = (ROOT / ".github/workflows/validate-public-record.yml").read_text(
+            encoding="utf-8"
+        )
+        browser = (ROOT / ".github/workflows/verifier-wasm.yml").read_text(
+            encoding="utf-8"
+        )
+        expected = {
+            match.group("action"): match.group("sha").lower()
+            for match in pattern.finditer(validation)
+        }
+        observed = {
+            match.group("action"): match.group("sha").lower()
+            for match in pattern.finditer(browser)
+        }
+        self.assertEqual(set(observed), {"checkout", "setup-go"})
+        self.assertEqual(observed, expected)
+
+    def test_publication_workflow_runs_the_release_manifest_hostile_suite(self) -> None:
+        workflow = (ROOT / ".github/workflows/validate-public-record.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertEqual(workflow.count("tools/test_release_manifest.py"), 1)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
