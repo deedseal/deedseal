@@ -1118,8 +1118,100 @@ class BrandIdentityGateTests(unittest.TestCase):
             self.assertIsInstance(path.read_text(encoding="utf-8"), str)
 
 
+# ----------------------------------------------------------------------
+# the release policy's prerelease boundary, held in the policy's own bytes
+# ----------------------------------------------------------------------
+
+# The complete normative sentence the release-and-tagging policy exists to
+# carry. The guard below anchors here rather than on the bare `prerelease: true`
+# substring: that substring also occurs decoratively in procedure step 6, so it
+# survives an inversion of this clause and cannot hold the boundary.
+NORMATIVE_PRERELEASE_CLAUSE = (
+    "Every GitHub Release remains a prerelease with `prerelease: true` until "
+    "general availability is separately evidenced and Owner-approved. A version "
+    "number, a closed engineering workstream or a passing check is not evidence "
+    "of general availability."
+)
+
+# The one truthful way this policy names general availability: to defer it.
+TRUTHFUL_GENERAL_AVAILABILITY_BOUNDARY = (
+    "until general availability is separately evidenced and Owner-approved"
+)
+
+# General-availability instructions. None of these is text the repository
+# carries; each is the *shape* the release policy must never take. They are
+# allowed only where the sentence denies or defers them, which is exactly how
+# the adopted boundary itself reads.
+GENERAL_AVAILABILITY_INSTRUCTION_TERMS = re.compile(
+    r"\b(?:prerelease:[ \t]*false|generally[ \t]+available|"
+    r"general[ \t-]availability[ \t]+release|ordinary[ \t]+release|"
+    r"GA[ \t]+release|evidence[ \t]+of[ \t]+general[ \t]+availability|"
+    r"general[ \t]+availability[ \t]+is[ \t]+(?:established|reached|achieved))\b",
+    re.IGNORECASE,
+)
+
+# A stand-in for the policy document, carrying the same two occurrences of
+# `prerelease: true` as the real one -- the normative clause, and the decorative
+# mention in procedure step 6. The guard's own probes run against this fixture
+# rather than the committed file, so that mutating the committed file produces
+# one named failure from the two tests that own it, not a cascade here.
+REFERENCE_RELEASE_POLICY = f"""# Release and tagging policy
+
+## Decision
+
+{NORMATIVE_PRERELEASE_CLAUSE}
+
+A published tag target is immutable.
+
+## Release procedure
+
+6. Create the GitHub Release from that exact immutable tag with `prerelease: true`.
+"""
+
+
+def unnegated_general_availability_instructions(policy: str) -> list[str]:
+    """General-availability wording used affirmatively rather than deferred.
+
+    Reuses the gate's own clause-scoped negation window, so "is not evidence of
+    general availability" reads as the boundary it is, while the same words used
+    as an instruction do not.
+    """
+    offences: list[str] = []
+    for match in GENERAL_AVAILABILITY_INSTRUCTION_TERMS.finditer(policy):
+        window = policy[max(0, match.start() - gate.NEGATION_WINDOW) : match.start()]
+        boundary = max(window.rfind(character) for character in gate.NEGATION_BOUNDARY)
+        if boundary >= 0:
+            window = window[boundary + 1 :]
+        if gate.NEGATION_RE.search(window) is None:
+            offences.append(match.group(0))
+    return offences
+
+
+def release_policy_violation(policy: str) -> str | None:
+    """Name the way a release policy stopped holding the prerelease boundary.
+
+    Mirrors ``gate.proof_surface_violation``: the named reason, or ``None`` when
+    the policy still carries the boundary in its own bytes. Deleting, weakening
+    or inverting the normative clause is refused by the first check; an
+    affirmative general-availability instruction added alongside an intact
+    clause is refused by the second.
+    """
+    if NORMATIVE_PRERELEASE_CLAUSE not in policy:
+        return "normative prerelease clause missing or altered"
+    offences = unnegated_general_availability_instructions(policy)
+    if offences:
+        return f"affirmative general-availability instruction ({offences[0]!r})"
+    return None
+
+
 class BusinessFirstReleasePreflightTests(unittest.TestCase):
     """Hold the adopted public story and release preparation in repository bytes."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.policy = (ROOT / "docs/decisions/release-and-tagging-policy.md").read_text(
+            encoding="utf-8"
+        )
 
     def test_readme_front_door_has_the_adopted_order_and_exact_frame(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
@@ -1156,12 +1248,12 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
                 self.assertIn(phrase.lower(), front.lower())
 
     def test_release_policy_carries_every_immutable_tag_boundary(self) -> None:
-        policy = (ROOT / "docs/decisions/release-and-tagging-policy.md").read_text(
-            encoding="utf-8"
-        )
+        policy = self.policy
         for phrase in (
             "annotated and signed",
-            "prerelease: true",
+            NORMATIVE_PRERELEASE_CLAUSE,
+            "Create the GitHub Release from that exact immutable tag with"
+            " `prerelease: true`",
             "published tag target is immutable",
             "corrected by a new tag and Release",
             "DS-2026.08.2",
@@ -1172,6 +1264,120 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, policy)
+
+    # ------------------------------------------------------------------
+    # the prerelease boundary: what the committed policy holds, and what
+    # the guard refuses when a policy stops holding it
+    # ------------------------------------------------------------------
+
+    def test_the_committed_release_policy_holds_the_prerelease_boundary(self) -> None:
+        self.assertIsNone(release_policy_violation(self.policy))
+
+    def test_the_reference_policy_carries_both_prerelease_occurrences(self) -> None:
+        """The fixture reproduces the shape the old assertion could not see."""
+        self.assertEqual(REFERENCE_RELEASE_POLICY.count("prerelease: true"), 2)
+        self.assertIn(NORMATIVE_PRERELEASE_CLAUSE, REFERENCE_RELEASE_POLICY)
+        self.assertIsNone(release_policy_violation(REFERENCE_RELEASE_POLICY))
+
+    def test_the_inverted_prerelease_clause_is_refused_by_name(self) -> None:
+        """Issue #59 hostile probe 5, run against the guard itself.
+
+        The inversion leaves the bare `prerelease: true` substring standing in
+        procedure step 6, which is exactly why an assertion anchored there could
+        not see it. The clause-anchored guard names the refusal.
+        """
+        inverted = REFERENCE_RELEASE_POLICY.replace(
+            NORMATIVE_PRERELEASE_CLAUSE,
+            "Every GitHub Release is published as an ordinary general-availability"
+            " release. Deedseal is generally available, and a passing check is"
+            " sufficient evidence of general availability.",
+        )
+        self.assertNotEqual(inverted, REFERENCE_RELEASE_POLICY)
+        self.assertIn("prerelease: true", inverted)
+        self.assertEqual(
+            release_policy_violation(inverted),
+            "normative prerelease clause missing or altered",
+        )
+
+    def test_deleting_or_weakening_the_normative_clause_is_refused(self) -> None:
+        weakenings = {
+            "deleted": "",
+            "made optional": (
+                "Every GitHub Release may remain a prerelease with `prerelease:"
+                " true` until general availability is separately evidenced and"
+                " Owner-approved."
+            ),
+            "boundary dropped": (
+                "Every GitHub Release remains a prerelease with `prerelease: true`."
+            ),
+            "owner approval dropped": (
+                "Every GitHub Release remains a prerelease with `prerelease: true`"
+                " until general availability is separately evidenced. A version"
+                " number, a closed engineering workstream or a passing check is"
+                " not evidence of general availability."
+            ),
+        }
+        for name, replacement in weakenings.items():
+            with self.subTest(weakening=name):
+                self.assertEqual(
+                    release_policy_violation(
+                        REFERENCE_RELEASE_POLICY.replace(
+                            NORMATIVE_PRERELEASE_CLAUSE, replacement
+                        )
+                    ),
+                    "normative prerelease clause missing or altered",
+                )
+
+    def test_every_affirmative_general_availability_instruction_is_refused(self) -> None:
+        """An added GA instruction is refused even with the clause left intact."""
+        instructions = (
+            ("ordinary release", "Publish each Release as an ordinary release."),
+            (
+                "general-availability release",
+                "Publish each Release as a general-availability release.",
+            ),
+            ("GA release", "Publish each Release as a GA release."),
+            ("prerelease disabled", "Create the Release with `prerelease: false`."),
+            ("product declared available", "Deedseal is generally available."),
+            (
+                "check treated as GA evidence",
+                "A passing check is sufficient evidence of general availability.",
+            ),
+            (
+                "availability asserted as reached",
+                "General availability is reached once the suites pass.",
+            ),
+        )
+        for name, sentence in instructions:
+            with self.subTest(instruction=name):
+                violation = release_policy_violation(
+                    f"{REFERENCE_RELEASE_POLICY}\n{sentence}\n"
+                )
+                self.assertIsNotNone(violation, f"{name} was not refused")
+                self.assertTrue(
+                    violation.startswith(
+                        "affirmative general-availability instruction"
+                    ),
+                    violation,
+                )
+
+    def test_truthful_prerelease_boundary_language_is_accepted(self) -> None:
+        """The boundary names general availability in order to defer it."""
+        truthful = (
+            "Every Release stays a prerelease "
+            f"{TRUTHFUL_GENERAL_AVAILABILITY_BOUNDARY}.",
+            "Deedseal is not generally available.",
+            "A passing check is not evidence of general availability.",
+            "No Release is published as an ordinary release.",
+            "The Release is created with `prerelease: true`.",
+        )
+        for sentence in truthful:
+            with self.subTest(sentence=sentence):
+                self.assertIsNone(
+                    release_policy_violation(
+                        f"{REFERENCE_RELEASE_POLICY}\n{sentence}\n"
+                    )
+                )
 
     def test_candidate_notes_use_one_exact_source_placeholder_for_proof_links(self) -> None:
         notes = (ROOT / "docs/releases/v0.2.0-prerelease-notes.md").read_text(
