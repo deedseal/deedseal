@@ -15,7 +15,7 @@ import sys
 import tempfile
 import unittest
 from datetime import date, timedelta
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 from unittest import mock
 
 
@@ -1533,6 +1533,23 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
 class AdditivePublicClaimGuardTests(unittest.TestCase):
     """Every Issue #67 claim class fails closed on a real Markdown surface."""
 
+    def assert_repository_relative_refusal(
+        self,
+        error: gate.ValidationError,
+        relative: str,
+        reason: str,
+    ) -> None:
+        """Compare a refusal's full repository path independent of host OS."""
+        rendered_path, separator, rendered_reason = str(error).partition(
+            ": contains forbidden "
+        )
+        self.assertEqual(separator, ": contains forbidden ")
+        self.assertEqual(
+            PurePosixPath(*PureWindowsPath(rendered_path).parts),
+            PurePosixPath(relative),
+        )
+        self.assertEqual(rendered_reason, reason)
+
     def _copy_public_tree(self, destination: Path) -> Path:
         root = destination / "repo"
         shutil.copytree(
@@ -1571,15 +1588,25 @@ class AdditivePublicClaimGuardTests(unittest.TestCase):
                     if expected is None:
                         gate.validate_public_text()
                     else:
-                        with self.assertRaisesRegex(
-                            gate.ValidationError,
-                            rf"{re.escape(relative)}: contains forbidden "
-                            rf"{re.escape(expected)}",
-                        ):
+                        with self.assertRaises(gate.ValidationError) as raised:
                             gate.validate_public_text()
+                        self.assert_repository_relative_refusal(
+                            raised.exception, relative, expected
+                        )
 
             # The disposable copy is gone; the candidate source is unchanged.
             self.assertEqual(source.read_bytes(), source_bytes)
+
+    def test_repository_relative_refusal_paths_accept_both_slash_conventions(self) -> None:
+        relative = PurePosixPath("docs/faq.md")
+        reason = "manufactured v0.2.0 publication claim"
+        for rendered in (relative.as_posix(), str(PureWindowsPath(*relative.parts))):
+            with self.subTest(rendered=rendered):
+                self.assert_repository_relative_refusal(
+                    gate.ValidationError(f"{rendered}: contains forbidden {reason}"),
+                    relative.as_posix(),
+                    reason,
+                )
 
     def test_invented_live_lockup_geometry_is_refused(self) -> None:
         self._prove_hostile_and_limited(
