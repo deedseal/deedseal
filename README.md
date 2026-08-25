@@ -154,7 +154,7 @@ Questions are welcome as GitHub issues. Pull requests are accepted for correctio
 
 ## Brand
 
-The mark, the lockup, and the palette are documented in [assets/README.md](assets/README.md), with generators that reproduce every asset from source.
+The name, the mark, the wordmark, the lockup, the type system and the colour roles are defined in [assets/BRAND-IDENTITY-v1.0.md](assets/BRAND-IDENTITY-v1.0.md). Every asset is generated from one committed construction and bound by digest in [assets/brand-manifest.v1.json](assets/brand-manifest.v1.json); the sources are text with integer coordinates and no font, script or external reference, so each one renders from its own bytes. `python3 tools/check_brand_identity.py` re-proves the files against the manifest offline. Where the assets live and how to regenerate them: [assets/README.md](assets/README.md).
 
 ## License
 

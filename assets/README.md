@@ -1,66 +1,70 @@
 # Brand assets
 
-Deedseal's visual identity, kept as source. This repository is a text-only public record — its validation gate deliberately rejects binary files, because bytes that cannot be read cannot be reviewed for disclosure. Design artifacts follow the same rule as everything else here: the generator is committed; the image is derived. Rendered files are uploaded where they are used (repository social preview, organization avatar, site favicon) and can be reproduced at any time from `src/`.
+Deedseal's identity is kept as source. This repository is a text-only public
+record -- its validation gate rejects binary files, because bytes that cannot
+be read cannot be reviewed for disclosure -- and design follows the same rule as
+everything else here: the construction is committed, the image is derived.
 
-## The mark
+The identity is defined in [BRAND-IDENTITY-v1.0.md](BRAND-IDENTITY-v1.0.md) and
+bound by digest in `assets/brand-manifest.v1.json`
+([manifest](brand-manifest.v1.json)). Read the document for the idea, the
+geometry, the type system, the colour roles, the clearspace and minimum-size
+rules, the misuse and accessibility rules, and the contract a downstream
+consumer adopts. What follows is only where things are and how to check them.
 
-A counterseal: two concentric rings with a single luminous green point at the center. The mark carries no letters, so it survives every size. Below 64 pixels the inner ring is dropped and the point goes solid; the outer ring and the point remain.
+## What is here
 
-## Meaning
+| Path | What it is |
+| --- | --- |
+| [`svg/deedseal-mark.svg`](svg/deedseal-mark.svg) | the mark, light surface |
+| [`svg/deedseal-mark-inverse.svg`](svg/deedseal-mark-inverse.svg) | the mark, dark surface |
+| [`svg/deedseal-icon.svg`](svg/deedseal-icon.svg) | the small-context icon, 16 px and up |
+| [`svg/deedseal-wordmark.svg`](svg/deedseal-wordmark.svg) | the wordmark, light surface |
+| [`svg/deedseal-wordmark-inverse.svg`](svg/deedseal-wordmark-inverse.svg) | the wordmark, dark surface |
+| `assets/svg/deedseal-lockup.svg` ([file](svg/deedseal-lockup.svg)) | the lockup, light surface |
+| [`svg/deedseal-lockup-inverse.svg`](svg/deedseal-lockup-inverse.svg) | the lockup, dark surface |
+| [`svg/deedseal-identity-board.svg`](svg/deedseal-identity-board.svg) | the specimen sheet |
+| [`brand-manifest.v1.json`](brand-manifest.v1.json) | every digest, token and pin |
+| [`src/build_brand_assets.py`](src/build_brand_assets.py) | the construction that produces all eight files |
 
-The rings refer to a seal, and the center point denotes a `PASS` verdict.
+Every SVG is UTF-8 text with integer coordinates only. None of them references
+a script, a style sheet, a font, a link or an external image, so each one
+renders from its own bytes and can be reviewed by reading it.
 
-## The lockup
+## Checking it
 
-The wordmark `deedseal`, set in Bricolage Grotesque Bold, lowercase, with slight negative tracking, sitting on a hairline exactly as wide as the wordmark-plus-mark group. The mark stands after the name at cap height, like a countersign. The slogan is set in Geist Mono under the line.
+Standard library only, offline, no renderer required:
 
-## Slogan
+```
+python3 assets/src/build_brand_assets.py --check
+python3 tools/check_brand_identity.py
+python3 tools/test_brand_identity.py
+```
 
-> Proof over trust.
-
-## Palette
-
-| Role | Dark field | Light field |
-| --- | --- | --- |
-| Field | `#0B0F14` | `#F4F6F8` |
-| Name | `#F2F5F8` | `#10151B` |
-| Muted text | `#8C98A3` | `#6E7883` |
-| Hairline | `#171E27` | `#CED4DB` |
-| Rings | `#28323E` | `#6E7883` |
-| Verified point | `#34A873` | `#1A7F55` |
-| Point core (dark field only) | `#60D69C` | — |
-| Rings, standalone mark | `#96A2AD` | — |
-
-The standalone mark uses `#96A2AD` rings for legibility at avatar and favicon sizes; the lockup uses `#28323E` because the wordmark carries the composition.
-
-## Typography
-
-- Wordmark: [Bricolage Grotesque](https://fonts.google.com/specimen/Bricolage+Grotesque) Bold (OFL).
-- Slogan and technical text: [Geist Mono](https://fonts.google.com/specimen/Geist+Mono) Regular (OFL).
-
-Fonts are not vendored here; download them from their upstream repositories.
-
-## Clearspace and sizes
-
-- Clearspace around the lockup and the standalone mark: half the mark's diameter on every side.
-- The mark: two rings and a luminous point at 64 px and above; one ring and a solid point below 64 px.
-- Do not add letters to the mark, do not recolor the point, do not use the green for anything but a verified state, do not set the wordmark in another face.
+The generator's `--check` proves the committed SVGs are exactly what the
+construction produces. The checker proves the files and the manifest agree.
+The tests mutate a copy of the tree and prove each mutation is refused.
 
 ## Regenerating
 
-Requires Python 3.9+ and [Pillow](https://pypi.org/project/Pillow/) (`pip install pillow`) — the only place in this repository where a dependency outside the standard library is used, and deliberately not part of the publication gate. The card generator needs two OFL fonts on disk, named exactly `BricolageGrotesque-Bold.ttf` and `GeistMono-Regular.ttf`; download them from the specimen pages linked above.
-
-Run from the repository root, writing outside the tree (rendered images are not committed; `*.png` is ignored):
-
 ```
-python3 assets/src/build_card.py --fonts <dir-with-ttf> --out /tmp/card-dark.png
-python3 assets/src/build_card.py --fonts <dir-with-ttf> --light --out /tmp/card-light.png
-python3 assets/src/build_mark.py --size 500 --out /tmp/avatar-500.png
-python3 assets/src/build_mark.py --size 32 --out /tmp/favicon-32.png
+python3 assets/src/build_brand_assets.py
+python3 assets/src/build_brand_assets.py --digests
 ```
 
-Rendered artifacts are deterministic up to the font rasterizer version. Where each artifact goes:
+The generator rewrites all eight SVGs; `--digests` prints the SHA-256 of each,
+which is what the manifest's `assets` entries carry. Change the construction
+and both the assets and those digests change together, or the checker refuses.
 
-- `card-dark.png` (1280x640) — repository settings, social preview.
-- `avatar-500.png` — organization profile picture.
-- `favicon-*.png` — the product site.
+Raster derivatives are produced outside this tree, because this record accepts
+text only. The manifest pins the renderer, the recipe and the exact dimensions
+of every target.
+
+## What used to be here
+
+The generators that produced the previous mark and card were removed in this
+change, and none of their properties survive into this identity: not the
+geometry, not the palette, not the type pairing, not the slogan. They were a
+live observation of what had been published, never a design authority. The
+checker enforces the mechanical half of that boundary by refusing any file in
+this packet that carries a retired palette coordinate or a retired type family.

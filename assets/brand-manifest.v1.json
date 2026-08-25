@@ -1,0 +1,635 @@
+{
+  "schema_version": "deedseal.brand-identity-manifest/v1",
+  "identity_version": "1.0",
+  "product_name": "Deedseal",
+  "status": "review-candidate",
+  "source_repository": "deedseal/deedseal",
+  "authority": {
+    "routing": "deedseal/deedseal-portal#63",
+    "public_surface_authority": "docs/product-1/PRODUCT-1-PUBLIC-SURFACE-AUTHORITY-v1.0.md in deedseal/deedseal-portal",
+    "legacy_exclusions": "docs/product-1/product-1-legacy-exclusions-v1.json in deedseal/deedseal-portal",
+    "non_donor_statement": "No property of this identity is inherited from any coordinate listed in the legacy exclusions register, nor from the retired assets this packet removes."
+  },
+  "visual_idea": {
+    "statement": "Two congruent forms, each the other turned half a turn, face across a stepped corridor with a six-unit closest approach and never touch — because Deedseal binds bounded authority recorded before an action to a matching record after it, while keeping authority and evidence distinct so the correspondence can be checked.",
+    "construction": "One 64-unit square field. Form A is a bar across the top, a stem down the left and a foot back to the right. Form B is form A rotated 180 degrees about the centre of the field. Every dimension is forced by the field, the bar and the seam.",
+    "rejected_shorthand": [
+      "ring",
+      "concentric ring",
+      "shield",
+      "padlock",
+      "checkmark",
+      "document stamp",
+      "monogram",
+      "robot",
+      "brain",
+      "neural dot network",
+      "sparkle",
+      "chat bubble",
+      "circuit",
+      "appliance silhouette",
+      "passport booklet",
+      "decorative gradient"
+    ]
+  },
+  "geometry": {
+    "field": 64,
+    "bar": 10,
+    "seam": 6,
+    "margin": 6,
+    "top_bar": 36,
+    "stem_height": 31,
+    "foot_width": 23,
+    "foot_top": 27,
+    "half_turn_centre": [
+      32,
+      32
+    ],
+    "cap_height": 64,
+    "x_height": 46,
+    "stroke": 10,
+    "crossbar": 36,
+    "corner_radius": {
+      "x_height": 16,
+      "cap": 22,
+      "spine": 14
+    },
+    "lockup_gap": 32,
+    "minimum_separation": {
+      "mark": 6,
+      "icon": 11
+    },
+    "integer_coordinates_only": true
+  },
+  "assets": [
+    {
+      "path": "assets/svg/deedseal-mark.svg",
+      "sha256": "a09dc0769f5fc2bcd7e36703972fa99a78904fa9f730e1bd7c8f653a1b4f6b44",
+      "asset": "mark",
+      "geometry_group": "mark",
+      "view_box": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "square": true,
+      "size_class": "square-64",
+      "ink_role": "ink"
+    },
+    {
+      "path": "assets/svg/deedseal-mark-inverse.svg",
+      "sha256": "dc2b2b18333384f6e08ac769d516c6907b7fec1eec22acad720cff7a2f1d13b5",
+      "asset": "mark-inverse",
+      "geometry_group": "mark",
+      "view_box": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "square": true,
+      "size_class": "square-64",
+      "ink_role": "ink-inverse"
+    },
+    {
+      "path": "assets/svg/deedseal-wordmark.svg",
+      "sha256": "b41013692b0528d60ded0cbd28d7ef9b1babfb79dd096c94ffb6d6ed8a24fe77",
+      "asset": "wordmark",
+      "geometry_group": "wordmark",
+      "view_box": [
+        0,
+        0,
+        440,
+        64
+      ],
+      "square": false,
+      "size_class": "horizontal-440x64",
+      "ink_role": "ink"
+    },
+    {
+      "path": "assets/svg/deedseal-wordmark-inverse.svg",
+      "sha256": "f8f0b82f9671fbc4d0ff4cd5b676f1e7fb7f66ff35ed5d7fde34a7ca636ebf8b",
+      "asset": "wordmark-inverse",
+      "geometry_group": "wordmark",
+      "view_box": [
+        0,
+        0,
+        440,
+        64
+      ],
+      "square": false,
+      "size_class": "horizontal-440x64",
+      "ink_role": "ink-inverse"
+    },
+    {
+      "path": "assets/svg/deedseal-lockup.svg",
+      "sha256": "914b7d3397d2c5b0e1b9d06d13b3ad1b861cc417f7e4a7ffd814a49f852602f8",
+      "asset": "lockup",
+      "geometry_group": "lockup",
+      "view_box": [
+        0,
+        0,
+        524,
+        64
+      ],
+      "square": false,
+      "size_class": "horizontal-524x64",
+      "ink_role": "ink"
+    },
+    {
+      "path": "assets/svg/deedseal-lockup-inverse.svg",
+      "sha256": "53803bf9581b9a837c9f9c3925efeff040573d2b5b0b0da456bffc4df7faa910",
+      "asset": "lockup-inverse",
+      "geometry_group": "lockup",
+      "view_box": [
+        0,
+        0,
+        524,
+        64
+      ],
+      "square": false,
+      "size_class": "horizontal-524x64",
+      "ink_role": "ink-inverse"
+    },
+    {
+      "path": "assets/svg/deedseal-icon.svg",
+      "sha256": "a75c04cafeb1bfd4e8a0eb719a1b1b0a243b9aa790bcc3c6f1c02aec9e75a06d",
+      "asset": "icon",
+      "geometry_group": "icon",
+      "view_box": [
+        0,
+        0,
+        64,
+        64
+      ],
+      "square": true,
+      "size_class": "square-64",
+      "ink_role": "ink"
+    },
+    {
+      "path": "assets/svg/deedseal-identity-board.svg",
+      "sha256": "388e9905fa43449379a6a059b39328e67c8e6c1ecea74cc1771412042c072bc8",
+      "asset": "identity-board",
+      "geometry_group": "board",
+      "view_box": [
+        0,
+        0,
+        1600,
+        2400
+      ],
+      "square": false,
+      "size_class": "sheet-1600x2400",
+      "ink_role": "ink"
+    }
+  ],
+  "geometry_groups": {
+    "mark": {
+      "members": [
+        "assets/svg/deedseal-mark.svg",
+        "assets/svg/deedseal-mark-inverse.svg"
+      ],
+      "shared": "identical path data; the variants differ only in the declared ink role"
+    },
+    "wordmark": {
+      "members": [
+        "assets/svg/deedseal-wordmark.svg",
+        "assets/svg/deedseal-wordmark-inverse.svg"
+      ],
+      "shared": "identical path data; the variants differ only in the declared ink role"
+    },
+    "lockup": {
+      "members": [
+        "assets/svg/deedseal-lockup.svg",
+        "assets/svg/deedseal-lockup-inverse.svg"
+      ],
+      "shared": "identical path data; the variants differ only in the declared ink role"
+    },
+    "icon": {
+      "members": [
+        "assets/svg/deedseal-icon.svg"
+      ],
+      "shared": "the mark's construction with the foot omitted; every remaining coordinate is the mark's"
+    },
+    "board": {
+      "members": [
+        "assets/svg/deedseal-identity-board.svg"
+      ],
+      "shared": "a specimen sheet; it places the other assets and adds no new letterform"
+    }
+  },
+  "simplification": {
+    "asset": "assets/svg/deedseal-icon.svg",
+    "parent": "assets/svg/deedseal-mark.svg",
+    "rule": "omit-foot",
+    "reason": "At 16 px the mark's foot and its two 6-unit seams fall below 1.5 device pixels and grey out. The icon drops the foot and keeps every other coordinate, so the half-turn congruence still reads.",
+    "applies_below_px": 32
+  },
+  "palette": {
+    "roles": {
+      "ink": {
+        "value": "#141414",
+        "use": "every mark, wordmark and lockup on a light surface"
+      },
+      "surface": {
+        "value": "#FAFAF7",
+        "use": "the light surface those assets sit on"
+      },
+      "ink-inverse": {
+        "value": "#FAFAF7",
+        "use": "every mark, wordmark and lockup on a dark surface"
+      },
+      "surface-inverse": {
+        "value": "#141414",
+        "use": "the dark surface those assets sit on"
+      },
+      "muted": {
+        "value": "#5C5C57",
+        "use": "secondary text and diagram rules on a light surface"
+      },
+      "muted-inverse": {
+        "value": "#9C9C93",
+        "use": "secondary text and diagram rules on a dark surface"
+      }
+    },
+    "asset_inks": [
+      "ink",
+      "ink-inverse"
+    ],
+    "permitted_in_assets": [
+      "#141414",
+      "#FAFAF7",
+      "#5C5C57"
+    ],
+    "contrast_pairs": [
+      {
+        "foreground": "ink",
+        "background": "surface",
+        "ratio": 17.62,
+        "minimum": 4.5
+      },
+      {
+        "foreground": "ink-inverse",
+        "background": "surface-inverse",
+        "ratio": 17.62,
+        "minimum": 4.5
+      },
+      {
+        "foreground": "muted",
+        "background": "surface",
+        "ratio": 6.43,
+        "minimum": 4.5
+      },
+      {
+        "foreground": "muted-inverse",
+        "background": "surface-inverse",
+        "ratio": 6.66,
+        "minimum": 4.5
+      }
+    ],
+    "runtime_states": {
+      "statement": "GREEN, AMBER and RED are runtime verdicts, not brand accents. They are declared here so a consumer samples the same values, and they may not appear in any brand asset.",
+      "permitted_in_assets": false,
+      "roles": {
+        "state-pass": {
+          "value": "#1F6F43",
+          "on": "surface",
+          "ratio": 5.88
+        },
+        "state-pass-inverse": {
+          "value": "#5BC98D",
+          "on": "surface-inverse",
+          "ratio": 8.93
+        },
+        "state-hold": {
+          "value": "#8A5A00",
+          "on": "surface",
+          "ratio": 5.67
+        },
+        "state-hold-inverse": {
+          "value": "#E0A63A",
+          "on": "surface-inverse",
+          "ratio": 8.5
+        },
+        "state-block": {
+          "value": "#9B1C1C",
+          "on": "surface",
+          "ratio": 7.79
+        },
+        "state-block-inverse": {
+          "value": "#F08A8A",
+          "on": "surface-inverse",
+          "ratio": 7.64
+        }
+      }
+    }
+  },
+  "typography": {
+    "statement": "A closed three-role system. The wordmark is not typeset from any of these families: it is constructed geometry, so no font is needed to render or to verify it.",
+    "roles": [
+      {
+        "role": "display",
+        "use": "product statement and headline",
+        "family": "InterDisplay",
+        "weight": 600,
+        "style": "normal",
+        "license": "OFL-1.1",
+        "upstream_project": "https://rsms.me/inter/",
+        "distribution": "inter-ui",
+        "release": "4.1.1",
+        "release_url": "https://registry.npmjs.org/inter-ui/-/inter-ui-4.1.1.tgz",
+        "woff2_file": "display/InterDisplay-SemiBold.woff2",
+        "woff2_sha256": "d9f63a82b826fb0117c92715c3a52a2d2247bc321bc39341420bf52d91e8277a"
+      },
+      {
+        "role": "interface",
+        "use": "interface and body text",
+        "family": "Inter",
+        "weight": 400,
+        "style": "normal",
+        "license": "OFL-1.1",
+        "upstream_project": "https://rsms.me/inter/",
+        "distribution": "inter-ui",
+        "release": "4.1.1",
+        "release_url": "https://registry.npmjs.org/inter-ui/-/inter-ui-4.1.1.tgz",
+        "woff2_file": "web/Inter-Regular.woff2",
+        "woff2_sha256": "e06f6b1bc553aaea4e4668023ed0ab0a147129c3107f511bc7d03d361b0ae085"
+      },
+      {
+        "role": "technical",
+        "use": "evidence, digests, passports and any byte a reader must compare",
+        "family": "IBM Plex Mono",
+        "weight": 400,
+        "style": "normal",
+        "license": "OFL-1.1",
+        "upstream_project": "https://www.ibm.com/plex/",
+        "distribution": "@ibm/plex-mono",
+        "release": "2.5.0",
+        "release_url": "https://registry.npmjs.org/@ibm/plex-mono/-/plex-mono-2.5.0.tgz",
+        "woff2_file": "fonts/complete/woff2/IBMPlexMono-Regular.woff2",
+        "woff2_sha256": "ba204497f16b6d334cee9d1e963a831b73e3a56e1d6300a8489d18df7214b350"
+      }
+    ],
+    "vendoring": "This record is text only and vendors no font binary. A consumer vendors exactly the WOFF2 file named above and verifies its SHA-256 against this manifest before use."
+  },
+  "wordmark": {
+    "name": "Deedseal",
+    "glyphs": [
+      {
+        "character": "D",
+        "origin": 0,
+        "width": 52
+      },
+      {
+        "character": "e",
+        "origin": 64,
+        "width": 48
+      },
+      {
+        "character": "e",
+        "origin": 124,
+        "width": 48
+      },
+      {
+        "character": "d",
+        "origin": 184,
+        "width": 50
+      },
+      {
+        "character": "s",
+        "origin": 248,
+        "width": 46
+      },
+      {
+        "character": "e",
+        "origin": 306,
+        "width": 48
+      },
+      {
+        "character": "a",
+        "origin": 366,
+        "width": 48
+      },
+      {
+        "character": "l",
+        "origin": 430,
+        "width": 10
+      }
+    ]
+  },
+  "clearspace": {
+    "unit": "quarter-field",
+    "units": 16,
+    "relative_to": "the 64-unit mark field, in each asset's own coordinate space",
+    "rule": "Keep a clear band of 16 units on every side of the mark, the icon, the wordmark and the lockup. Nothing enters that band."
+  },
+  "minimum_sizes": {
+    "assets/svg/deedseal-mark.svg": {
+      "minimum_px": 32,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-mark-inverse.svg": {
+      "minimum_px": 32,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-icon.svg": {
+      "minimum_px": 16,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-wordmark.svg": {
+      "minimum_px": 120,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-wordmark-inverse.svg": {
+      "minimum_px": 120,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-lockup.svg": {
+      "minimum_px": 160,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-lockup-inverse.svg": {
+      "minimum_px": 160,
+      "measured": "width"
+    },
+    "assets/svg/deedseal-identity-board.svg": {
+      "minimum_px": 800,
+      "measured": "width"
+    }
+  },
+  "surfaces": [
+    {
+      "surface": "svg-master",
+      "source": "assets/svg/deedseal-mark.svg",
+      "format": "svg"
+    },
+    {
+      "surface": "landing-header-lockup",
+      "source": "assets/svg/deedseal-lockup.svg",
+      "format": "svg"
+    },
+    {
+      "surface": "landing-footer-lockup",
+      "source": "assets/svg/deedseal-lockup-inverse.svg",
+      "format": "svg"
+    },
+    {
+      "surface": "cockpit-header",
+      "source": "assets/svg/deedseal-lockup.svg",
+      "format": "svg"
+    },
+    {
+      "surface": "cockpit-application-icon",
+      "source": "assets/svg/deedseal-mark.svg",
+      "format": "svg"
+    },
+    {
+      "surface": "monochrome-print-export",
+      "source": "assets/svg/deedseal-lockup.svg",
+      "format": "svg"
+    }
+  ],
+  "raster_derivatives": {
+    "renderer": {
+      "name": "chromium",
+      "version": "151.0.7922.108",
+      "mode": "headless screenshot at device scale factor 1",
+      "command": "chromium --headless --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --screenshot={output} --window-size={width},{height} {page}",
+      "page": "one local HTML document whose only element is an img of {source} sized {width} by {height} on the declared surface colour",
+      "determinism": "The SVG sources are the canonical bytes. Raster output is reproducible for a fixed renderer version; byte equality across renderer versions is not claimed."
+    },
+    "targets": [
+      {
+        "target": "favicon-16",
+        "source": "assets/svg/deedseal-icon.svg",
+        "width": 16,
+        "height": 16,
+        "surface": "surface",
+        "output": "deedseal-icon-16x16.png"
+      },
+      {
+        "target": "favicon-32",
+        "source": "assets/svg/deedseal-icon.svg",
+        "width": 32,
+        "height": 32,
+        "surface": "surface",
+        "output": "deedseal-icon-32x32.png"
+      },
+      {
+        "target": "apple-touch-icon",
+        "source": "assets/svg/deedseal-mark.svg",
+        "width": 180,
+        "height": 180,
+        "surface": "surface",
+        "output": "deedseal-mark-180x180.png"
+      },
+      {
+        "target": "pwa-icon-192",
+        "source": "assets/svg/deedseal-mark.svg",
+        "width": 192,
+        "height": 192,
+        "surface": "surface",
+        "output": "deedseal-mark-192x192.png"
+      },
+      {
+        "target": "pwa-icon-512",
+        "source": "assets/svg/deedseal-mark.svg",
+        "width": 512,
+        "height": 512,
+        "surface": "surface",
+        "output": "deedseal-mark-512x512.png"
+      },
+      {
+        "target": "github-organization-avatar",
+        "source": "assets/svg/deedseal-mark.svg",
+        "width": 512,
+        "height": 512,
+        "surface": "surface",
+        "output": "deedseal-mark-avatar-512x512.png"
+      },
+      {
+        "target": "github-repository-social-preview",
+        "source": "assets/svg/deedseal-lockup.svg",
+        "width": 1280,
+        "height": 640,
+        "surface": "surface",
+        "output": "deedseal-lockup-social-1280x640.png"
+      },
+      {
+        "target": "cockpit-application-icon-raster",
+        "source": "assets/svg/deedseal-mark.svg",
+        "width": 1024,
+        "height": 1024,
+        "surface": "surface",
+        "output": "deedseal-mark-1024x1024.png"
+      },
+      {
+        "target": "monochrome-print-proof",
+        "source": "assets/svg/deedseal-lockup.svg",
+        "width": 2048,
+        "height": 250,
+        "surface": "surface",
+        "output": "deedseal-lockup-print-2048x250.png"
+      }
+    ],
+    "committed": false,
+    "reason": "The public-record gate accepts UTF-8 text only. Raster derivatives are produced outside the tree from the committed SVG sources and the recipe above."
+  },
+  "downstream": {
+    "statement": "This packet defines adoption and performs none of it. No consumer is edited by this packet.",
+    "consumers": [
+      "deedseal/deedseal-portal",
+      "deedseal/deedseal-cockpit-client",
+      "github-organization-and-repository-settings"
+    ],
+    "rules": [
+      "A consumer vendors only assets and fonts declared in this manifest.",
+      "A consumer records one local pin file conforming to the schema below.",
+      "A consumer's continuous integration verifies its local bytes against that pin without network access.",
+      "No consumer invents a variant: a needed variant returns here as a change to this manifest.",
+      "A later convergence check reports exact digest equality or a named mismatch. Visual similarity is not evidence."
+    ],
+    "pin_record_schema": {
+      "schema_version": "deedseal.brand-pin-record/v1",
+      "required_fields": [
+        "schema_version",
+        "source_repository",
+        "accepted_merge_commit",
+        "identity_version",
+        "manifest_path",
+        "manifest_sha256",
+        "assets",
+        "typography"
+      ],
+      "field_patterns": {
+        "schema_version": "^deedseal\\.brand-pin-record/v1$",
+        "source_repository": "^deedseal/deedseal$",
+        "accepted_merge_commit": "^[0-9a-f]{40}$",
+        "identity_version": "^[0-9]+\\.[0-9]+$",
+        "manifest_path": "^assets/brand-manifest\\.v1\\.json$",
+        "manifest_sha256": "^[0-9a-f]{64}$"
+      },
+      "assets_entry_fields": [
+        "path",
+        "sha256"
+      ],
+      "typography_entry_fields": [
+        "role",
+        "woff2_file",
+        "woff2_sha256"
+      ],
+      "digest_pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "legal": {
+    "statement": "This packet records a design. It makes no trademark claim of any kind.",
+    "no_trademark_search": true,
+    "no_clearance_claim": true,
+    "no_registration_claim": true,
+    "symbols_forbidden": [
+      "registered-sign",
+      "trademark-sign"
+    ],
+    "governing_notice": "NOTICE.md"
+  }
+}
