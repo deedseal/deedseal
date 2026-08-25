@@ -69,6 +69,42 @@ PUBLIC_GITHUB_URL_RE = re.compile(
 # and nowhere else.
 PUBLIC_COMMIT_ID_PREFIX = "examples/verified/"
 
+# A published workflow pins every third-party Action to an immutable commit, and
+# an immutable commit is commit-shaped, so the rule above needs one exception.
+# A per-file waiver would exempt an entire file, so the exception is written as
+# syntax instead: a complete `uses:` entry, in a workflow file, whose ref is
+# exactly 40 lowercase hexadecimal characters, on a line carrying no second
+# commit-shaped value. Prose, comments, `run:` bodies, `env:` values and `with:`
+# inputs stay under the rule, inside a workflow as everywhere else.
+WORKFLOW_DIRECTORY = ".github/workflows/"
+WORKFLOW_SUFFIXES = {".yml", ".yaml"}
+
+# `owner/repository`, optionally followed by a path inside that repository --
+# the shapes GitHub accepts to the left of `@` for a non-local Action.
+ACTION_REPOSITORY_RE = re.compile(
+    r"[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?"          # owner
+    r"/[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?"          # repository
+    r"(?:/(?!\.{1,2}(?:/|$))[A-Za-z0-9._-]+)*"              # a path inside it
+)
+# One whole line and nothing else: an optional block-sequence dash, the literal
+# `uses` key, one reference that may be quoted, and at most a trailing comment.
+ACTION_USES_LINE_RE = re.compile(
+    r"^[ \t]*(?:-[ \t]+)?uses:[ \t]*"
+    r"(?P<quote>[\"']?)(?P<reference>[^\s\"'#]+)(?P=quote)"
+    r"[ \t]*(?:#[^\n]*)?$"
+)
+# A `uses` key that this rule cannot read is refused rather than skipped.
+ACTION_USES_KEY_RE = re.compile(r"^[ \t]*(?:-[ \t]+)?uses:")
+IMMUTABLE_ACTION_REF_RE = re.compile(r"[0-9a-f]{40}")
+# A block scalar (`run: |`, `description: >-`) holds text, not YAML. A `uses:`
+# line inside one is a string, so it is not an Action entry and gets no
+# exception.
+BLOCK_SCALAR_LINE_RE = re.compile(
+    r"^[ \t]*(?:-[ \t]+)?[^\s:#][^:#]*:[ \t]*[|>][+-]?[0-9]*[ \t]*(?:#[^\n]*)?$"
+)
+# References that name no upstream commit, so there is no commit to pin them to.
+UNPINNABLE_ACTION_PREFIXES = ("./", "../", "docker://")
+
 # Assemble credential-shaped prefixes without embedding a live-looking token in
 # the validator source. The public scan includes this file and its tests.
 _CREDENTIAL_PREFIXES = ("gh" + "p_", "github_" + "pat_", "s" + "k-")
@@ -705,6 +741,103 @@ def all_public_files() -> list[Path]:
     return sorted(files)
 
 
+def is_workflow_file(path: Path) -> bool:
+    """A GitHub Actions workflow: under `.github/workflows/`, `.yml` or `.yaml`."""
+    return (
+        path.as_posix().startswith(WORKFLOW_DIRECTORY)
+        and path.suffix in WORKFLOW_SUFFIXES
+    )
+
+
+def workflow_structure_lines(text: str) -> list[tuple[int, str]]:
+    """Return the (line number, line) pairs YAML reads as structure.
+
+    A block scalar -- `run: |`, `description: >-` -- carries text, so `uses:`
+    written inside one is a string, not a step key. Those lines are dropped here
+    and therefore never reach the Action-pin rules below.
+    """
+    lines: list[tuple[int, str]] = []
+    block_indent: int | None = None
+    for number, line in enumerate(text.splitlines(), start=1):
+        indent = len(line) - len(line.lstrip(" \t"))
+        if block_indent is not None:
+            if not line.strip() or indent > block_indent:
+                continue
+            block_indent = None
+        lines.append((number, line))
+        if BLOCK_SCALAR_LINE_RE.match(line):
+            block_indent = indent
+    return lines
+
+
+def workflow_action_pins(path: Path, text: str) -> dict[int, str]:
+    """Map line number to the immutable Action ref that line pins.
+
+    A ref is returned only when every condition holds: the file is a workflow;
+    the line is a complete `uses:` entry naming an `owner/repository[/path]`
+    Action outside any block scalar; the ref is exactly 40 lowercase hexadecimal
+    characters; and the line carries no second commit-shaped value the entry
+    does not account for. This mapping is the whole of the exception -- a
+    commit-shaped value anywhere else in the file is not covered by it.
+    """
+    pins: dict[int, str] = {}
+    if not is_workflow_file(path):
+        return pins
+    for number, line in workflow_structure_lines(text):
+        match = ACTION_USES_LINE_RE.match(line)
+        if match is None:
+            continue
+        action, separator, ref = match.group("reference").partition("@")
+        if not separator or ACTION_REPOSITORY_RE.fullmatch(action) is None:
+            continue
+        if IMMUTABLE_ACTION_REF_RE.fullmatch(ref) is None:
+            continue
+        if len(FULL_COMMIT_RE.findall(line)) != 1:
+            continue
+        pins[number] = ref
+    return pins
+
+
+def workflow_pin_violations(path: Path, text: str) -> list[str]:
+    """Refuse an Action this repository has left unpinned or loosely pinned.
+
+    The exception above recognises only a lowercase 40-hex ref. Without this
+    rule the other forms -- an uppercase or mixed-case commit, a short SHA, a
+    mutable tag, a branch -- would merely go unexempted rather than be
+    forbidden, and a mutable ref discloses nothing, so the disclosure rule alone
+    would never see it. Local (`./`) and container (`docker://`) references name
+    no upstream commit and are out of scope.
+    """
+    violations: list[str] = []
+    if not is_workflow_file(path):
+        return violations
+    posix = path.as_posix()
+    for number, line in workflow_structure_lines(text):
+        match = ACTION_USES_LINE_RE.match(line)
+        if match is None:
+            if ACTION_USES_KEY_RE.match(line):
+                violations.append(
+                    f"{posix}:{number}: unreadable Action reference: {line.strip()}"
+                )
+            continue
+        reference = match.group("reference")
+        if reference.startswith(UNPINNABLE_ACTION_PREFIXES):
+            continue
+        action, separator, ref = reference.partition("@")
+        if not separator or ACTION_REPOSITORY_RE.fullmatch(action) is None:
+            violations.append(
+                f"{posix}:{number}: Action reference is not owner/repository@ref:"
+                f" {reference}"
+            )
+            continue
+        if IMMUTABLE_ACTION_REF_RE.fullmatch(ref) is None:
+            violations.append(
+                f"{posix}:{number}: {action} must be pinned to an exact 40-character"
+                f" lowercase commit SHA, not {ref}"
+            )
+    return violations
+
+
 def disclosure_violation(path: Path, text: str) -> str | None:
     for match in GITHUB_REPOSITORY_URL_RE.finditer(text):
         if PUBLIC_GITHUB_URL_RE.match(match.group(0)) is None:
@@ -712,23 +845,12 @@ def disclosure_violation(path: Path, text: str) -> str | None:
     for pattern, label in DISCLOSURE_PATTERNS:
         if pattern.search(text):
             return label
-    for match in FULL_COMMIT_RE.finditer(text):
-        line_start = text.rfind("\n", 0, match.start()) + 1
-        line_end = text.find("\n", match.end())
-        if line_end < 0:
-            line_end = len(text)
-        line = text[line_start:line_end]
-        if (
-            path.as_posix() == ".github/workflows/validate-public-record.yml"
-            and any(
-                f"{action}@{match.group(0)}" in line
-                for action in ("actions/checkout", "actions/setup-go")
-            )
-        ):
-            continue
-        if path.as_posix().startswith(PUBLIC_COMMIT_ID_PREFIX):
-            continue
-        return "private commit identifier"
+    if not path.as_posix().startswith(PUBLIC_COMMIT_ID_PREFIX):
+        pins = workflow_action_pins(path, text)
+        for match in FULL_COMMIT_RE.finditer(text):
+            line_number = text.count("\n", 0, match.start()) + 1
+            if pins.get(line_number) != match.group(0):
+                return "private commit identifier"
     return None
 
 
@@ -1080,6 +1202,8 @@ def validate_public_text() -> None:
         violation = disclosure_violation(relative, text)
         if violation is not None:
             fail(f"{relative}: contains forbidden {violation}")
+        for message in workflow_pin_violations(relative, text):
+            fail(message)
         for message in internal_link_violations(relative, text):
             fail(message)
         if relative.suffix == ".py":

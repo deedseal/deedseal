@@ -1408,8 +1408,14 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
         self.assertEqual(codeowners, "* @avoroncov971-maker\n")
 
     def test_browser_verifier_actions_match_the_existing_immutable_pins(self) -> None:
+        """The two workflows carry the same pins, in the same canonical case.
+
+        The pattern is lowercase-only on purpose. A case-insensitive one cannot
+        see a divergence it then normalises away, and the pins have to be
+        byte-equal for the disclosure exception to recognise both of them.
+        """
         pattern = re.compile(
-            r"uses:\s+actions/(?P<action>checkout|setup-go)@(?P<sha>[0-9A-Fa-f]{40})"
+            r"uses:\s+actions/(?P<action>checkout|setup-go)@(?P<sha>[0-9a-f]{40})"
         )
         validation = (ROOT / ".github/workflows/validate-public-record.yml").read_text(
             encoding="utf-8"
@@ -1418,11 +1424,11 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
             encoding="utf-8"
         )
         expected = {
-            match.group("action"): match.group("sha").lower()
+            match.group("action"): match.group("sha")
             for match in pattern.finditer(validation)
         }
         observed = {
-            match.group("action"): match.group("sha").lower()
+            match.group("action"): match.group("sha")
             for match in pattern.finditer(browser)
         }
         self.assertEqual(set(observed), {"checkout", "setup-go"})
@@ -1434,6 +1440,338 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
         )
         self.assertEqual(workflow.count("tools/test_release_manifest.py"), 1)
 
+
+# ----------------------------------------------------------------------
+# the immutable Action pin: one narrow, syntax-aware exception to the rule
+# that a commit-shaped value in a public file is a private coordinate
+# ----------------------------------------------------------------------
+
+# Commit-shaped fixtures, assembled rather than written out: this file is itself
+# inside the public scan, and a literal 40-hex value here would be a disclosure.
+LOWERCASE_PIN = "a" * 40
+SECOND_PIN = "b" * 40
+UPPERCASE_PIN = "A" * 40
+MIXED_CASE_PIN = "A" * 20 + "a" * 20
+SHORT_PIN = "a" * 7
+
+WORKFLOW_FIXTURE_PATH = Path(".github/workflows/fixture.yml")
+CHECKOUT = "actions/checkout"
+
+
+def workflow_fixture(*step_lines: str) -> str:
+    """A minimal but structurally real workflow carrying the given step lines."""
+    body = "\n".join(f"      {line}" for line in step_lines)
+    return (
+        "name: Fixture\n"
+        "\n"
+        "on:\n"
+        "  workflow_dispatch:\n"
+        "\n"
+        "permissions:\n"
+        "  contents: read\n"
+        "\n"
+        "jobs:\n"
+        "  job:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        f"{body}\n"
+    )
+
+
+def pinned_step(ref: str, action: str = CHECKOUT) -> str:
+    return f"- uses: {action}@{ref}"
+
+
+class WorkflowActionPinDisclosureTests(unittest.TestCase):
+    """The disclosure exception for immutable Action pins, and its limits.
+
+    The rule under test is that a 40-hex value in a public file is a private
+    repository coordinate. A pinned workflow has to carry commit-shaped values
+    to be pinned at all, so exactly one exception exists. It is syntax-aware,
+    not per-file: the exception recognises a complete `uses:` entry in a
+    workflow whose ref is 40 lowercase hexadecimal characters and whose line
+    carries no second commit-shaped value. Everything else -- including
+    everything else in the same file -- stays under the rule.
+    """
+
+    WORKFLOWS = (
+        ".github/workflows/validate-public-record.yml",
+        ".github/workflows/verifier-wasm.yml",
+    )
+
+    def workflow_text(self, relative: str) -> str:
+        return (ROOT / relative).read_text(encoding="utf-8")
+
+    # -- what the committed tree carries ------------------------------------
+
+    def test_the_committed_workflows_pin_every_action_to_a_lowercase_commit(self) -> None:
+        for relative in self.WORKFLOWS:
+            with self.subTest(workflow=relative):
+                path = Path(relative)
+                text = self.workflow_text(relative)
+                self.assertEqual(gate.workflow_pin_violations(path, text), [])
+                self.assertIsNone(gate.disclosure_violation(path, text))
+                pins = gate.workflow_action_pins(path, text)
+                self.assertTrue(pins)
+                for ref in pins.values():
+                    self.assertRegex(ref, r"^[0-9a-f]{40}$")
+
+    def test_the_browser_verifier_pins_are_lowercase_forty_hex(self) -> None:
+        text = self.workflow_text(".github/workflows/verifier-wasm.yml")
+        refs = re.findall(r"uses:[ \t]+actions/(?:checkout|setup-go)@(\S+)", text)
+        self.assertEqual(len(refs), 2)
+        for ref in refs:
+            with self.subTest(ref=ref[:8]):
+                self.assertRegex(ref, r"^[0-9a-f]{40}$")
+                self.assertEqual(ref, ref.lower())
+
+    def test_no_workflow_is_exempt_by_its_path(self) -> None:
+        """The replaced rule waived one named file. Nothing is waived by name now."""
+        for relative in self.WORKFLOWS:
+            with self.subTest(workflow=relative):
+                text = self.workflow_text(relative)
+                self.assertEqual(
+                    gate.disclosure_violation(
+                        Path(relative), f"{text}\n# a note about {SECOND_PIN}\n"
+                    ),
+                    "private commit identifier",
+                )
+
+    # -- what the exception accepts -----------------------------------------
+
+    def test_an_immutable_action_pin_is_accepted_in_its_canonical_shapes(self) -> None:
+        accepted = {
+            "step entry": workflow_fixture(pinned_step(LOWERCASE_PIN)),
+            "quoted reference": workflow_fixture(
+                f'- uses: "{CHECKOUT}@{LOWERCASE_PIN}"'
+            ),
+            "trailing comment": workflow_fixture(
+                f"{pinned_step(LOWERCASE_PIN)}  # pinned upstream release"
+            ),
+            "action in a subdirectory": workflow_fixture(
+                pinned_step(LOWERCASE_PIN, "deedseal/deedseal/.github/actions/verify")
+            ),
+            "two pins in one workflow": workflow_fixture(
+                pinned_step(LOWERCASE_PIN),
+                pinned_step(SECOND_PIN, "actions/setup-go"),
+            ),
+        }
+        for name, text in accepted.items():
+            with self.subTest(shape=name):
+                self.assertIsNone(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text)
+                )
+                self.assertEqual(
+                    gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text), []
+                )
+
+    def test_local_and_container_action_references_need_no_commit_pin(self) -> None:
+        """Neither names an upstream commit, so neither can be pinned to one."""
+        for reference in ("./.github/actions/local", "docker://alpine:3.20"):
+            with self.subTest(reference=reference):
+                text = workflow_fixture(f"- uses: {reference}")
+                self.assertEqual(
+                    gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text), []
+                )
+                self.assertIsNone(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text)
+                )
+
+    # -- what the exception must never reach --------------------------------
+
+    def test_a_commit_outside_a_uses_entry_is_refused_inside_a_workflow(self) -> None:
+        """Issue #61: the exception cannot disclose an arbitrary 40-hex value."""
+        elsewhere = {
+            "comment": workflow_fixture(f"# rebuilt from {LOWERCASE_PIN}"),
+            "run command": workflow_fixture(f"- run: git checkout {LOWERCASE_PIN}"),
+            "run block scalar": workflow_fixture(
+                "- run: |",
+                f"    uses: {CHECKOUT}@{LOWERCASE_PIN}",
+            ),
+            "step name": workflow_fixture(f"- name: build {LOWERCASE_PIN}"),
+            "env value": workflow_fixture(
+                "- run: build.sh", "  env:", f"    SOURCE_REF: {LOWERCASE_PIN}"
+            ),
+            "action input": workflow_fixture(
+                pinned_step(SECOND_PIN), "  with:", f"    ref: {LOWERCASE_PIN}"
+            ),
+            "arbitrary yaml value": workflow_fixture(f"- ref: {LOWERCASE_PIN}"),
+            "yaml list item": workflow_fixture(f"- {LOWERCASE_PIN}"),
+            "key that merely ends in uses": workflow_fixture(
+                f"- not-uses: {CHECKOUT}@{LOWERCASE_PIN}"
+            ),
+            "uses inside a quoted string": workflow_fixture(
+                f'- name: "uses: {CHECKOUT}@{LOWERCASE_PIN}"'
+            ),
+        }
+        for name, text in elsewhere.items():
+            with self.subTest(placement=name):
+                self.assertEqual(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text),
+                    "private commit identifier",
+                    f"{name} was not refused",
+                )
+
+    def test_a_second_commit_on_a_pin_line_is_refused(self) -> None:
+        """The entry classifies its own ref and nothing else on the line."""
+        for name, line in (
+            (
+                "trailing comment",
+                f"{pinned_step(LOWERCASE_PIN)}  # was {SECOND_PIN}",
+            ),
+            ("appended value", f"{pinned_step(LOWERCASE_PIN)} {SECOND_PIN}"),
+        ):
+            with self.subTest(line=name):
+                text = workflow_fixture(line)
+                self.assertEqual(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text),
+                    "private commit identifier",
+                )
+                self.assertEqual(gate.workflow_action_pins(WORKFLOW_FIXTURE_PATH, text), {})
+
+    def test_the_exception_does_not_reach_outside_a_workflow_file(self) -> None:
+        text = workflow_fixture(pinned_step(LOWERCASE_PIN))
+        outside = (
+            "README.md",
+            "docs/verify.md",
+            "CHANGELOG.md",
+            ".github/CODEOWNERS",
+            ".github/dependabot.yml",
+            ".github/ISSUE_TEMPLATE/config.yml",
+            ".github/workflows/notes.txt",
+            ".github/workflows/README.md",
+            "workflows/verifier-wasm.yml",
+            "docs/.github/workflows/example.yml",
+        )
+        for relative in outside:
+            with self.subTest(path=relative):
+                self.assertEqual(
+                    gate.disclosure_violation(Path(relative), text),
+                    "private commit identifier",
+                    f"{relative} was exempted",
+                )
+                self.assertEqual(
+                    gate.workflow_action_pins(Path(relative), text), {}
+                )
+
+    # -- pins this repository refuses to accept as immutable ----------------
+
+    def test_an_uppercase_or_mixed_case_action_pin_is_refused(self) -> None:
+        for name, ref in (
+            ("uppercase", UPPERCASE_PIN),
+            ("mixed case", MIXED_CASE_PIN),
+        ):
+            with self.subTest(case=name):
+                text = workflow_fixture(pinned_step(ref))
+                violations = gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text)
+                self.assertEqual(len(violations), 1, violations)
+                self.assertIn("lowercase commit SHA", violations[0])
+                self.assertEqual(gate.workflow_action_pins(WORKFLOW_FIXTURE_PATH, text), {})
+
+    def test_a_short_sha_action_pin_is_refused(self) -> None:
+        for name, ref in (
+            ("short", SHORT_PIN),
+            ("one character short", "a" * 39),
+            ("one character long", "a" * 41),
+        ):
+            with self.subTest(ref=name):
+                text = workflow_fixture(pinned_step(ref))
+                violations = gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text)
+                self.assertEqual(len(violations), 1, violations)
+                self.assertIn("lowercase commit SHA", violations[0])
+
+    def test_a_mutable_tag_or_branch_action_pin_is_refused(self) -> None:
+        for ref in ("v4", "v7.0.1", "main", "master", "latest", "refs/heads/main"):
+            with self.subTest(ref=ref):
+                text = workflow_fixture(pinned_step(ref))
+                violations = gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text)
+                self.assertEqual(len(violations), 1, violations)
+                self.assertIn("lowercase commit SHA", violations[0])
+
+    def test_a_malformed_or_unreadable_action_reference_is_refused(self) -> None:
+        malformed = {
+            "no ref at all": f"- uses: {CHECKOUT}",
+            "no repository": f"- uses: checkout@{LOWERCASE_PIN}",
+            "path traversal": (
+                f"- uses: deedseal/deedseal/../private@{LOWERCASE_PIN}"
+            ),
+            "empty value": "- uses:",
+            "value on the next line": "- uses:\n          actions/checkout",
+        }
+        for name, line in malformed.items():
+            with self.subTest(reference=name):
+                text = workflow_fixture(*line.split("\n"))
+                self.assertTrue(
+                    gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text),
+                    f"{name} was not refused",
+                )
+
+    # -- everything the rule already refused, still refused ------------------
+
+    def test_existing_disclosure_violations_still_refuse_inside_a_workflow(self) -> None:
+        pinned = workflow_fixture(pinned_step(LOWERCASE_PIN))
+        additions = {
+            "private repository URL": (
+                "# see https://github." + "com/" + "private-space/repository"
+            ),
+            "private host path": "# built from " + "/" + "home/" + "operator/tree",
+            "credential-shaped token": "# token " + "gh" + "p_" + "A" * 30,
+            "email address": "# owner " + "person" + "@" + "example.invalid",
+            "network address": "# host " + "10." + "0.0." + "1",
+            "non-English text": "# te" + chr(0x0445) + chr(0x0442) + "st",
+        }
+        for name, line in additions.items():
+            with self.subTest(violation=name):
+                self.assertIsNotNone(
+                    gate.disclosure_violation(
+                        WORKFLOW_FIXTURE_PATH, f"{pinned}{line}\n"
+                    ),
+                    f"{name} was not refused",
+                )
+
+    def test_published_passport_commit_scope_is_untouched_by_the_exception(self) -> None:
+        self.assertIsNone(
+            gate.disclosure_violation(
+                Path("examples/verified/run-passport.json"),
+                '{"commit_sha": "' + LOWERCASE_PIN + '"}',
+            )
+        )
+        self.assertEqual(
+            gate.disclosure_violation(Path("docs/verify.md"), LOWERCASE_PIN),
+            "private commit identifier",
+        )
+
+    # -- the gate actually runs both rules over the committed tree -----------
+
+    def test_the_repository_gate_refuses_a_loosened_pin_and_a_leaked_commit(self) -> None:
+        """End-to-end, against the real tree, restored byte-for-byte afterwards."""
+        path = ROOT / ".github/workflows/verifier-wasm.yml"
+        original = path.read_bytes()
+        text = original.decode("utf-8")
+        pinned = re.search(
+            r"uses:[ \t]+actions/checkout@[0-9a-f]{40}", text
+        )
+        self.assertIsNotNone(pinned)
+        mutations = {
+            "mutable tag": text.replace(
+                pinned.group(0), "uses: actions/checkout@v4", 1
+            ),
+            "uppercase pin": text.replace(
+                pinned.group(0), pinned.group(0).upper().replace("USES:", "uses:"), 1
+            ),
+            "commit leaked into a comment": f"{text}# {SECOND_PIN}\n",
+        }
+        try:
+            for name, mutated in mutations.items():
+                with self.subTest(mutation=name):
+                    self.assertNotEqual(mutated, text)
+                    path.write_text(mutated, encoding="utf-8", newline="")
+                    with self.assertRaises(gate.ValidationError):
+                        gate.validate_repository()
+        finally:
+            path.write_bytes(original)
+        self.assertEqual(path.read_bytes(), original)
+        gate.validate_repository()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
