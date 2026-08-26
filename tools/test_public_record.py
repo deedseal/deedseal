@@ -1206,6 +1206,90 @@ def release_policy_violation(policy: str) -> str | None:
     return None
 
 
+# ----------------------------------------------------------------------
+# the release-signing identity, held in the release documents' own bytes
+# ----------------------------------------------------------------------
+
+# The registered public fingerprint of the Owner's Ed25519 release-signing key,
+# read back from GitHub and proven against an annotated tag in Issue #71. A
+# public fingerprint is publishable by construction; no private key material is
+# read, derived or carried by anything here.
+RELEASE_SIGNING_FINGERPRINT = "SHA256:5EAseYajdN8AATd6zX3f2EUUnfhrNn1XPpLWyHeohHE"
+RELEASE_SIGNING_EVIDENCE_URL = "https://github.com/deedseal/deedseal/issues/71"
+
+# The retired placeholder, assembled rather than written out: a literal here
+# would be indistinguishable from the reintroduction this guard exists to refuse,
+# and would answer a tree-wide search for it.
+RETIRED_SIGNING_PLACEHOLDER = "OWNER_ACTION" + "_REQUIRED"
+
+# The candidate notes' source-commit token, assembled for the same reason: its
+# tracked count is itself part of the release contract, so this file must not
+# add to that census while asserting on it.
+SOURCE_COMMIT_TOKEN = "SOURCE_SHA" + "_PLACEHOLDER"
+
+# Any `SHA256:` token in a release document is a statement about the release
+# identity, so every one of them has to be the registered fingerprint. The
+# alphabet is deliberately wider than base64 so a malformed token is caught as a
+# wrong fingerprint rather than skipped as unrecognisable.
+SIGNING_FINGERPRINT_TOKEN_RE = re.compile(r"SHA256:[A-Za-z0-9+/=_-]*")
+
+# The retired placeholder is refused where it speaks about the signing identity,
+# not wherever it appears: the rule is about this identity, not about the word.
+SIGNING_IDENTITY_CONTEXT_RE = re.compile(
+    r"\b(?:signing|signature|signed|fingerprint|release[ \t]+key)\b",
+    re.IGNORECASE,
+)
+SIGNING_IDENTITY_CONTEXT_WINDOW = 240
+
+# `SHA256SUMS` described as the one thing it is not. The claim group sits on the
+# provenance term so the gate's clause-local negation can deny it, which is
+# exactly how the committed sentence "`SHA256SUMS` is not a signature." reads.
+SIGNED_PROVENANCE_CLAIM_RE = re.compile(
+    r"\bSHA256SUMS\b[^\n.!?;]{0,80}?"
+    r"\b(?:is|are|was|were|acts?[ \t]+as|serves?[ \t]+as|counts?[ \t]+as|"
+    r"provides?|carries|constitutes?)\b[^\n.!?;]{0,40}?"
+    r"(?P<claim>\b(?:signature|signed[ \t]+provenance|signed[ \t]+attestation|"
+    r"provenance[ \t]+attestation|signed[ \t]+evidence)\b)",
+    re.IGNORECASE,
+)
+
+
+def release_signing_identity_violation(document: str) -> str | None:
+    """Name the way a release document stopped binding the registered identity.
+
+    Four refusals, in the order a reader meets them: the retired placeholder
+    returning for the signing identity, the registered fingerprint going missing,
+    a different or malformed fingerprint presented as the release identity, and
+    `SHA256SUMS` described as a signature. Negation is read through the gate's own
+    clause-local window, so a document stays free to say what it is *not*.
+    """
+    for match in re.finditer(re.escape(RETIRED_SIGNING_PLACEHOLDER), document):
+        window = document[
+            max(0, match.start() - SIGNING_IDENTITY_CONTEXT_WINDOW) : match.start()
+        ]
+        if SIGNING_IDENTITY_CONTEXT_RE.search(window) is None:
+            continue
+        if gate.claim_is_negated(document, match.start()):
+            continue
+        return f"release-signing identity returned to {RETIRED_SIGNING_PLACEHOLDER}"
+
+    if RELEASE_SIGNING_FINGERPRINT not in document:
+        return "registered release-signing fingerprint missing"
+
+    for match in SIGNING_FINGERPRINT_TOKEN_RE.finditer(document):
+        if match.group(0) != RELEASE_SIGNING_FINGERPRINT:
+            return (
+                "release-signing fingerprint that is not the registered identity "
+                f"({match.group(0)!r})"
+            )
+
+    for match in SIGNED_PROVENANCE_CLAIM_RE.finditer(document):
+        if not gate.claim_is_negated(document, match.start("claim")):
+            return "SHA256SUMS presented as a signature"
+
+    return None
+
+
 class BusinessFirstReleasePreflightTests(unittest.TestCase):
     """Hold the adopted public story and release preparation in repository bytes."""
 
@@ -1345,7 +1429,7 @@ class BusinessFirstReleasePreflightTests(unittest.TestCase):
             "evidence-snapshot identifier",
             "v0.1.0",
             "must not be moved, replaced, deleted or retroactively signed",
-            "OWNER_ACTION_REQUIRED",
+            RELEASE_SIGNING_FINGERPRINT,
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, policy)
@@ -2086,6 +2170,189 @@ class WorkflowActionPinDisclosureTests(unittest.TestCase):
             path.write_bytes(original)
         self.assertEqual(path.read_bytes(), original)
         gate.validate_repository()
+
+
+# ----------------------------------------------------------------------
+# the registered signing identity, probed in disposable copies of the real
+# release documents
+# ----------------------------------------------------------------------
+
+class ReleaseSigningIdentityBindingTests(unittest.TestCase):
+    """Issue #72: the release documents carry the registered identity, and say so.
+
+    Each probe mutates a disposable copy of a real committed document, proves the
+    mutation landed, and only then reads the guard's verdict. The committed file
+    is byte-compared afterwards, so a probe can never leave a candidate edited.
+    """
+
+    POLICY = "docs/decisions/release-and-tagging-policy.md"
+    NOTES = "docs/releases/v0.2.0-prerelease-notes.md"
+
+    # How many source-commit tokens the tracked candidate notes carry.
+    # Substitution happens in the composed Release body, outside the repository;
+    # substituting them in-repository is a defect, not a step.
+    TRACKED_SOURCE_PLACEHOLDERS = 13
+
+    def _document(self, relative: str) -> str:
+        return (ROOT / relative).read_text(encoding="utf-8")
+
+    def _prove_mutation_then_refusal(
+        self,
+        relative: str,
+        mutate,
+        reason: str,
+    ) -> None:
+        """Land the mutation in a disposable copy, then read the named refusal."""
+        source = ROOT / relative
+        source_bytes = source.read_bytes()
+        original = source_bytes.decode("utf-8")
+        mutated = mutate(original)
+
+        # A probe that changes nothing proves nothing.
+        self.assertNotEqual(mutated, original)
+
+        with tempfile.TemporaryDirectory() as temporary:
+            copy = Path(temporary) / Path(relative).name
+            copy.write_text(mutated, encoding="utf-8", newline="")
+
+            # Prove the mutation landed before interpreting the guard.
+            landed = copy.read_text(encoding="utf-8")
+            self.assertEqual(landed, mutated)
+            self.assertNotEqual(landed, original)
+
+            self.assertEqual(release_signing_identity_violation(landed), reason)
+
+        # The disposable copy is gone; the committed document is untouched.
+        self.assertEqual(source.read_bytes(), source_bytes)
+
+    # -- what the committed bytes hold ---------------------------------------
+
+    def test_the_committed_release_policy_binds_the_registered_identity(self) -> None:
+        policy = self._document(self.POLICY)
+        self.assertIsNone(release_signing_identity_violation(policy))
+        self.assertIn(RELEASE_SIGNING_FINGERPRINT, policy)
+        self.assertIn(RELEASE_SIGNING_EVIDENCE_URL, policy)
+        self.assertNotIn(RETIRED_SIGNING_PLACEHOLDER, policy)
+
+    def test_the_committed_candidate_notes_bind_the_registered_identity(self) -> None:
+        notes = self._document(self.NOTES)
+        self.assertIsNone(release_signing_identity_violation(notes))
+        self.assertIn(RELEASE_SIGNING_FINGERPRINT, notes)
+        self.assertIn(RELEASE_SIGNING_EVIDENCE_URL, notes)
+        self.assertNotIn(RETIRED_SIGNING_PLACEHOLDER, notes)
+
+    def test_the_candidate_notes_keep_the_checksum_boundary_verbatim(self) -> None:
+        notes = self._document(self.NOTES)
+        self.assertIn("`SHA256SUMS` is not a signature.", notes)
+        self.assertIn(
+            "No unsigned checksum file should be described as signed provenance.",
+            notes,
+        )
+
+    def test_the_candidate_notes_keep_every_source_sha_placeholder(self) -> None:
+        notes = self._document(self.NOTES)
+        self.assertEqual(
+            notes.count(SOURCE_COMMIT_TOKEN), self.TRACKED_SOURCE_PLACEHOLDERS
+        )
+        self.assertNotIn("/blob/main/", notes)
+
+    def test_the_guard_is_not_vacuous_on_an_empty_document(self) -> None:
+        """A guard that never fires would pass every test above for free."""
+        self.assertEqual(
+            release_signing_identity_violation(""),
+            "registered release-signing fingerprint missing",
+        )
+
+    # -- hostile probes, one refusal each ------------------------------------
+
+    def test_reintroducing_the_retired_placeholder_is_refused_by_name(self) -> None:
+        for relative in (self.POLICY, self.NOTES):
+            with self.subTest(document=relative):
+                self._prove_mutation_then_refusal(
+                    relative,
+                    lambda text: text.replace(
+                        RELEASE_SIGNING_FINGERPRINT, RETIRED_SIGNING_PLACEHOLDER
+                    ),
+                    "release-signing identity returned to "
+                    f"{RETIRED_SIGNING_PLACEHOLDER}",
+                )
+
+    def test_dropping_the_registered_fingerprint_is_refused_by_name(self) -> None:
+        for relative in (self.POLICY, self.NOTES):
+            with self.subTest(document=relative):
+                self._prove_mutation_then_refusal(
+                    relative,
+                    lambda text: text.replace(
+                        RELEASE_SIGNING_FINGERPRINT, "the Owner's release key"
+                    ),
+                    "registered release-signing fingerprint missing",
+                )
+
+    def test_a_different_fingerprint_as_the_release_identity_is_refused(self) -> None:
+        substitute = "SHA256:" + "0" * 43
+        for relative in (self.POLICY, self.NOTES):
+            with self.subTest(document=relative):
+                self._prove_mutation_then_refusal(
+                    relative,
+                    lambda text: f"{text}\nThe release identity is `{substitute}`.\n",
+                    "release-signing fingerprint that is not the registered identity "
+                    f"({substitute!r})",
+                )
+
+    def test_a_malformed_fingerprint_as_the_release_identity_is_refused(self) -> None:
+        malformed = {
+            "truncated": RELEASE_SIGNING_FINGERPRINT[:20],
+            "empty body": "SHA256:",
+            "wrong alphabet": "SHA256:not-a-real-fingerprint",
+        }
+        for name, token in malformed.items():
+            with self.subTest(fingerprint=name):
+                self._prove_mutation_then_refusal(
+                    self.POLICY,
+                    lambda text, token=token: (
+                        f"{text}\nThe release identity is `{token}`.\n"
+                    ),
+                    "release-signing fingerprint that is not the registered identity "
+                    f"({token!r})",
+                )
+
+    def test_calling_the_checksum_file_a_signature_is_refused_by_name(self) -> None:
+        hostile = (
+            "`SHA256SUMS` is a signature.",
+            "The attached `SHA256SUMS` is signed provenance for this release.",
+            "`SHA256SUMS` serves as a provenance attestation.",
+            "`SHA256SUMS` constitutes signed evidence of the release contents.",
+        )
+        for sentence in hostile:
+            with self.subTest(sentence=sentence):
+                self._prove_mutation_then_refusal(
+                    self.NOTES,
+                    lambda text, sentence=sentence: f"{text}\n{sentence}\n",
+                    "SHA256SUMS presented as a signature",
+                )
+
+    # -- and what must not be falsely refused --------------------------------
+
+    def test_truthful_signing_and_checksum_language_is_accepted(self) -> None:
+        """The boundary names a signature in order to deny it."""
+        notes = self._document(self.NOTES)
+        accepted = (
+            "`SHA256SUMS` is not a signature.",
+            "`SHA256SUMS` is never a signature.",
+            "`SHA256SUMS` is not signed provenance.",
+            "`SHA256SUMS` is not a provenance attestation.",
+            "`SHA256SUMS` is not signed evidence.",
+            "The release-signing identity is no longer "
+            f"{RETIRED_SIGNING_PLACEHOLDER}.",
+            "Signing the checksum file remains an Owner action.",
+            f"The registered fingerprint is `{RELEASE_SIGNING_FINGERPRINT}`.",
+        )
+        for sentence in accepted:
+            with self.subTest(sentence=sentence):
+                self.assertIsNone(
+                    release_signing_identity_violation(f"{notes}\n{sentence}\n"),
+                    sentence,
+                )
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
