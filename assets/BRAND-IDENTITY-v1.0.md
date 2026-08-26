@@ -1,12 +1,16 @@
 # Deedseal Brand Identity v1.0
 
-The canonical, portable, machine-checkable source for the Deedseal identity.
-Everything a landing page, an application client or a repository setting needs
-in order to present this product is defined here, generated from one committed
-construction, and bound by digest in [the manifest](brand-manifest.v1.json).
+A portable, machine-checkable review candidate and engineering design study for
+Deedseal. Its construction is generated from one committed source and bound by
+digest in [the manifest](brand-manifest.v1.json).
 
-This document is a design record. It is not an approval, not a deployment, and
+This document is a design record. It is not the Owner-selected, adopted,
+deployed or current public identity, authorizes no downstream placement, and is
 not a legal opinion. It makes no trademark claim of any kind.
+
+The public release surface continues to use the existing Deedseal wordmark and
+one green point, pending a later Owner brand decision. This repository does not
+specify, version or publish an asset for that lockup.
 
 ## The name
 
@@ -401,10 +405,11 @@ this identity publishes in one ink only -- the icon -- may not be painted in
 the inverse ink or onto the dark surface anywhere on the sheet. Recomputing the
 board's digest does not help, because the check reads what the board draws.
 
-## Adopting this identity downstream
+## Candidate downstream contract
 
-This packet defines adoption and performs none of it. No consumer is edited
-here.
+This packet records how a later adoption would be pinned and checked. It grants
+no permission, authorizes no downstream placement and edits no consumer. The
+named consumers below have not been directed to adopt or place these assets.
 
 1. A consumer vendors only the assets and fonts declared in the manifest.
 2. A consumer records one local pin file: the source repository, the accepted
@@ -469,5 +474,6 @@ governs names and marks, and this packet changes no legal text.
   asset on some third surface owes its own measurement.
 - Font digests pin the bytes this packet examined. They are not a licence
   audit, and they say nothing about a future release of either family.
-- This identity is a candidate. It is not accepted, not adopted, and not
-  deployed until the Owner selects and merges it.
+- The packet was merged after mechanical qualification. That merge recorded no
+  Owner visual selection, adoption or deployment; this remains a review
+  candidate and engineering design study.

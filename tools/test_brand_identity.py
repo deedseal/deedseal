@@ -657,6 +657,72 @@ class BrandIdentityCheckerTests(unittest.TestCase):
             text = (ROOT / relative).read_text(encoding="utf-8")
             self.assertIn(brand.CANONICAL_STATEMENT, brand.unwrapped(text))
 
+    # -- review-candidate and live-surface authority -----------------------
+
+    def test_an_adopted_identity_claim_is_refused_by_name(self) -> None:
+        with sandbox() as root:
+            path = root / DOCUMENT
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nBrand Identity v1.0 is the adopted identity.\n",
+                encoding="utf-8",
+            )
+            self.refuse(root, "an adopted, deployed or canonical public identity")
+
+    def test_a_current_public_identity_claim_is_refused_by_name(self) -> None:
+        with sandbox() as root:
+            path = root / ASSETS_README
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nBrand Identity v1.0 is the current public identity.\n",
+                encoding="utf-8",
+            )
+            self.refuse(root, "an adopted, deployed or canonical public identity")
+
+    def test_downstream_placement_authority_is_refused_by_name(self) -> None:
+        with sandbox() as root:
+            path = root / DOCUMENT
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nThese assets authorize downstream placement.\n",
+                encoding="utf-8",
+            )
+            self.refuse(root, "an authorization of downstream placement")
+
+    def test_the_live_lockup_becoming_a_permanent_canon_is_refused(self) -> None:
+        with sandbox() as root:
+            path = root / DOCUMENT
+            path.write_text(
+                path.read_text(encoding="utf-8")
+                + "\nThe Deedseal wordmark and one green point form the permanent identity.\n",
+                encoding="utf-8",
+            )
+            self.refuse(root, "settled as a specified permanent canon")
+
+    def test_each_packet_document_must_carry_the_live_surface_disclosure(self) -> None:
+        for relative in (DOCUMENT, ASSETS_README):
+            with self.subTest(relative=relative), sandbox() as root:
+                path = root / relative
+                text = path.read_text(encoding="utf-8")
+                changed = brand.unwrapped(text)
+                self.assertIn(brand.LIVE_SURFACE_DISCLOSURE, changed)
+                path.write_text(
+                    text.replace("continues to use", "may later use", 1),
+                    encoding="utf-8",
+                )
+                self.refuse(root, "missing the live wordmark and green-point disclosure")
+
+    def test_truthful_identity_denials_are_accepted(self) -> None:
+        truthful = (
+            "Brand Identity v1.0 is not the adopted identity.",
+            "Brand Identity v1.0 is not the current public identity.",
+            "These assets do not authorize downstream placement.",
+            "The wordmark and one green point are not a permanent identity.",
+        )
+        for sentence in truthful:
+            with self.subTest(sentence=sentence):
+                self.assertIsNone(brand.identity_alignment_violation(sentence))
+
     # -- the manifest's geometry, against the drawing ------------------------
     #
     # `check_geometry` re-solves the manifest's own table. That proves the table

@@ -41,6 +41,9 @@ jobs:
       - name: Test the publication gate
         run: ${{ matrix.python }} tools/test_public_record.py
 
+      - name: Test the release manifest and hostile refusals
+        run: ${{ matrix.python }} tools/test_release_manifest.py
+
       - name: Validate the public record
         run: ${{ matrix.python }} tools/validate_public_record.py
 

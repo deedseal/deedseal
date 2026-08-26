@@ -15,13 +15,15 @@ import sys
 import tempfile
 import unittest
 from datetime import date, timedelta
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
+from unittest import mock
 
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
 import validate_public_record as gate
+import check_brand_identity as brand
 
 
 class PublicRecordGateTests(unittest.TestCase):
@@ -1117,6 +1119,973 @@ class BrandIdentityGateTests(unittest.TestCase):
                 continue
             self.assertIsInstance(path.read_text(encoding="utf-8"), str)
 
+
+# ----------------------------------------------------------------------
+# the release policy's prerelease boundary, held in the policy's own bytes
+# ----------------------------------------------------------------------
+
+# The complete normative sentence the release-and-tagging policy exists to
+# carry. The guard below anchors here rather than on the bare `prerelease: true`
+# substring: that substring also occurs decoratively in procedure step 6, so it
+# survives an inversion of this clause and cannot hold the boundary.
+NORMATIVE_PRERELEASE_CLAUSE = (
+    "Every GitHub Release remains a prerelease with `prerelease: true` until "
+    "general availability is separately evidenced and Owner-approved. A version "
+    "number, a closed engineering workstream or a passing check is not evidence "
+    "of general availability."
+)
+
+# The one truthful way this policy names general availability: to defer it.
+TRUTHFUL_GENERAL_AVAILABILITY_BOUNDARY = (
+    "until general availability is separately evidenced and Owner-approved"
+)
+
+# General-availability instructions. None of these is text the repository
+# carries; each is the *shape* the release policy must never take. They are
+# allowed only where the sentence denies or defers them, which is exactly how
+# the adopted boundary itself reads.
+GENERAL_AVAILABILITY_INSTRUCTION_TERMS = re.compile(
+    r"\b(?:prerelease:[ \t]*false|generally[ \t]+available|"
+    r"general[ \t-]availability[ \t]+release|ordinary[ \t]+release|"
+    r"GA[ \t]+release|evidence[ \t]+of[ \t]+general[ \t]+availability|"
+    r"general[ \t]+availability[ \t]+is[ \t]+(?:established|reached|achieved))\b",
+    re.IGNORECASE,
+)
+
+# A stand-in for the policy document, carrying the same two occurrences of
+# `prerelease: true` as the real one -- the normative clause, and the decorative
+# mention in procedure step 6. The guard's own probes run against this fixture
+# rather than the committed file, so that mutating the committed file produces
+# one named failure from the two tests that own it, not a cascade here.
+REFERENCE_RELEASE_POLICY = f"""# Release and tagging policy
+
+## Decision
+
+{NORMATIVE_PRERELEASE_CLAUSE}
+
+A published tag target is immutable.
+
+## Release procedure
+
+6. Create the GitHub Release from that exact immutable tag with `prerelease: true`.
+"""
+
+
+def unnegated_general_availability_instructions(policy: str) -> list[str]:
+    """General-availability wording used affirmatively rather than deferred.
+
+    Reuses the gate's own clause-scoped negation window, so "is not evidence of
+    general availability" reads as the boundary it is, while the same words used
+    as an instruction do not.
+    """
+    offences: list[str] = []
+    for match in GENERAL_AVAILABILITY_INSTRUCTION_TERMS.finditer(policy):
+        window = policy[max(0, match.start() - gate.NEGATION_WINDOW) : match.start()]
+        boundary = max(window.rfind(character) for character in gate.NEGATION_BOUNDARY)
+        if boundary >= 0:
+            window = window[boundary + 1 :]
+        if gate.NEGATION_RE.search(window) is None:
+            offences.append(match.group(0))
+    return offences
+
+
+def release_policy_violation(policy: str) -> str | None:
+    """Name the way a release policy stopped holding the prerelease boundary.
+
+    Mirrors ``gate.proof_surface_violation``: the named reason, or ``None`` when
+    the policy still carries the boundary in its own bytes. Deleting, weakening
+    or inverting the normative clause is refused by the first check; an
+    affirmative general-availability instruction added alongside an intact
+    clause is refused by the second.
+    """
+    if NORMATIVE_PRERELEASE_CLAUSE not in policy:
+        return "normative prerelease clause missing or altered"
+    offences = unnegated_general_availability_instructions(policy)
+    if offences:
+        return f"affirmative general-availability instruction ({offences[0]!r})"
+    return None
+
+
+class BusinessFirstReleasePreflightTests(unittest.TestCase):
+    """Hold the adopted public story and release preparation in repository bytes."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.policy = (ROOT / "docs/decisions/release-and-tagging-policy.md").read_text(
+            encoding="utf-8"
+        )
+
+    def test_readme_front_door_has_the_adopted_order_and_exact_frame(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        coordinates = [
+            "Deedseal is an owner-governed AI business platform for deploying and operating a business.",
+            "Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner.",
+            "## For owners and operators",
+            "## Platform direction",
+            "## Current availability",
+            "## What is published today",
+            "## Verify it yourself",
+        ]
+        positions = [readme.index(value) for value in coordinates]
+        self.assertEqual(positions, sorted(positions))
+        self.assertIn("[deedseal.com](https://deedseal.com)", readme[:positions[-1]])
+        self.assertIn("product direction, not a claim", readme[:positions[-1]].lower())
+        self.assertIn("not generally available", readme[:positions[-1]].lower())
+        self.assertIn("not represented as production-qualified", readme[:positions[-1]].lower())
+
+    def test_readme_keeps_direction_proof_and_nonclaims_separate(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        front = readme[:readme.index("## Verify it yourself")]
+        for phrase in (
+            "modules, bounded adapters and bounded AI workers",
+            "owner-held business memory",
+            "two real run passports and their one-byte tampered twins",
+            "48 conformance vectors",
+            "Python/Go verdict agreement",
+            "does not prove the wider business-platform capability",
+            "Owner-operated first reference use and product direction only",
+            "No trademark-clearance claim",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase.lower(), front.lower())
+
+    def test_public_identity_prose_keeps_the_review_candidate_boundary(self) -> None:
+        scanned = []
+        for path in gate.all_public_files():
+            relative = path.relative_to(ROOT)
+            if relative.suffix.lower() != ".md" and relative.as_posix() != brand.MANIFEST_PATH:
+                continue
+            text = path.read_text(encoding="utf-8")
+            scanned.append(relative.as_posix())
+            self.assertIsNone(
+                brand.identity_alignment_violation(text, relative.as_posix()),
+                relative.as_posix(),
+            )
+        self.assertIn("README.md", scanned)
+        self.assertIn("docs/releases/v0.2.0-prerelease-notes.md", scanned)
+        self.assertIn(brand.MANIFEST_PATH, scanned)
+
+    def test_review_candidate_assets_cannot_be_promoted_by_public_prose(self) -> None:
+        hostile = {
+            "Owner-selected": "Brand Identity v1.0 is the Owner-selected identity.",
+            "adopted": "Brand Identity v1.0 is the adopted identity.",
+            "deployed": "Brand Identity v1.0 is the deployed identity.",
+            "canonical": "Brand Identity v1.0 is the canonical identity.",
+            "current": "Brand Identity v1.0 is the current public identity.",
+        }
+        for name, sentence in hostile.items():
+            with self.subTest(claim=name):
+                self.assertIsNotNone(brand.identity_alignment_violation(sentence))
+
+    def test_downstream_placement_cannot_be_authorized_by_public_prose(self) -> None:
+        self.assertEqual(
+            brand.identity_alignment_violation(
+                "These assets authorize downstream placement."
+            ),
+            "an authorization of downstream placement",
+        )
+
+    def test_live_wordmark_and_green_point_cannot_become_a_permanent_canon(self) -> None:
+        self.assertEqual(
+            brand.identity_alignment_violation(
+                "The Deedseal wordmark and one green point form the permanent identity."
+            ),
+            "the live wordmark and green point settled as a specified permanent canon",
+        )
+
+    def test_faq_matches_the_frozen_envelope_and_release_history(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        self.assertIsNone(brand.faq_alignment_violation(faq))
+
+    def test_faq_calling_the_1_0_envelope_unfrozen_is_refused_by_name(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        hostile = faq.replace(
+            "envelope is frozen",
+            "envelope is not frozen",
+            1,
+        )
+        self.assertNotEqual(hostile, faq)
+        self.assertEqual(
+            brand.faq_alignment_violation(hostile),
+            "the 1.0 passport envelope called unfrozen",
+        )
+
+    def test_faq_denying_the_historical_public_release_is_refused_by_name(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        hostile = faq.replace(
+            "A historical `v0.1.0` tag and Release exist and remain public",
+            "There is no public release",
+            1,
+        )
+        self.assertNotEqual(hostile, faq)
+        self.assertEqual(
+            brand.faq_alignment_violation(hostile),
+            "no public release, while v0.1.0 is preserved as historical",
+        )
+
+    def test_faq_losing_a_required_release_coordinate_is_refused_by_name(self) -> None:
+        faq = (ROOT / "docs/faq.md").read_text(encoding="utf-8")
+        hostile = faq.replace("`v0.1.0`", "the first historical version", 1)
+        self.assertNotEqual(hostile, faq)
+        self.assertEqual(
+            brand.faq_alignment_violation(hostile),
+            "missing FAQ alignment coordinate 'v0.1.0'",
+        )
+
+    def test_release_policy_carries_every_immutable_tag_boundary(self) -> None:
+        policy = self.policy
+        for phrase in (
+            "annotated and signed",
+            NORMATIVE_PRERELEASE_CLAUSE,
+            "Create the GitHub Release from that exact immutable tag with"
+            " `prerelease: true`",
+            "published tag target is immutable",
+            "corrected by a new tag and Release",
+            "DS-2026.08.2",
+            "evidence-snapshot identifier",
+            "v0.1.0",
+            "must not be moved, replaced, deleted or retroactively signed",
+            "OWNER_ACTION_REQUIRED",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, policy)
+
+    # ------------------------------------------------------------------
+    # the prerelease boundary: what the committed policy holds, and what
+    # the guard refuses when a policy stops holding it
+    # ------------------------------------------------------------------
+
+    def test_the_committed_release_policy_holds_the_prerelease_boundary(self) -> None:
+        self.assertIsNone(release_policy_violation(self.policy))
+
+    def test_the_reference_policy_carries_both_prerelease_occurrences(self) -> None:
+        """The fixture reproduces the shape the old assertion could not see."""
+        self.assertEqual(REFERENCE_RELEASE_POLICY.count("prerelease: true"), 2)
+        self.assertIn(NORMATIVE_PRERELEASE_CLAUSE, REFERENCE_RELEASE_POLICY)
+        self.assertIsNone(release_policy_violation(REFERENCE_RELEASE_POLICY))
+
+    def test_the_inverted_prerelease_clause_is_refused_by_name(self) -> None:
+        """Issue #59 hostile probe 5, run against the guard itself.
+
+        The inversion leaves the bare `prerelease: true` substring standing in
+        procedure step 6, which is exactly why an assertion anchored there could
+        not see it. The clause-anchored guard names the refusal.
+        """
+        inverted = REFERENCE_RELEASE_POLICY.replace(
+            NORMATIVE_PRERELEASE_CLAUSE,
+            "Every GitHub Release is published as an ordinary general-availability"
+            " release. Deedseal is generally available, and a passing check is"
+            " sufficient evidence of general availability.",
+        )
+        self.assertNotEqual(inverted, REFERENCE_RELEASE_POLICY)
+        self.assertIn("prerelease: true", inverted)
+        self.assertEqual(
+            release_policy_violation(inverted),
+            "normative prerelease clause missing or altered",
+        )
+
+    def test_deleting_or_weakening_the_normative_clause_is_refused(self) -> None:
+        weakenings = {
+            "deleted": "",
+            "made optional": (
+                "Every GitHub Release may remain a prerelease with `prerelease:"
+                " true` until general availability is separately evidenced and"
+                " Owner-approved."
+            ),
+            "boundary dropped": (
+                "Every GitHub Release remains a prerelease with `prerelease: true`."
+            ),
+            "owner approval dropped": (
+                "Every GitHub Release remains a prerelease with `prerelease: true`"
+                " until general availability is separately evidenced. A version"
+                " number, a closed engineering workstream or a passing check is"
+                " not evidence of general availability."
+            ),
+        }
+        for name, replacement in weakenings.items():
+            with self.subTest(weakening=name):
+                self.assertEqual(
+                    release_policy_violation(
+                        REFERENCE_RELEASE_POLICY.replace(
+                            NORMATIVE_PRERELEASE_CLAUSE, replacement
+                        )
+                    ),
+                    "normative prerelease clause missing or altered",
+                )
+
+    def test_every_affirmative_general_availability_instruction_is_refused(self) -> None:
+        """An added GA instruction is refused even with the clause left intact."""
+        instructions = (
+            ("ordinary release", "Publish each Release as an ordinary release."),
+            (
+                "general-availability release",
+                "Publish each Release as a general-availability release.",
+            ),
+            ("GA release", "Publish each Release as a GA release."),
+            ("prerelease disabled", "Create the Release with `prerelease: false`."),
+            ("product declared available", "Deedseal is generally available."),
+            (
+                "check treated as GA evidence",
+                "A passing check is sufficient evidence of general availability.",
+            ),
+            (
+                "availability asserted as reached",
+                "General availability is reached once the suites pass.",
+            ),
+        )
+        for name, sentence in instructions:
+            with self.subTest(instruction=name):
+                violation = release_policy_violation(
+                    f"{REFERENCE_RELEASE_POLICY}\n{sentence}\n"
+                )
+                self.assertIsNotNone(violation, f"{name} was not refused")
+                self.assertTrue(
+                    violation.startswith(
+                        "affirmative general-availability instruction"
+                    ),
+                    violation,
+                )
+
+    def test_truthful_prerelease_boundary_language_is_accepted(self) -> None:
+        """The boundary names general availability in order to defer it."""
+        truthful = (
+            "Every Release stays a prerelease "
+            f"{TRUTHFUL_GENERAL_AVAILABILITY_BOUNDARY}.",
+            "Deedseal is not generally available.",
+            "A passing check is not evidence of general availability.",
+            "No Release is published as an ordinary release.",
+            "The Release is created with `prerelease: true`.",
+        )
+        for sentence in truthful:
+            with self.subTest(sentence=sentence):
+                self.assertIsNone(
+                    release_policy_violation(
+                        f"{REFERENCE_RELEASE_POLICY}\n{sentence}\n"
+                    )
+                )
+
+    def test_candidate_notes_use_one_exact_source_placeholder_for_proof_links(self) -> None:
+        notes = (ROOT / "docs/releases/v0.2.0-prerelease-notes.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertGreaterEqual(notes.count("SOURCE_SHA_PLACEHOLDER"), 12)
+        self.assertNotIn("/blob/main/", notes)
+        for heading in (
+            "## Status boundary",
+            "## Exact source",
+            "## Changes",
+            "## Proof links",
+            "## Verification",
+            "## Release manifest, assets and checksums",
+            "## Known limitations",
+            "## Non-claims",
+        ):
+            self.assertIn(heading, notes)
+
+    def test_changelog_separates_the_four_candidate_concerns(self) -> None:
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("[Unreleased] — v0.2.0 prerelease candidate", changelog)
+        for heading in ("Product presentation", "Brand", "Evidence", "Tooling"):
+            self.assertIn(f"### {heading}", changelog)
+
+    def test_codeowners_names_the_owner_for_the_complete_surface(self) -> None:
+        codeowners = (ROOT / ".github/CODEOWNERS").read_text(encoding="utf-8")
+        self.assertEqual(codeowners, "* @avoroncov971-maker\n")
+
+    def test_browser_verifier_actions_match_the_existing_immutable_pins(self) -> None:
+        """The two workflows carry the same pins, in the same canonical case.
+
+        The pattern is lowercase-only on purpose. A case-insensitive one cannot
+        see a divergence it then normalises away, and the pins have to be
+        byte-equal for the disclosure exception to recognise both of them.
+        """
+        pattern = re.compile(
+            r"uses:\s+actions/(?P<action>checkout|setup-go)@(?P<sha>[0-9a-f]{40})"
+        )
+        validation = (ROOT / ".github/workflows/validate-public-record.yml").read_text(
+            encoding="utf-8"
+        )
+        browser = (ROOT / ".github/workflows/verifier-wasm.yml").read_text(
+            encoding="utf-8"
+        )
+        expected = {
+            match.group("action"): match.group("sha")
+            for match in pattern.finditer(validation)
+        }
+        observed = {
+            match.group("action"): match.group("sha")
+            for match in pattern.finditer(browser)
+        }
+        self.assertEqual(set(observed), {"checkout", "setup-go"})
+        self.assertEqual(observed, expected)
+
+    def test_publication_workflow_runs_the_release_manifest_hostile_suite(self) -> None:
+        workflow = (ROOT / ".github/workflows/validate-public-record.yml").read_text(
+            encoding="utf-8"
+        )
+        self.assertEqual(workflow.count("tools/test_release_manifest.py"), 1)
+
+
+# ----------------------------------------------------------------------
+# additive public-story contradictions, mutated in disposable public trees
+# ----------------------------------------------------------------------
+
+class AdditivePublicClaimGuardTests(unittest.TestCase):
+    """Every Issue #67 claim class fails closed on a real Markdown surface."""
+
+    def assert_repository_relative_refusal(
+        self,
+        error: gate.ValidationError,
+        relative: str,
+        reason: str,
+    ) -> None:
+        """Compare a refusal's full repository path independent of host OS."""
+        rendered_path, separator, rendered_reason = str(error).partition(
+            ": contains forbidden "
+        )
+        self.assertEqual(separator, ": contains forbidden ")
+        self.assertEqual(
+            PurePosixPath(*PureWindowsPath(rendered_path).parts),
+            PurePosixPath(relative),
+        )
+        self.assertEqual(rendered_reason, reason)
+
+    def _copy_public_tree(self, destination: Path) -> Path:
+        root = destination / "repo"
+        shutil.copytree(
+            ROOT,
+            root,
+            ignore=shutil.ignore_patterns(".git", "__pycache__", "*.pyc"),
+        )
+        return root
+
+    def _prove_hostile_and_limited(
+        self,
+        relative: str,
+        hostile: str,
+        limited: str,
+        reason: str,
+    ) -> None:
+        """Land each mutation, run the real tree scan, then discard the copy."""
+        source = ROOT / relative
+        source_bytes = source.read_bytes()
+        for label, sentence, expected in (
+            ("hostile", hostile, reason),
+            ("limited", limited, None),
+        ):
+            with self.subTest(form=label), tempfile.TemporaryDirectory() as temporary:
+                copy_root = self._copy_public_tree(Path(temporary))
+                path = copy_root / relative
+                before = path.read_bytes()
+                mutation = f"\n{sentence}\n".encode("utf-8")
+                path.write_bytes(before + mutation)
+
+                # Prove the mutation landed before interpreting the validator.
+                self.assertNotEqual(path.read_bytes(), before)
+                self.assertIn(mutation, path.read_bytes())
+
+                with mock.patch.object(gate, "ROOT", copy_root):
+                    if expected is None:
+                        gate.validate_public_text()
+                    else:
+                        with self.assertRaises(gate.ValidationError) as raised:
+                            gate.validate_public_text()
+                        self.assert_repository_relative_refusal(
+                            raised.exception, relative, expected
+                        )
+
+            # The disposable copy is gone; the candidate source is unchanged.
+            self.assertEqual(source.read_bytes(), source_bytes)
+
+    def test_repository_relative_refusal_paths_accept_both_slash_conventions(self) -> None:
+        relative = PurePosixPath("docs/faq.md")
+        reason = "manufactured v0.2.0 publication claim"
+        for rendered in (relative.as_posix(), str(PureWindowsPath(*relative.parts))):
+            with self.subTest(rendered=rendered):
+                self.assert_repository_relative_refusal(
+                    gate.ValidationError(f"{rendered}: contains forbidden {reason}"),
+                    relative.as_posix(),
+                    reason,
+                )
+
+    def test_invented_live_lockup_geometry_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "The live wordmark and green point lockup has a 64-by-64 geometry.",
+            "The live lockup has no specified geometry.",
+            "manufactured live-lockup geometry specification",
+        )
+
+    def test_invented_live_lockup_colour_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "assets/README.md",
+            "The live wordmark and green point lockup uses colour #00FF00.",
+            "The live lockup has no published colour.",
+            "manufactured live-lockup colour specification",
+        )
+
+    def test_invented_live_lockup_digest_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "CHANGELOG.md",
+            "The live wordmark and green point lockup has digest sha256:deadbeef.",
+            "The live lockup has no published digest.",
+            "manufactured live-lockup digest specification",
+        )
+
+    def test_invented_live_lockup_filename_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/releases/v0.2.0-prerelease-notes.md",
+            "The live wordmark and green point lockup is file assets/live-lockup.svg.",
+            "The live lockup has no published filename.",
+            "manufactured live-lockup filename specification",
+        )
+
+    def test_invented_live_lockup_version_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "The live wordmark and green point lockup is version 1.0.",
+            "The live lockup has no assigned version.",
+            "manufactured live-lockup version specification",
+        )
+
+    def test_v0_2_0_available_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/faq.md",
+            "`v0.2.0` is available.",
+            "No `v0.2.0` tag or Release exists.",
+            "manufactured v0.2.0 publication claim",
+        )
+
+    def test_general_availability_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/status.md",
+            "Deedseal is generally available.",
+            "Deedseal is not generally available.",
+            "manufactured general-availability claim",
+        )
+
+    def test_public_price_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "Deedseal costs $99.",
+            "No public price is stated.",
+            "unapproved public price claim",
+        )
+
+    def test_savings_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "CHANGELOG.md",
+            "Deedseal saves customers 40%.",
+            "No savings of 40% are claimed.",
+            "unapproved savings claim",
+        )
+
+    def test_customer_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "West Coast KBP is a Deedseal customer.",
+            "West Coast KBP is not a customer.",
+            "unapproved customer claim",
+        )
+
+    def test_partner_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "West Coast KBP is a Deedseal partner.",
+            "West Coast KBP is not a partner.",
+            "unapproved partner claim",
+        )
+
+    def test_deployment_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/faq.md",
+            "Deedseal is deployed with West Coast KBP.",
+            "Deedseal is not deployed with West Coast KBP.",
+            "unapproved deployment claim",
+        )
+
+    def test_business_outcome_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "README.md",
+            "Deedseal has delivered a business outcome.",
+            "Deedseal has not delivered a business outcome.",
+            "unapproved business-outcome claim",
+        )
+
+    def test_zero_egress_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/faq.md",
+            "Deedseal guarantees zero-egress.",
+            "Deedseal makes no zero-egress claim.",
+            "unapproved zero-egress claim",
+        )
+
+    def test_fully_local_claim_is_refused(self) -> None:
+        self._prove_hostile_and_limited(
+            "docs/releases/v0.2.0-prerelease-notes.md",
+            "Deedseal runs fully local.",
+            "Deedseal is not fully local.",
+            "unapproved fully-local claim",
+        )
+
+    def test_audit_logging_and_signed_evidence_outcomes_remain_separate(self) -> None:
+        accepted = (
+            "An audit log records a deployment outcome.",
+            "A signed run passport carries an offline-verifiable custody outcome.",
+        )
+        for sentence in accepted:
+            with self.subTest(sentence=sentence):
+                self.assertIsNone(gate.public_markdown_claim_violation(sentence))
+
+    def test_every_committed_public_markdown_surface_is_clean(self) -> None:
+        scanned = []
+        for path in gate.all_public_files():
+            relative = path.relative_to(ROOT)
+            if relative.suffix.lower() != ".md":
+                continue
+            scanned.append(relative.as_posix())
+            self.assertIsNone(
+                gate.public_markdown_claim_violation(
+                    path.read_text(encoding="utf-8")
+                ),
+                relative.as_posix(),
+            )
+        self.assertIn("README.md", scanned)
+        self.assertIn("docs/faq.md", scanned)
+        self.assertIn("docs/releases/v0.2.0-prerelease-notes.md", scanned)
+
+
+# ----------------------------------------------------------------------
+# the immutable Action pin: one narrow, syntax-aware exception to the rule
+# that a commit-shaped value in a public file is a private coordinate
+# ----------------------------------------------------------------------
+
+# Commit-shaped fixtures, assembled rather than written out: this file is itself
+# inside the public scan, and a literal 40-hex value here would be a disclosure.
+LOWERCASE_PIN = "a" * 40
+SECOND_PIN = "b" * 40
+UPPERCASE_PIN = "A" * 40
+MIXED_CASE_PIN = "A" * 20 + "a" * 20
+SHORT_PIN = "a" * 7
+
+WORKFLOW_FIXTURE_PATH = Path(".github/workflows/fixture.yml")
+CHECKOUT = "actions/checkout"
+
+
+def workflow_fixture(*step_lines: str) -> str:
+    """A minimal but structurally real workflow carrying the given step lines."""
+    body = "\n".join(f"      {line}" for line in step_lines)
+    return (
+        "name: Fixture\n"
+        "\n"
+        "on:\n"
+        "  workflow_dispatch:\n"
+        "\n"
+        "permissions:\n"
+        "  contents: read\n"
+        "\n"
+        "jobs:\n"
+        "  job:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        f"{body}\n"
+    )
+
+
+def pinned_step(ref: str, action: str = CHECKOUT) -> str:
+    return f"- uses: {action}@{ref}"
+
+
+class WorkflowActionPinDisclosureTests(unittest.TestCase):
+    """The disclosure exception for immutable Action pins, and its limits.
+
+    The rule under test is that a 40-hex value in a public file is a private
+    repository coordinate. A pinned workflow has to carry commit-shaped values
+    to be pinned at all, so exactly one exception exists. It is syntax-aware,
+    not per-file: the exception recognises a complete `uses:` entry in a
+    workflow whose ref is 40 lowercase hexadecimal characters and whose line
+    carries no second commit-shaped value. Everything else -- including
+    everything else in the same file -- stays under the rule.
+    """
+
+    WORKFLOWS = (
+        ".github/workflows/validate-public-record.yml",
+        ".github/workflows/verifier-wasm.yml",
+    )
+
+    def workflow_text(self, relative: str) -> str:
+        return (ROOT / relative).read_text(encoding="utf-8")
+
+    # -- what the committed tree carries ------------------------------------
+
+    def test_the_committed_workflows_pin_every_action_to_a_lowercase_commit(self) -> None:
+        for relative in self.WORKFLOWS:
+            with self.subTest(workflow=relative):
+                path = Path(relative)
+                text = self.workflow_text(relative)
+                self.assertEqual(gate.workflow_pin_violations(path, text), [])
+                self.assertIsNone(gate.disclosure_violation(path, text))
+                pins = gate.workflow_action_pins(path, text)
+                self.assertTrue(pins)
+                for ref in pins.values():
+                    self.assertRegex(ref, r"^[0-9a-f]{40}$")
+
+    def test_the_browser_verifier_pins_are_lowercase_forty_hex(self) -> None:
+        text = self.workflow_text(".github/workflows/verifier-wasm.yml")
+        refs = re.findall(r"uses:[ \t]+actions/(?:checkout|setup-go)@(\S+)", text)
+        self.assertEqual(len(refs), 2)
+        for ref in refs:
+            with self.subTest(ref=ref[:8]):
+                self.assertRegex(ref, r"^[0-9a-f]{40}$")
+                self.assertEqual(ref, ref.lower())
+
+    def test_no_workflow_is_exempt_by_its_path(self) -> None:
+        """The replaced rule waived one named file. Nothing is waived by name now."""
+        for relative in self.WORKFLOWS:
+            with self.subTest(workflow=relative):
+                text = self.workflow_text(relative)
+                self.assertEqual(
+                    gate.disclosure_violation(
+                        Path(relative), f"{text}\n# a note about {SECOND_PIN}\n"
+                    ),
+                    "private commit identifier",
+                )
+
+    # -- what the exception accepts -----------------------------------------
+
+    def test_an_immutable_action_pin_is_accepted_in_its_canonical_shapes(self) -> None:
+        accepted = {
+            "step entry": workflow_fixture(pinned_step(LOWERCASE_PIN)),
+            "quoted reference": workflow_fixture(
+                f'- uses: "{CHECKOUT}@{LOWERCASE_PIN}"'
+            ),
+            "trailing comment": workflow_fixture(
+                f"{pinned_step(LOWERCASE_PIN)}  # pinned upstream release"
+            ),
+            "action in a subdirectory": workflow_fixture(
+                pinned_step(LOWERCASE_PIN, "deedseal/deedseal/.github/actions/verify")
+            ),
+            "two pins in one workflow": workflow_fixture(
+                pinned_step(LOWERCASE_PIN),
+                pinned_step(SECOND_PIN, "actions/setup-go"),
+            ),
+        }
+        for name, text in accepted.items():
+            with self.subTest(shape=name):
+                self.assertIsNone(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text)
+                )
+                self.assertEqual(
+                    gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text), []
+                )
+
+    def test_local_and_container_action_references_need_no_commit_pin(self) -> None:
+        """Neither names an upstream commit, so neither can be pinned to one."""
+        for reference in ("./.github/actions/local", "docker://alpine:3.20"):
+            with self.subTest(reference=reference):
+                text = workflow_fixture(f"- uses: {reference}")
+                self.assertEqual(
+                    gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text), []
+                )
+                self.assertIsNone(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text)
+                )
+
+    # -- what the exception must never reach --------------------------------
+
+    def test_a_commit_outside_a_uses_entry_is_refused_inside_a_workflow(self) -> None:
+        """Issue #61: the exception cannot disclose an arbitrary 40-hex value."""
+        elsewhere = {
+            "comment": workflow_fixture(f"# rebuilt from {LOWERCASE_PIN}"),
+            "run command": workflow_fixture(f"- run: git checkout {LOWERCASE_PIN}"),
+            "run block scalar": workflow_fixture(
+                "- run: |",
+                f"    uses: {CHECKOUT}@{LOWERCASE_PIN}",
+            ),
+            "step name": workflow_fixture(f"- name: build {LOWERCASE_PIN}"),
+            "env value": workflow_fixture(
+                "- run: build.sh", "  env:", f"    SOURCE_REF: {LOWERCASE_PIN}"
+            ),
+            "action input": workflow_fixture(
+                pinned_step(SECOND_PIN), "  with:", f"    ref: {LOWERCASE_PIN}"
+            ),
+            "arbitrary yaml value": workflow_fixture(f"- ref: {LOWERCASE_PIN}"),
+            "yaml list item": workflow_fixture(f"- {LOWERCASE_PIN}"),
+            "key that merely ends in uses": workflow_fixture(
+                f"- not-uses: {CHECKOUT}@{LOWERCASE_PIN}"
+            ),
+            "uses inside a quoted string": workflow_fixture(
+                f'- name: "uses: {CHECKOUT}@{LOWERCASE_PIN}"'
+            ),
+        }
+        for name, text in elsewhere.items():
+            with self.subTest(placement=name):
+                self.assertEqual(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text),
+                    "private commit identifier",
+                    f"{name} was not refused",
+                )
+
+    def test_a_second_commit_on_a_pin_line_is_refused(self) -> None:
+        """The entry classifies its own ref and nothing else on the line."""
+        for name, line in (
+            (
+                "trailing comment",
+                f"{pinned_step(LOWERCASE_PIN)}  # was {SECOND_PIN}",
+            ),
+            ("appended value", f"{pinned_step(LOWERCASE_PIN)} {SECOND_PIN}"),
+        ):
+            with self.subTest(line=name):
+                text = workflow_fixture(line)
+                self.assertEqual(
+                    gate.disclosure_violation(WORKFLOW_FIXTURE_PATH, text),
+                    "private commit identifier",
+                )
+                self.assertEqual(gate.workflow_action_pins(WORKFLOW_FIXTURE_PATH, text), {})
+
+    def test_the_exception_does_not_reach_outside_a_workflow_file(self) -> None:
+        text = workflow_fixture(pinned_step(LOWERCASE_PIN))
+        outside = (
+            "README.md",
+            "docs/verify.md",
+            "CHANGELOG.md",
+            ".github/CODEOWNERS",
+            ".github/dependabot.yml",
+            ".github/ISSUE_TEMPLATE/config.yml",
+            ".github/workflows/notes.txt",
+            ".github/workflows/README.md",
+            "workflows/verifier-wasm.yml",
+            "docs/.github/workflows/example.yml",
+        )
+        for relative in outside:
+            with self.subTest(path=relative):
+                self.assertEqual(
+                    gate.disclosure_violation(Path(relative), text),
+                    "private commit identifier",
+                    f"{relative} was exempted",
+                )
+                self.assertEqual(
+                    gate.workflow_action_pins(Path(relative), text), {}
+                )
+
+    # -- pins this repository refuses to accept as immutable ----------------
+
+    def test_an_uppercase_or_mixed_case_action_pin_is_refused(self) -> None:
+        for name, ref in (
+            ("uppercase", UPPERCASE_PIN),
+            ("mixed case", MIXED_CASE_PIN),
+        ):
+            with self.subTest(case=name):
+                text = workflow_fixture(pinned_step(ref))
+                violations = gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text)
+                self.assertEqual(len(violations), 1, violations)
+                self.assertIn("lowercase commit SHA", violations[0])
+                self.assertEqual(gate.workflow_action_pins(WORKFLOW_FIXTURE_PATH, text), {})
+
+    def test_a_short_sha_action_pin_is_refused(self) -> None:
+        for name, ref in (
+            ("short", SHORT_PIN),
+            ("one character short", "a" * 39),
+            ("one character long", "a" * 41),
+        ):
+            with self.subTest(ref=name):
+                text = workflow_fixture(pinned_step(ref))
+                violations = gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text)
+                self.assertEqual(len(violations), 1, violations)
+                self.assertIn("lowercase commit SHA", violations[0])
+
+    def test_a_mutable_tag_or_branch_action_pin_is_refused(self) -> None:
+        for ref in ("v4", "v7.0.1", "main", "master", "latest", "refs/heads/main"):
+            with self.subTest(ref=ref):
+                text = workflow_fixture(pinned_step(ref))
+                violations = gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text)
+                self.assertEqual(len(violations), 1, violations)
+                self.assertIn("lowercase commit SHA", violations[0])
+
+    def test_a_malformed_or_unreadable_action_reference_is_refused(self) -> None:
+        malformed = {
+            "no ref at all": f"- uses: {CHECKOUT}",
+            "no repository": f"- uses: checkout@{LOWERCASE_PIN}",
+            "path traversal": (
+                f"- uses: deedseal/deedseal/../private@{LOWERCASE_PIN}"
+            ),
+            "empty value": "- uses:",
+            "value on the next line": "- uses:\n          actions/checkout",
+        }
+        for name, line in malformed.items():
+            with self.subTest(reference=name):
+                text = workflow_fixture(*line.split("\n"))
+                self.assertTrue(
+                    gate.workflow_pin_violations(WORKFLOW_FIXTURE_PATH, text),
+                    f"{name} was not refused",
+                )
+
+    # -- everything the rule already refused, still refused ------------------
+
+    def test_existing_disclosure_violations_still_refuse_inside_a_workflow(self) -> None:
+        pinned = workflow_fixture(pinned_step(LOWERCASE_PIN))
+        additions = {
+            "private repository URL": (
+                "# see https://github." + "com/" + "private-space/repository"
+            ),
+            "private host path": "# built from " + "/" + "home/" + "operator/tree",
+            "credential-shaped token": "# token " + "gh" + "p_" + "A" * 30,
+            "email address": "# owner " + "person" + "@" + "example.invalid",
+            "network address": "# host " + "10." + "0.0." + "1",
+            "non-English text": "# te" + chr(0x0445) + chr(0x0442) + "st",
+        }
+        for name, line in additions.items():
+            with self.subTest(violation=name):
+                self.assertIsNotNone(
+                    gate.disclosure_violation(
+                        WORKFLOW_FIXTURE_PATH, f"{pinned}{line}\n"
+                    ),
+                    f"{name} was not refused",
+                )
+
+    def test_published_passport_commit_scope_is_untouched_by_the_exception(self) -> None:
+        self.assertIsNone(
+            gate.disclosure_violation(
+                Path("examples/verified/run-passport.json"),
+                '{"commit_sha": "' + LOWERCASE_PIN + '"}',
+            )
+        )
+        self.assertEqual(
+            gate.disclosure_violation(Path("docs/verify.md"), LOWERCASE_PIN),
+            "private commit identifier",
+        )
+
+    # -- the gate actually runs both rules over the committed tree -----------
+
+    def test_the_repository_gate_refuses_a_loosened_pin_and_a_leaked_commit(self) -> None:
+        """End-to-end, against the real tree, restored byte-for-byte afterwards."""
+        path = ROOT / ".github/workflows/verifier-wasm.yml"
+        original = path.read_bytes()
+        text = original.decode("utf-8")
+        pinned = re.search(
+            r"uses:[ \t]+actions/checkout@[0-9a-f]{40}", text
+        )
+        self.assertIsNotNone(pinned)
+        mutations = {
+            "mutable tag": text.replace(
+                pinned.group(0), "uses: actions/checkout@v4", 1
+            ),
+            "uppercase pin": text.replace(
+                pinned.group(0), pinned.group(0).upper().replace("USES:", "uses:"), 1
+            ),
+            "commit leaked into a comment": f"{text}# {SECOND_PIN}\n",
+        }
+        try:
+            for name, mutated in mutations.items():
+                with self.subTest(mutation=name):
+                    self.assertNotEqual(mutated, text)
+                    path.write_text(mutated, encoding="utf-8", newline="")
+                    with self.assertRaises(gate.ValidationError):
+                        gate.validate_repository()
+        finally:
+            path.write_bytes(original)
+        self.assertEqual(path.read_bytes(), original)
+        gate.validate_repository()
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

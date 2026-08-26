@@ -145,6 +145,77 @@ MISSPELLING_RE = re.compile(
 CODE_FENCE_RE = re.compile(r"```.*?```", re.DOTALL)
 CODE_SPAN_RE = re.compile(r"`[^`\n]*`")
 
+# The geometric packet remains a review candidate.  These sentences bind the
+# distinction between that study and the live release surface without
+# manufacturing an asset specification for the live lockup.
+LIVE_SURFACE_DISCLOSURE = (
+    "The public release surface continues to use the existing Deedseal "
+    "wordmark and one green point, pending a later Owner brand decision. "
+    "This repository does not specify, version or publish an asset for that "
+    "lockup."
+)
+
+_NEGATION_RE = re.compile(
+    r"\b(?:not|never|no|none|nothing|nor|neither|without|cannot)\b",
+    re.IGNORECASE,
+)
+_NEGATION_BOUNDARY = ".!?;\"'"
+_FALSE_IDENTITY_CLAIMS = (
+    (
+        re.compile(
+            r"\b(?:Owner[- ]selected|Owner[- ]approved|adopted|deployed|"
+            r"canonical|current public)\s+(?:Deedseal\s+)?(?:Brand Identity "
+            r"v1\.0|identity|logo|mark|assets?)\b",
+            re.IGNORECASE,
+        ),
+        "an adopted, deployed or canonical public identity",
+    ),
+    (
+        re.compile(
+            r"\b(?:Brand Identity v1\.0|identity|logo|mark|assets?)\s+"
+            r"(?:is|are|was|were|remains?|becomes?|as)\s+(?:the\s+)?"
+            r"(?:Owner[- ]selected|Owner[- ]approved|adopted|deployed|"
+            r"canonical|current public)\b",
+            re.IGNORECASE,
+        ),
+        "an Owner selection of the review candidate",
+    ),
+    (
+        re.compile(
+            r"\b(?:authorize[ds]?|approve[ds]?|clear(?:ed|s)?)\s+(?:the\s+)?"
+            r"(?:assets?\s+)?(?:for\s+)?downstream placement\b|"
+            r"\bdownstream placement\s+(?:is|was|has been)\s+authorized\b",
+            re.IGNORECASE,
+        ),
+        "an authorization of downstream placement",
+    ),
+)
+_PERMANENT_LIVE_LOCKUP_TERM_RE = re.compile(
+    r"\b(?:permanent|canonical|fully specified|final)\s+"
+    r"(?:identity|logo|lockup|canon)\b",
+    re.IGNORECASE,
+)
+
+FAQ_REQUIRED_COORDINATES = (
+    "prerelease / design-partner stage",
+    "not generally available",
+    "deedseal-run-passport/1.0",
+    "frozen",
+    "historical",
+    "v0.1.0",
+    "v0.2.0",
+)
+_FAQ_UNFROZEN_RE = re.compile(
+    r"\b(?:passport(?: format)?|passport envelope|envelope)\b.{0,64}"
+    r"\b(?:is|remains|stays)\s+not\s+(?:yet\s+)?frozen\b",
+    re.IGNORECASE | re.DOTALL,
+)
+_FAQ_NO_PUBLIC_RELEASE_RE = re.compile(
+    r"\b(?:there\s+is|there's|we\s+have)\s+no\s+public\s+release\b|"
+    r"\bno\s+public\s+release\s+(?:exists|has been published)\b",
+    re.IGNORECASE,
+)
+
 # Claims this packet has no standing to make. The negative statements the
 # document does make -- that there is no claim -- do not contain these.
 TRADEMARK_CLAIM_RE = re.compile(
@@ -886,6 +957,57 @@ def prose_only(relative: str, text: str) -> str:
     return CODE_SPAN_RE.sub(" ", CODE_FENCE_RE.sub(" ", text))
 
 
+def _claim_is_negated(text: str, start: int) -> bool:
+    """Whether a claim-shaped term is denied in its own clause."""
+    window = text[max(0, start - 72) : start]
+    boundary = max(window.rfind(character) for character in _NEGATION_BOUNDARY)
+    if boundary >= 0:
+        window = window[boundary + 1 :]
+    return _NEGATION_RE.search(window) is not None
+
+
+def identity_alignment_violation(raw: str, relative: str = "public text") -> str | None:
+    """Name a public claim that promotes the review candidate or live lockup.
+
+    This is intentionally prose-aware and negation-aware.  A truthful denial
+    ("not the adopted identity") must remain writable, while an affirmative
+    claim cannot be laundered by another denial elsewhere in the document.
+    """
+    text = unwrapped(prose_only(relative, raw))
+    for pattern, reason in _FALSE_IDENTITY_CLAIMS:
+        for match in pattern.finditer(text):
+            if not _claim_is_negated(text, match.start()):
+                return reason
+    for match in _PERMANENT_LIVE_LOCKUP_TERM_RE.finditer(text):
+        context = text[max(0, match.start() - 200) : match.start()].lower()
+        boundary = max(context.rfind(character) for character in _NEGATION_BOUNDARY)
+        if boundary >= 0:
+            context = context[boundary + 1 :]
+        if (
+            "wordmark" in context
+            and "green point" in context
+            and not _claim_is_negated(text, match.start())
+        ):
+            return "the live wordmark and green point settled as a specified permanent canon"
+    return None
+
+
+def faq_alignment_violation(raw: str) -> str | None:
+    """Name a drift from the release and passport coordinates the FAQ owes."""
+    # Coordinates are intentionally code-formatted in Markdown, so keep inline
+    # code while excluding fenced examples.
+    text = unwrapped(CODE_FENCE_RE.sub(" ", raw))
+    if _FAQ_UNFROZEN_RE.search(text):
+        return "the 1.0 passport envelope called unfrozen"
+    if _FAQ_NO_PUBLIC_RELEASE_RE.search(text):
+        return "no public release, while v0.1.0 is preserved as historical"
+    lower = text.lower()
+    for coordinate in FAQ_REQUIRED_COORDINATES:
+        if coordinate.lower() not in lower:
+            return f"missing FAQ alignment coordinate {coordinate!r}"
+    return None
+
+
 def check_prose(relative: str, raw: str) -> None:
     text = prose_only(relative, raw)
     misspelled = MISSPELLING_RE.search(text)
@@ -1480,12 +1602,17 @@ def check_identity(root: Path = ROOT) -> tuple[str, int]:
 
     for relative in (MANIFEST_PATH, DOCUMENT_PATH, ASSETS_README):
         check_prose(relative, texts[relative])
+        violation = identity_alignment_violation(texts[relative], relative)
+        if violation is not None:
+            fail(f"{relative}: carries {violation}")
     check_non_donor(root, {**texts, **{name: asset.raw for name, asset in assets.items()}})
 
     for relative in (DOCUMENT_PATH, ASSETS_README):
         for required in (MANIFEST_PATH, "assets/svg/deedseal-lockup.svg"):
             if required not in texts[relative]:
                 fail(f"{relative}: never points a reader at {required}")
+        if LIVE_SURFACE_DISCLOSURE not in unwrapped(texts[relative]):
+            fail(f"{relative}: missing the live wordmark and green-point disclosure")
 
     return identity_version, len(entries)
 

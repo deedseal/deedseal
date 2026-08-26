@@ -2,11 +2,33 @@
 
 [![Public record validation](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml/badge.svg)](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml)
 
-Deny-by-default execution control for AI coding agents on Linux, with a signed, offline-verifiable passport for every run.
+**Deedseal is an owner-governed AI business platform for deploying and operating a business.**
 
-Deedseal is designed so that what a machine was allowed to do — and what it actually did — can be proven later, offline, without trusting the machine that did it.
+Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner.
 
-In plain terms: before an AI coding agent runs, the owner signs a permission slip naming exactly which files it may change. The kernel holds that boundary while the agent works. Afterwards, a signed passport records what was permitted and what happened — and anyone can check that passport on their own machine, offline, without asking us.
+Visit [deedseal.com](https://deedseal.com).
+
+## For owners and operators
+
+Deedseal is intended for business owners and operators who want to use AI without handing a model provider the enduring operating record, accumulated context or final judgement of the business. The problem is both custody and proof: business memory should remain with the owner, and the owner should be able to establish what a machine was permitted to do and what it actually did.
+
+## Platform direction
+
+Deedseal is being built as one platform configured for each business through modules, bounded adapters and bounded AI workers — not client-specific forks. Work moves as bounded packets under owner authority, admitted work runs inside a controlled operating boundary, and each closed run is intended to compile its accepted record back into owner-held business memory. The category is hardware-neutral; an operating boundary would be agreed with its owner.
+
+This is product direction, not a claim that the wider platform is implemented today. West Coast KBP ADU / Construction OS is the Owner-operated first reference use and product direction only. It is not presented as a customer, sale, completed integration, deployment or outcome.
+
+## Current availability
+
+Deedseal is at the **prerelease / design-partner stage**. It is not generally available and is not represented as production-qualified. No price, savings, service level, business outcome or customer adoption is claimed.
+
+## What is published today
+
+This public repository proves only the execution-control, owner-grant, run-passport, verifier and evidence-record properties its checked-in record actually carries. In plain terms: before a supervised AI coding run, the owner signs a permission slip naming exactly which files it may change. The published design applies that boundary while work runs, then records what was permitted and what happened in a signed passport that can be checked offline.
+
+The independently checkable public surface includes two real run passports and their one-byte tampered twins, a single-file standard-library verifier, a frozen `deedseal-run-passport/1.0` envelope exercised by 48 conformance vectors, Python/Go verdict agreement across that corpus, and the recorded Linux filesystem-write boundary. The claim table below preserves the exact status and evidence coordinate for every published property.
+
+This repository does not prove the wider business-platform capability, general deployment availability, all-business automation, business outcomes, customer adoption, price, savings, service level or partner status. It also makes no trademark-clearance claim and does not change the existing patent disclosures.
 
 ## Verify it yourself
 
@@ -45,25 +67,25 @@ One deliberate exception: the offline run-passport verifier is published in full
 
 In depth: [architecture](docs/architecture.md) (how the pieces fit), [trust model](docs/trust-model.md) (what is assumed, threatened, and out of scope), [system boundary](docs/system-boundary.md) (the engineering lifecycle around a run).
 
-## What Deedseal is
+## Published execution-control properties
 
-Four properties. Each one is enforced by the system and recorded in the run passport — none is a promise.
+The current public record carries four execution-control properties. Each is enforced by the published design and recorded in the run passport — none is a promise about the wider platform.
 
 - **Deny-by-default authority.** Every action is matched against explicitly enumerated allow paths; anything unmatched — an unknown action type, an ambiguous scope, a self-approval attempt — is blocked and recorded.
 - **One canonical path.** A signed work grant, checked at a single authorization gate, executed through a single effect broker. There is no second door.
 - **A signed passport for every run.** Each supervised run closes into a single evidence record binding the grant, the execution, and the complete resulting changeset — verifiable offline by anyone holding the verifier.
 - **The owner decides.** Automation and AI tooling implement and propose; approval, merge, and signature stay with one human. Self-approval is rejected outright.
 
-## Who this is for
+## Trust audience for the published proof
 
 - Engineers who let AI coding agents change real repositories and want the allowed scope enforced and recorded rather than assumed.
 - Reviewers and auditors who are handed machine-made changes and need an answer to "what else could it have touched?" that does not depend on the agent's own account.
 - Anyone evaluating this project: every claim in the table below is labelled with exactly what you can and cannot reproduce yourself.
 
-## What Deedseal is not
+## What the published execution-control layer is not
 
-- **Not an agent framework.** Deedseal does not run, prompt, or orchestrate agents; it is the authority layer an agent runs under.
-- **Not a sandbox.** Deedseal governs what a run is allowed to change and proves what it did change. To contain hostile code, compose it with a sandbox or a virtual machine (gVisor, Firecracker, or similar).
+- **Not an agent framework.** The published layer does not run, prompt, or orchestrate agents; it is the authority layer an agent runs under.
+- **Not a sandbox.** The published layer governs what a run is allowed to change and proves what it did change. To contain hostile code, compose it with a sandbox or a virtual machine (gVisor, Firecracker, or similar).
 - **Not an audit log or a SIEM.** A log is trusted because of where it sits. A run passport carries its own verifiability wherever it travels.
 - **Not a policy linter.** The gate does not advise; it decides, and its default is no.
 
@@ -128,9 +150,9 @@ Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineeri
 - **Prefer sealed evidence to inference.** Claims about a run are read from signed records, never from the run's own account of itself.
 - **Verification must not require trusting us.** The verifier is one auditable file with its keys baked in; nothing in the input can substitute a trust anchor.
 
-## What Deedseal does not do
+## Current boundary limits
 
-Deedseal does not sandbox the workload itself. To run possibly-malicious code, pair it with an appropriate sandbox or virtual machine. Deedseal does not protect against a compromised kernel or a compromised owner key. Grant-derived filesystem confinement of the agent process is applied by the kernel and recorded in the published passport ([docs/verify.md](docs/verify.md)); resource and egress bounds remain open objectives tracked in [docs/status.md](docs/status.md).
+The published execution-control layer does not sandbox the workload itself. To run possibly-malicious code, pair it with an appropriate sandbox or virtual machine. It does not protect against a compromised kernel or a compromised owner key. Grant-derived filesystem confinement of the agent process is applied by the kernel and recorded in the published passport ([docs/verify.md](docs/verify.md)); resource and egress bounds remain open objectives tracked in [docs/status.md](docs/status.md).
 
 ## Status
 
@@ -154,7 +176,9 @@ Questions are welcome as GitHub issues. Pull requests are accepted for correctio
 
 ## Brand
 
-The name, the mark, the wordmark, the lockup, the type system and the colour roles are defined in [assets/BRAND-IDENTITY-v1.0.md](assets/BRAND-IDENTITY-v1.0.md). Every asset is generated from one committed construction and bound by digest in [assets/brand-manifest.v1.json](assets/brand-manifest.v1.json); the sources are text with integer coordinates and no font, script or external reference, so each one renders from its own bytes. `python3 tools/check_brand_identity.py` re-proves the files against the manifest offline. Where the assets live and how to regenerate them: [assets/README.md](assets/README.md).
+[Brand Identity v1.0](assets/BRAND-IDENTITY-v1.0.md) is a mechanically qualified review candidate and engineering design study, not an Owner-selected, adopted, deployed or current public identity. Its generated assets remain bound by digest in [assets/brand-manifest.v1.json](assets/brand-manifest.v1.json), and `python3 tools/check_brand_identity.py` re-proves those files against the manifest offline. The packet authorizes no downstream placement.
+
+The public release surface continues to use the existing Deedseal wordmark and one green point, pending a later Owner brand decision. This repository does not specify, version or publish an asset for that lockup.
 
 ## License
 

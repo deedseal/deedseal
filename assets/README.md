@@ -5,12 +5,18 @@ record -- its validation gate rejects binary files, because bytes that cannot
 be read cannot be reviewed for disclosure -- and design follows the same rule as
 everything else here: the construction is committed, the image is derived.
 
-The identity is defined in [BRAND-IDENTITY-v1.0.md](BRAND-IDENTITY-v1.0.md) and
-bound by digest in `assets/brand-manifest.v1.json`
-([manifest](brand-manifest.v1.json)). Read the document for the idea, the
-geometry, the type system, the colour roles, the clearspace and minimum-size
-rules, the misuse and accessibility rules, and the contract a downstream
-consumer adopts. What follows is only where things are and how to check them.
+The mechanically qualified review candidate and engineering design study is
+defined in [BRAND-IDENTITY-v1.0.md](BRAND-IDENTITY-v1.0.md) and bound by digest
+in `assets/brand-manifest.v1.json` ([manifest](brand-manifest.v1.json)). It is
+not the Owner-selected, adopted, deployed or current public identity, and it
+authorizes no downstream placement. Read the document for the idea, geometry,
+type system, colour roles, clearspace, minimum-size and accessibility rules,
+and the candidate downstream contract. What follows is only where things are
+and how to check them.
+
+The public release surface continues to use the existing Deedseal wordmark and
+one green point, pending a later Owner brand decision. This repository does not
+specify, version or publish an asset for that lockup.
 
 ## What is here
 

@@ -69,6 +69,42 @@ PUBLIC_GITHUB_URL_RE = re.compile(
 # and nowhere else.
 PUBLIC_COMMIT_ID_PREFIX = "examples/verified/"
 
+# A published workflow pins every third-party Action to an immutable commit, and
+# an immutable commit is commit-shaped, so the rule above needs one exception.
+# A per-file waiver would exempt an entire file, so the exception is written as
+# syntax instead: a complete `uses:` entry, in a workflow file, whose ref is
+# exactly 40 lowercase hexadecimal characters, on a line carrying no second
+# commit-shaped value. Prose, comments, `run:` bodies, `env:` values and `with:`
+# inputs stay under the rule, inside a workflow as everywhere else.
+WORKFLOW_DIRECTORY = ".github/workflows/"
+WORKFLOW_SUFFIXES = {".yml", ".yaml"}
+
+# `owner/repository`, optionally followed by a path inside that repository --
+# the shapes GitHub accepts to the left of `@` for a non-local Action.
+ACTION_REPOSITORY_RE = re.compile(
+    r"[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?"          # owner
+    r"/[A-Za-z0-9](?:[A-Za-z0-9._-]*[A-Za-z0-9])?"          # repository
+    r"(?:/(?!\.{1,2}(?:/|$))[A-Za-z0-9._-]+)*"              # a path inside it
+)
+# One whole line and nothing else: an optional block-sequence dash, the literal
+# `uses` key, one reference that may be quoted, and at most a trailing comment.
+ACTION_USES_LINE_RE = re.compile(
+    r"^[ \t]*(?:-[ \t]+)?uses:[ \t]*"
+    r"(?P<quote>[\"']?)(?P<reference>[^\s\"'#]+)(?P=quote)"
+    r"[ \t]*(?:#[^\n]*)?$"
+)
+# A `uses` key that this rule cannot read is refused rather than skipped.
+ACTION_USES_KEY_RE = re.compile(r"^[ \t]*(?:-[ \t]+)?uses:")
+IMMUTABLE_ACTION_REF_RE = re.compile(r"[0-9a-f]{40}")
+# A block scalar (`run: |`, `description: >-`) holds text, not YAML. A `uses:`
+# line inside one is a string, so it is not an Action entry and gets no
+# exception.
+BLOCK_SCALAR_LINE_RE = re.compile(
+    r"^[ \t]*(?:-[ \t]+)?[^\s:#][^:#]*:[ \t]*[|>][+-]?[0-9]*[ \t]*(?:#[^\n]*)?$"
+)
+# References that name no upstream commit, so there is no commit to pin them to.
+UNPINNABLE_ACTION_PREFIXES = ("./", "../", "docker://")
+
 # Assemble credential-shaped prefixes without embedding a live-looking token in
 # the validator source. The public scan includes this file and its tests.
 _CREDENTIAL_PREFIXES = ("gh" + "p_", "github_" + "pat_", "s" + "k-")
@@ -202,6 +238,151 @@ NEGATION_WINDOW = 48
 # public prose is wrapped -- but a sentence terminator or a JSON string boundary
 # does, so a "not" from the sentence before cannot launder the next sentence.
 NEGATION_BOUNDARY = ".!?;\"'"
+
+# Additive public-story contradictions.  These are claim shapes, not forbidden
+# words: the public record must remain free to state limitations, discuss
+# technical deployment and custody outcomes, and describe the mechanically
+# qualified Brand study.  Every match is therefore both context-scoped and
+# checked through the same clause-local negation model used by the proof
+# surface above.
+LIVE_LOCKUP_REFERENCE_RE = re.compile(
+    r"\b(?:live|public[ \t]+release|release)[ \t]+(?:surface[ \t]+)?lockup\b|"
+    r"\b(?:that|this)[ \t]+lockup\b|"
+    r"\bwordmark\b.{0,120}\bgreen[ \t]+point\b|"
+    r"\bgreen[ \t]+point\b.{0,120}\bwordmark\b",
+    re.IGNORECASE,
+)
+LIVE_LOCKUP_SPECIFICATION_TERMS = (
+    (
+        re.compile(
+            r"\b(?:geometry|dimensions?)\b|"
+            r"\b[0-9]+(?:[ \t-]+by[ \t-]+|[ \t]*[xX×][ \t]*)[0-9]+\b",
+            re.IGNORECASE,
+        ),
+        "manufactured live-lockup geometry specification",
+    ),
+    (
+        re.compile(
+            r"\bcolou?r(?:s|way)?\b|\b(?:hex|rgba?|hsla?|pantone)\b|"
+            r"#[0-9A-Fa-f]{3,8}\b",
+            re.IGNORECASE,
+        ),
+        "manufactured live-lockup colour specification",
+    ),
+    (
+        re.compile(
+            r"\b(?:sha[ -]?256|digest|checksum)\b|\b[0-9a-f]{64}\b",
+            re.IGNORECASE,
+        ),
+        "manufactured live-lockup digest specification",
+    ),
+    (
+        re.compile(
+            r"\b(?:asset[ \t]+)?file(?:name)?\b|"
+            r"(?:^|[ \t`'\"])(?:assets/)?[A-Za-z0-9._/-]+\.svg\b",
+            re.IGNORECASE,
+        ),
+        "manufactured live-lockup filename specification",
+    ),
+    (
+        re.compile(
+            r"\bversion(?:ed)?\b|\bv?[0-9]+\.[0-9]+(?:\.[0-9]+)?\b",
+            re.IGNORECASE,
+        ),
+        "manufactured live-lockup version specification",
+    ),
+)
+
+# Each pattern names the exact claim-bearing group ``claim``.  Keeping that
+# group at the sensitive term lets a nearby "not" or "no" deny the claim even
+# when ordinary grammar ("is not a customer") places the negation after the
+# sentence's first verb.
+PUBLIC_MARKDOWN_CLAIM_PATTERNS = (
+    (
+        re.compile(
+            r"(?P<claim>\bv0\.2\.0\b)"
+            r"(?=[^\n.!?;]{0,96}\b(?:already[ \t]+exists?|exists?[ \t]+already|"
+            r"is[ \t]+available|is[ \t]+published|is[ \t]+released|"
+            r"has[ \t]+been[ \t]+published|has[ \t]+been[ \t]+released)\b)",
+            re.IGNORECASE,
+        ),
+        "manufactured v0.2.0 publication claim",
+    ),
+    (
+        re.compile(r"(?P<claim>\bgenerally[ \t]+available\b)", re.IGNORECASE),
+        "manufactured general-availability claim",
+    ),
+    (
+        re.compile(
+            r"(?P<claim>\b(?:costs?|priced)[ \t]+(?:at[ \t]+)?(?:[$£€][ \t]*)?[0-9])|"
+            r"(?P<claim_currency>[$£€][ \t]*[0-9]+)|"
+            r"(?P<claim_price>\b(?:public[ \t]+)?(?:price|pricing|fee)[ \t]+"
+            r"(?:is|starts?|equals?|of)\b)",
+            re.IGNORECASE,
+        ),
+        "unapproved public price claim",
+    ),
+    (
+        re.compile(
+            r"(?P<claim>\bsaves?[ \t]+(?:(?:every|each|our|a|the)[ \t]+)?"
+            r"(?:customers?|owners?|businesses?|users?)\b)|"
+            r"(?P<claim_savings>\b(?:savings?|cost[ \t]+reduction)[ \t]+"
+            r"(?:of|is|are|equals?|reaches?)[ \t]+(?:[$£€][ \t]*)?[0-9])|"
+            r"(?P<claim_percent>\b[0-9]+(?:\.[0-9]+)?%[ \t]+"
+            r"(?:savings?|cheaper|cost[ \t]+reduction)\b)",
+            re.IGNORECASE,
+        ),
+        "unapproved savings claim",
+    ),
+    (
+        re.compile(
+            r"\b(?:is|are|became|has|have|serves?|won|signed)\b"
+            r"[^\n.!?;]{0,48}?(?P<claim>\bcustomers?\b)|"
+            r"(?P<claim_customer_use>\bcustomers?\b)(?=[^\n.!?;]{0,40}\b"
+            r"(?:uses?|adopted|deployed|bought|pays?|subscribes?)\b)",
+            re.IGNORECASE,
+        ),
+        "unapproved customer claim",
+    ),
+    (
+        re.compile(
+            r"\b(?:is|are|became|named|made)\b[^\n.!?;]{0,48}?"
+            r"(?P<claim>(?<!design-)\bpartners?\b)|"
+            r"(?P<claim_partnered>\bpartnered\b)[ \t]+with\b",
+            re.IGNORECASE,
+        ),
+        "unapproved partner claim",
+    ),
+    (
+        re.compile(
+            r"(?P<claim>\bdeployed\b)(?=[^\n.!?;]{0,48}\b(?:with|at|across|for|to)\b)|"
+            r"(?P<claim_deployment>\bdeployment\b)(?=[^\n.!?;]{0,40}\b"
+            r"(?:is|was|has[ \t]+been)[ \t]+(?:complete|live|successful)\b)",
+            re.IGNORECASE,
+        ),
+        "unapproved deployment claim",
+    ),
+    (
+        re.compile(
+            r"\b(?:delivered|achieved|produced|guarantees?)\b"
+            r"[^\n.!?;]{0,64}?(?P<claim>\b(?:business|commercial|customer|"
+            r"promised|measured)[ \t]+outcomes?\b)|"
+            r"(?P<claim_outcome>\b(?:business|commercial|customer|promised|"
+            r"measured)[ \t]+outcomes?\b)(?=[^\n.!?;]{0,40}\b"
+            r"(?:is|was|has[ \t]+been)[ \t]+(?:delivered|achieved|proven)\b)",
+            re.IGNORECASE,
+        ),
+        "unapproved business-outcome claim",
+    ),
+    (
+        re.compile(r"(?P<claim>\bzero[ -]egress\b)", re.IGNORECASE),
+        "unapproved zero-egress claim",
+    ),
+    (
+        re.compile(r"(?P<claim>\bfully[ -]local\b)", re.IGNORECASE),
+        "unapproved fully-local claim",
+    ),
+)
 
 README_CLAIM_ROW_RE = re.compile(
     r"^\|\s*`(CLM-[0-9]{4})`\s*\|\s*(.+?)\s*\|\s*(.+?)\s*\|\s*`([a-z-]+)`\s*\|\s*$",
@@ -705,6 +886,103 @@ def all_public_files() -> list[Path]:
     return sorted(files)
 
 
+def is_workflow_file(path: Path) -> bool:
+    """A GitHub Actions workflow: under `.github/workflows/`, `.yml` or `.yaml`."""
+    return (
+        path.as_posix().startswith(WORKFLOW_DIRECTORY)
+        and path.suffix in WORKFLOW_SUFFIXES
+    )
+
+
+def workflow_structure_lines(text: str) -> list[tuple[int, str]]:
+    """Return the (line number, line) pairs YAML reads as structure.
+
+    A block scalar -- `run: |`, `description: >-` -- carries text, so `uses:`
+    written inside one is a string, not a step key. Those lines are dropped here
+    and therefore never reach the Action-pin rules below.
+    """
+    lines: list[tuple[int, str]] = []
+    block_indent: int | None = None
+    for number, line in enumerate(text.splitlines(), start=1):
+        indent = len(line) - len(line.lstrip(" \t"))
+        if block_indent is not None:
+            if not line.strip() or indent > block_indent:
+                continue
+            block_indent = None
+        lines.append((number, line))
+        if BLOCK_SCALAR_LINE_RE.match(line):
+            block_indent = indent
+    return lines
+
+
+def workflow_action_pins(path: Path, text: str) -> dict[int, str]:
+    """Map line number to the immutable Action ref that line pins.
+
+    A ref is returned only when every condition holds: the file is a workflow;
+    the line is a complete `uses:` entry naming an `owner/repository[/path]`
+    Action outside any block scalar; the ref is exactly 40 lowercase hexadecimal
+    characters; and the line carries no second commit-shaped value the entry
+    does not account for. This mapping is the whole of the exception -- a
+    commit-shaped value anywhere else in the file is not covered by it.
+    """
+    pins: dict[int, str] = {}
+    if not is_workflow_file(path):
+        return pins
+    for number, line in workflow_structure_lines(text):
+        match = ACTION_USES_LINE_RE.match(line)
+        if match is None:
+            continue
+        action, separator, ref = match.group("reference").partition("@")
+        if not separator or ACTION_REPOSITORY_RE.fullmatch(action) is None:
+            continue
+        if IMMUTABLE_ACTION_REF_RE.fullmatch(ref) is None:
+            continue
+        if len(FULL_COMMIT_RE.findall(line)) != 1:
+            continue
+        pins[number] = ref
+    return pins
+
+
+def workflow_pin_violations(path: Path, text: str) -> list[str]:
+    """Refuse an Action this repository has left unpinned or loosely pinned.
+
+    The exception above recognises only a lowercase 40-hex ref. Without this
+    rule the other forms -- an uppercase or mixed-case commit, a short SHA, a
+    mutable tag, a branch -- would merely go unexempted rather than be
+    forbidden, and a mutable ref discloses nothing, so the disclosure rule alone
+    would never see it. Local (`./`) and container (`docker://`) references name
+    no upstream commit and are out of scope.
+    """
+    violations: list[str] = []
+    if not is_workflow_file(path):
+        return violations
+    posix = path.as_posix()
+    for number, line in workflow_structure_lines(text):
+        match = ACTION_USES_LINE_RE.match(line)
+        if match is None:
+            if ACTION_USES_KEY_RE.match(line):
+                violations.append(
+                    f"{posix}:{number}: unreadable Action reference: {line.strip()}"
+                )
+            continue
+        reference = match.group("reference")
+        if reference.startswith(UNPINNABLE_ACTION_PREFIXES):
+            continue
+        action, separator, ref = reference.partition("@")
+        if not separator or ACTION_REPOSITORY_RE.fullmatch(action) is None:
+            violations.append(
+                f"{posix}:{number}: Action reference is not owner/repository@ref:"
+                f" {reference}"
+            )
+            continue
+        if IMMUTABLE_ACTION_REF_RE.fullmatch(ref) is None:
+            violations.append(
+                f"{posix}:{number}: {action} must be pinned to an exact 40-character"
+                f" lowercase commit SHA, not {ref}"
+            )
+    return violations
+
+
 def disclosure_violation(path: Path, text: str) -> str | None:
     for match in GITHUB_REPOSITORY_URL_RE.finditer(text):
         if PUBLIC_GITHUB_URL_RE.match(match.group(0)) is None:
@@ -712,23 +990,12 @@ def disclosure_violation(path: Path, text: str) -> str | None:
     for pattern, label in DISCLOSURE_PATTERNS:
         if pattern.search(text):
             return label
-    for match in FULL_COMMIT_RE.finditer(text):
-        line_start = text.rfind("\n", 0, match.start()) + 1
-        line_end = text.find("\n", match.end())
-        if line_end < 0:
-            line_end = len(text)
-        line = text[line_start:line_end]
-        if (
-            path.as_posix() == ".github/workflows/validate-public-record.yml"
-            and any(
-                f"{action}@{match.group(0)}" in line
-                for action in ("actions/checkout", "actions/setup-go")
-            )
-        ):
-            continue
-        if path.as_posix().startswith(PUBLIC_COMMIT_ID_PREFIX):
-            continue
-        return "private commit identifier"
+    if not path.as_posix().startswith(PUBLIC_COMMIT_ID_PREFIX):
+        pins = workflow_action_pins(path, text)
+        for match in FULL_COMMIT_RE.finditer(text):
+            line_number = text.count("\n", 0, match.start()) + 1
+            if pins.get(line_number) != match.group(0):
+                return "private commit identifier"
     return None
 
 
@@ -895,17 +1162,111 @@ def unresolved_source_paths(text: str, base: Path) -> list[str]:
     return unresolved
 
 
+def claim_is_negated(text: str, start: int) -> bool:
+    """Whether a claim-shaped term is denied inside its own local clause."""
+    window = text[max(0, start - NEGATION_WINDOW) : start]
+    boundary = max(window.rfind(character) for character in NEGATION_BOUNDARY)
+    if boundary >= 0:
+        window = window[boundary + 1 :]
+    return NEGATION_RE.search(window) is not None
+
+
 def unnegated_positive_claims(text: str) -> list[str]:
     """Banned words used as a positive claim, rather than denied."""
     offences: list[str] = []
     for match in POSITIVE_CLAIM_TERMS.finditer(text):
-        window = text[max(0, match.start() - NEGATION_WINDOW) : match.start()]
-        boundary = max(window.rfind(character) for character in NEGATION_BOUNDARY)
-        if boundary >= 0:
-            window = window[boundary + 1 :]
-        if NEGATION_RE.search(window) is None:
+        if not claim_is_negated(text, match.start()):
             offences.append(match.group(0))
     return offences
+
+
+def markdown_claim_segments(text: str) -> list[str]:
+    """Return prose-sized Markdown segments without joining separate bullets.
+
+    Ordinary wrapped prose remains one segment. Sentence terminators and a new
+    Markdown block/list/table entry start another, preventing an asset table or
+    the Brand study's geometry prose from being mistaken for a specification of
+    the separate live release lockup.
+    """
+    normalized = re.sub(r"[ \t]+", " ", text.replace("\r\n", "\n"))
+    return [
+        segment.strip()
+        for segment in re.split(
+            r"(?<=[.!?;])[ \t\n]+|"
+            r"\n[ \t]*(?=(?:[-*+]|[0-9]+\.)[ \t]+|[#|])|"
+            r"\n[ \t]*\n",
+            normalized,
+        )
+        if segment.strip()
+    ]
+
+
+def live_lockup_specification_violation(text: str) -> str | None:
+    """Name an invented specification tied to the live release lockup."""
+    for segment in markdown_claim_segments(text):
+        if LIVE_LOCKUP_REFERENCE_RE.search(segment) is None:
+            continue
+        for pattern, reason in LIVE_LOCKUP_SPECIFICATION_TERMS:
+            for match in pattern.finditer(segment):
+                if not claim_is_negated(segment, match.start()):
+                    return reason
+    return None
+
+
+def _claim_group_start(match: re.Match[str]) -> int:
+    for name, value in match.groupdict().items():
+        if name.startswith("claim") and value is not None:
+            return match.start(name)
+    raise AssertionError("public claim pattern has no matched claim group")
+
+
+def _policy_list_denies_claim(text: str, start: int) -> bool:
+    """Recognize the one Markdown list that enumerates prohibited claims."""
+    before = text[:start]
+    introductions = list(
+        re.finditer(
+            r"must\s+not\s+describe\s+the\s+product\s+as:",
+            before,
+            re.IGNORECASE,
+        )
+    )
+    if not introductions:
+        return False
+    tail = before[introductions[-1].end() :]
+    started = False
+    for line in tail.splitlines():
+        if not line.strip():
+            if started:
+                return False
+            continue
+        if not started and not line.lstrip().startswith("-"):
+            return False
+        started = True
+    return started
+
+
+def public_markdown_claim_violation(text: str) -> str | None:
+    """Name an additive contradiction in one public Markdown surface.
+
+    The scan distinguishes commercial/product assertions from ordinary audit,
+    logging, deployment-policy and signed custody/outcome terminology.  It also
+    accepts direct denials and the repository's explicit prohibited-claims
+    list, so policy and limitation prose remain writable.
+    """
+    lockup = live_lockup_specification_violation(text)
+    if lockup is not None:
+        return lockup
+
+    for pattern, reason in PUBLIC_MARKDOWN_CLAIM_PATTERNS:
+        for match in pattern.finditer(text):
+            start = _claim_group_start(match)
+            if claim_is_negated(text, start):
+                continue
+            if reason == "manufactured general-availability claim":
+                if _policy_list_denies_claim(text, start):
+                    continue
+            return reason
+    return None
 
 
 def proof_surface_violation(text: str, base: Path) -> str | None:
@@ -1077,9 +1438,15 @@ def validate_public_text() -> None:
             text = raw.decode("utf-8")
         except UnicodeError:
             fail(f"{relative}: public files must be UTF-8 text")
+        if relative.suffix.lower() == ".md":
+            claim_violation = public_markdown_claim_violation(text)
+            if claim_violation is not None:
+                fail(f"{relative}: contains forbidden {claim_violation}")
         violation = disclosure_violation(relative, text)
         if violation is not None:
             fail(f"{relative}: contains forbidden {violation}")
+        for message in workflow_pin_violations(relative, text):
+            fail(message)
         for message in internal_link_violations(relative, text):
             fail(message)
         if relative.suffix == ".py":
