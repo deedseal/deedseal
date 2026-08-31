@@ -1,0 +1,257 @@
+{
+  "record_version": "deedseal.public-build-journal/v1",
+  "entries": [
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0001",
+      "title": "Two run passports verify, and one-byte twins are refused",
+      "user_value": "A reader can run the published verifier offline against two fixed passports and see each original pass while its one-byte-modified twin is refused.",
+      "surface": "run-passport",
+      "status": "PROVED",
+      "evidence_grade": "PUBLIC_REPRODUCIBLE",
+      "observed_at": "2026-08-04",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:evidence/README.md",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/evidence/README.md",
+      "limitations": [
+        "Reproducing a verdict does not reproduce either supervised run or expose the private system that produced it.",
+        "PASS establishes the bounded signed record against keys pinned in the project verifier; it does not establish semantic correctness, independent certification, or wider product availability."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0002",
+      "title": "The public refusal corpus exercises 35 declared reasons",
+      "user_value": "A verifier implementer can replay the committed hostile inputs and compare exact refusal outcomes instead of trusting a prose count.",
+      "surface": "offline-verifier",
+      "status": "PROVED",
+      "evidence_grade": "PUBLIC_REPRODUCIBLE",
+      "observed_at": "2026-08-03",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:evidence/records/EVD-PUBLIC-0001.json",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/evidence/records/EVD-PUBLIC-0001.json",
+      "limitations": [
+        "The 39 declared, 35 demonstrated, and 4 unreachable counts describe the verifier and corpus at this protected tag, not every refusal path in private components.",
+        "The corpus demonstrates deterministic outcomes for its inputs; it does not establish completeness or semantic correctness."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0003",
+      "title": "A recorded filesystem boundary can be replayed on Linux",
+      "user_value": "A reader on a compatible Linux kernel can observe the recorded rule permit the named write and refuse creation, directory, symbolic-link, and unlink operations.",
+      "surface": "kernel-boundary",
+      "status": "PROVED",
+      "evidence_grade": "PUBLIC_REPRODUCIBLE",
+      "observed_at": "2026-08-03",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:evidence/records/EVD-PUBLIC-0002.json",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/evidence/records/EVD-PUBLIC-0002.json",
+      "limitations": [
+        "The probe applies the recorded rules to a new temporary directory; it does not re-execute the original run.",
+        "The observation covers filesystem-write classes on a compatible kernel, not resource or network bounds."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0004",
+      "title": "Python and Go agree on 48 passport vectors",
+      "user_value": "An implementer can compare two project-built verifiers over the same language-neutral vectors, including exact verdict lines and exit codes.",
+      "surface": "passport-conformance",
+      "status": "PROVED",
+      "evidence_grade": "PUBLIC_REPRODUCIBLE",
+      "observed_at": "2026-08-04",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:evidence/records/EVD-PUBLIC-0003.json",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/evidence/records/EVD-PUBLIC-0003.json",
+      "limitations": [
+        "Both implementations are maintained by this project, so agreement is not independent verification.",
+        "Agreement covers the 48 committed vectors and says nothing about inputs outside that set."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0005",
+      "title": "v0.2.0 prerelease coordinate and release assets",
+      "user_value": "A reader has a protected source tag plus a public release manifest and checksum inventory for the bounded public distribution surface.",
+      "surface": "public-release",
+      "status": "PROVED",
+      "evidence_grade": "PUBLIC_OBSERVED",
+      "observed_at": "2026-08-26T20:18:31Z",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0",
+      "source_url": "https://github.com/deedseal/deedseal/releases/tag/v0.2.0",
+      "limitations": [
+        "This is a prerelease of public documentation, verifier bytes, examples, and evidence records; it is not evidence of general availability or production qualification.",
+        "The checksum inventory is not a signature, and both verifier implementations remain project-built."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0006",
+      "title": "Offline-verifier maintenance remains active",
+      "user_value": "Readers can separate the already published verifier from continuing work that has not yet earned another proved capability entry.",
+      "surface": "offline-verifier",
+      "status": "IN_DEVELOPMENT",
+      "evidence_grade": "PUBLIC_OBSERVED",
+      "observed_at": "2026-08-26",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:docs/status.md",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/docs/status.md",
+      "limitations": [
+        "The active workstream label is a public repository status declaration, not proof of any unpublished feature, schedule, or outcome.",
+        "Only separately listed immutable artifacts support the verifier capabilities marked PROVED."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0007",
+      "title": "Brand Identity v1.0 remains a review candidate",
+      "user_value": "A visitor can inspect the mechanically checked design study without mistaking it for the selected or current public identity.",
+      "surface": "brand-identity",
+      "status": "IN_REVIEW",
+      "evidence_grade": "PUBLIC_OBSERVED",
+      "observed_at": "2026-08-26",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:README.md",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/README.md#brand",
+      "limitations": [
+        "The public record explicitly does not present this study as Owner-selected, adopted, deployed, or the current public identity.",
+        "Mechanical agreement with its manifest does not authorize downstream placement."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0008",
+      "title": "The public landing relaunch was reversed",
+      "user_value": "The public history preserves an attempted presentation change and its later reversal instead of presenting uninterrupted progress.",
+      "surface": "repository-presentation",
+      "status": "FAILED",
+      "evidence_grade": "PUBLIC_OBSERVED",
+      "observed_at": "2026-08-09T07:55:32Z",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0",
+      "source_url": "https://github.com/deedseal/deedseal/commits/v0.2.0",
+      "limitations": [
+        "The protected tag history shows the landing relaunch merge followed by its revert; it does not establish a cause beyond the public commit and pull-request record.",
+        "Repository history does not prove which bytes the canonical external domain serves now."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0009",
+      "title": "Resource and network-egress bounds remain planned",
+      "user_value": "A user is warned that the published filesystem-write observation is narrower than whole-workload containment.",
+      "surface": "runtime-boundary",
+      "status": "PLANNED",
+      "evidence_grade": "PUBLIC_PROPOSAL",
+      "observed_at": "2026-08-26",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:docs/status.md",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/docs/status.md",
+      "limitations": [
+        "The status document records open objectives, not implemented controls, dates, or acceptance evidence.",
+        "No PROVED entry may be inferred from this plan."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0010",
+      "title": "Proof Check is a proposal, not a shipped tool",
+      "user_value": "The proposed entry product would give a maintainer one bounded verdict over selected pull-request evidence, while preserving an explicit not-available state today.",
+      "surface": "proof-check",
+      "status": "PLANNED",
+      "evidence_grade": "PUBLIC_PROPOSAL",
+      "observed_at": "2026-08-30T19:01:10Z",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "github-issue:deedseal/deedseal#78",
+      "source_url": "https://github.com/deedseal/deedseal/issues/78",
+      "limitations": [
+        "No public Action, CLI, receipt, release, Marketplace listing, or reproducible Proof Check example is evidenced by this coordinate.",
+        "An Issue is a public proposal object whose body can change; this coordinate is never sufficient for promotion to PROVED."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0011",
+      "title": "Canonical portal availability is not established by GitHub evidence",
+      "user_value": "A visitor is not asked to treat a successful repository Pages job as proof that the canonical domain serves a particular version now.",
+      "surface": "public-portal",
+      "status": "UNKNOWN",
+      "evidence_grade": "UNKNOWN",
+      "observed_at": "2026-08-30T05:46:13Z",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "github-actions-run:deedseal/deedseal#33295394238",
+      "source_url": "https://github.com/deedseal/deedseal/actions/runs/33295394238",
+      "limitations": [
+        "The public run reports a successful Pages build and deploy job, but it does not bind the canonical domain's response bytes or its current source.",
+        "External reachability alone is not treated as immutable GitHub proof in this journal."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0012",
+      "title": "Cockpit and local-inference capability remain unknown",
+      "user_value": "Readers receive an explicit unknown rather than an inference from private development or product vocabulary.",
+      "surface": "cockpit-local-inference",
+      "status": "UNKNOWN",
+      "evidence_grade": "UNKNOWN",
+      "observed_at": "2026-08-30",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0",
+      "source_url": "https://github.com/deedseal/deedseal/tree/v0.2.0",
+      "limitations": [
+        "The inspected protected public tree carries no qualifying immutable coordinate for a Cockpit or local-inference capability.",
+        "Absence from this public tree is not proof that work does not exist elsewhere; it keeps the public status UNKNOWN."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0013",
+      "title": "Marketplace, partner, connector-effect, and production state remain unknown",
+      "user_value": "A visitor is not led to infer distribution, endorsement, external side effects, or operational adoption from repository activity.",
+      "surface": "distribution-and-operations",
+      "status": "UNKNOWN",
+      "evidence_grade": "UNKNOWN",
+      "observed_at": "2026-08-30",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0:docs/releases/v0.2.0-prerelease-notes.md",
+      "source_url": "https://github.com/deedseal/deedseal/blob/v0.2.0/docs/releases/v0.2.0-prerelease-notes.md",
+      "limitations": [
+        "The public release notes expressly do not establish an accepted integration, partner status, provider endorsement, or production deployment.",
+        "No qualifying public immutable artifact establishes a Marketplace listing or live connector effect, so the journal does not infer either."
+      ],
+      "supersedes": []
+    },
+    {
+      "record_version": "deedseal.public-build-journal-entry/v1",
+      "entry_id": "PBJ-0014",
+      "title": "The tagged claim-count policy disagrees with the ledger",
+      "user_value": "A reader is warned that one hand-written policy count lags the machine ledger instead of receiving whichever count sounds stronger.",
+      "surface": "public-evidence-record",
+      "status": "FAILED",
+      "evidence_grade": "PUBLIC_OBSERVED",
+      "observed_at": "2026-08-30",
+      "repository": "deedseal/deedseal",
+      "immutable_coordinate": "deedseal/deedseal@refs/tags/v0.2.0",
+      "source_url": "https://github.com/deedseal/deedseal/tree/v0.2.0",
+      "limitations": [
+        "At the same protected tag, docs/publication-policy.md names two current public-reproducible claims while the machine ledger and evidence README carry five.",
+        "The mismatch does not by itself invalidate the underlying artifacts, decide which claim is correct, or repair the existing documents."
+      ],
+      "supersedes": []
+    }
+  ]
+}

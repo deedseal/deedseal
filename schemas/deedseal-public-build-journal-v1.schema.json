@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:deedseal:public-build-journal:v1",
+  "title": "Deedseal public build journal v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_version",
+    "entries"
+  ],
+  "properties": {
+    "record_version": {
+      "type": "string",
+      "const": "deedseal.public-build-journal/v1"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/entry"
+      }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "record_version",
+        "entry_id",
+        "title",
+        "user_value",
+        "surface",
+        "status",
+        "evidence_grade",
+        "observed_at",
+        "repository",
+        "immutable_coordinate",
+        "source_url",
+        "limitations",
+        "supersedes"
+      ],
+      "properties": {
+        "record_version": {
+          "type": "string",
+          "const": "deedseal.public-build-journal-entry/v1"
+        },
+        "entry_id": {
+          "type": "string",
+          "pattern": "^PBJ-[0-9]{4}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "user_value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "surface": {
+          "type": "string",
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$",
+          "maxLength": 80
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PROVED",
+            "IN_REVIEW",
+            "IN_DEVELOPMENT",
+            "BLOCKED",
+            "FAILED",
+            "PLANNED",
+            "UNKNOWN"
+          ]
+        },
+        "evidence_grade": {
+          "type": "string",
+          "enum": [
+            "PUBLIC_REPRODUCIBLE",
+            "PUBLIC_OBSERVED",
+            "PUBLIC_PROPOSAL",
+            "UNKNOWN"
+          ]
+        },
+        "observed_at": {
+          "type": "string",
+          "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}(?:T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)?$"
+        },
+        "repository": {
+          "type": "string",
+          "const": "deedseal/deedseal"
+        },
+        "immutable_coordinate": {
+          "type": "string",
+          "pattern": "^(?:deedseal/deedseal@refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+(?::[A-Za-z0-9._/-]+)?|github-issue:deedseal/deedseal#[1-9][0-9]*|github-actions-run:deedseal/deedseal#[1-9][0-9]*)$"
+        },
+        "source_url": {
+          "type": "string",
+          "pattern": "^https://github\\.com/deedseal/deedseal(?:/\\S*)?$"
+        },
+        "limitations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 700
+          }
+        },
+        "supersedes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^PBJ-[0-9]{4}$"
+          }
+        }
+      }
+    }
+  }
+}

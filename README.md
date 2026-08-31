@@ -4,30 +4,12 @@
 
 **Deedseal is an owner-controlled system for sending work to AI, reviewing the result, and deciding what may become durable business memory.**
 
-Category: Deedseal is an owner-governed AI business platform for deploying and operating a business.
+> - **PUBLISHED PROOF:** two run passports, tampered twins, an offline verifier, and 48 conformance vectors.
+> - **IN DEVELOPMENT:** the controlled-execution chain; resource and egress bounds remain open.
+> - **PRODUCT DIRECTION:** the wider platform, Cockpit, accepted memory, and external-system modules.
+> - **AVAILABILITY:** prerelease / design-partner stage; not generally available or production-qualified.
 
-Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner. Visit [deedseal.com](https://deedseal.com).
-
-## For owners and operators
-
-Deedseal is for people who want AI workers without giving a model provider the final decision or the owner-held business memory.
-
-## Platform direction
-
-The wider product is intended to use modules, bounded adapters and bounded AI workers to move accepted work into owner-held business memory. This is product direction, not a claim that the wider platform is implemented today. West Coast KBP ADU / Construction OS is the Owner-operated first reference use and product direction only. No trademark-clearance claim is made.
-
-## Current availability
-
-- **PUBLISHED PROOF:** two real run passports and their one-byte tampered twins, an offline verifier, 48 conformance vectors, Python/Go verdict agreement, and a limited replay of the recorded Linux write boundary.
-- **IN DEVELOPMENT:** the authorization, signing, quarantine, custody, and verification chain; resource and egress bounds remain open.
-- **PRODUCT DIRECTION:** the wider business platform, Cockpit, accepted memory, and external-system modules.
-- **AVAILABILITY:** prerelease / design-partner stage; not generally available and not represented as production-qualified.
-
-## What is published today
-
-This repository is the public documentation and machine-validated evidence record. It proves only the properties bound by its checked-in artifacts; it does not prove the wider business-platform capability, a customer outcome, or private implementation. The engineering repositories remain private.
-
-## Verify it yourself
+## Verify the published proof
 
 Try the proof now in the way that suits you. All three paths use the same published passport and tampered twin.
 
@@ -85,15 +67,18 @@ Technical detail: [architecture](docs/architecture.md), [trust model](docs/trust
 
 ## Strongest current public evidence
 
+The current [publication policy](docs/publication-policy.md) classifies only `CLM-0008` and `CLM-0010` as `public-reproducible`. The other entries below are observable supporting public records, not additional policy-classified claims.
+
 | Public evidence | What a visitor can check | Exact coordinate |
 |---|---|---|
-| Two supervised runs | Each real passport returns PASS; each one-byte twin returns BLOCK. | [Published run index in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/runs.md) |
-| Offline verifier | One standard-library Python file verifies against pinned public keys without a service or network. | [`verify_run_passport.py` in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/tools/verify_run_passport.py) |
-| Refusal corpus | Published mutations reproduce 35 exact refusal verdicts; four declared reasons are classified as unreachable from published bytes. | [Refusal corpus in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/demo/refusals/README.md) |
-| Two implementations | Python and Go agree on verdict and exit code across all 48 published vectors. Both implementations come from this project. | [Conformance corpus in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/conformance/README.md) |
-| Recorded write boundary | A local Linux probe can replay the recorded rules and observe the bounded filesystem operations. | [Boundary walkthrough in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/docs/verify.md#demonstrate-the-recorded-write-boundary-on-your-kernel) |
-| Continuous validation | GitHub Actions re-ran the public record and browser-verifier checks successfully on the prepared `main`. | [Public record run `33295394495`](https://github.com/deedseal/deedseal/actions/runs/33295394495) · [browser run `33295394478`](https://github.com/deedseal/deedseal/actions/runs/33295394478) |
-| Prerelease bundle | Release assets inventory the bounded distributable surface and publish checksums; checksums are not signatures. | [`v0.2.0` prerelease](https://github.com/deedseal/deedseal/releases/tag/v0.2.0) |
+| Published demonstration — policy-classified `CLM-0008` | The first real passport returns PASS; its one-byte twin returns BLOCK. | [Published run index in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/runs.md) |
+| Refusal corpus — policy-classified `CLM-0010` | Published mutations reproduce 35 exact refusal verdicts; four declared reasons are classified as unreachable from published bytes. | [Refusal corpus in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/demo/refusals/README.md) |
+| Offline verifier — supporting public artifact | One standard-library Python file verifies against pinned public keys without a service or network. | [`verify_run_passport.py` in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/tools/verify_run_passport.py) |
+| Second supervised run — supporting public record | The second real passport returns PASS; its one-byte twin returns BLOCK. | [Published run index in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/runs.md) |
+| Two implementations — supporting public record | Python and Go agree on verdict and exit code across all 48 published vectors. Both implementations come from this project. | [Conformance corpus in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/conformance/README.md) |
+| Recorded write boundary — supporting public observation | A local Linux probe can replay the recorded rules and observe the bounded filesystem operations. | [Boundary walkthrough in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/docs/verify.md#demonstrate-the-recorded-write-boundary-on-your-kernel) |
+| Continuous validation — supporting public observation | GitHub Actions re-ran the public record and browser-verifier checks successfully on the prepared `main`. | [Public record run `33295394495`](https://github.com/deedseal/deedseal/actions/runs/33295394495) · [browser run `33295394478`](https://github.com/deedseal/deedseal/actions/runs/33295394478) |
+| Prerelease bundle — supporting public artifact | Release assets inventory the bounded distributable surface and publish checksums; checksums are not signatures. | [`v0.2.0` prerelease](https://github.com/deedseal/deedseal/releases/tag/v0.2.0) |
 
 ## What this does not prove
 
@@ -106,7 +91,7 @@ Technical detail: [architecture](docs/architecture.md), [trust model](docs/trust
 
 | Visitor | Start here | Then go deeper |
 |---|---|---|
-| **User** | [Try the proof](#verify-it-yourself) and read [current status](docs/status.md). | [FAQ](docs/faq.md) and [deedseal.com](https://deedseal.com) |
+| **User** | [Verify the published proof](#verify-the-published-proof) and read [current status](docs/status.md). | [Verification limits](docs/verify.md) and [deedseal.com](https://deedseal.com) |
 | **Engineer** | [Architecture](docs/architecture.md) and [passport specification](docs/passport-spec-v1.md). | [Conformance vectors](examples/verified/conformance/README.md) and [method](docs/method.md) |
 | **Reviewer** | [Verification walkthrough](docs/verify.md) and [run index](examples/verified/runs.md). | [Trust model](docs/trust-model.md) and [evidence model](evidence/README.md) |
 | **Potential partner** | Read the [availability boundary](docs/status.md) and verify one public artifact. | Use the design-partner path on [deedseal.com](https://deedseal.com) only if the current limits fit. |
@@ -115,10 +100,39 @@ Technical detail: [architecture](docs/architecture.md), [trust model](docs/trust
 
 Report vulnerabilities through [private vulnerability reporting](https://github.com/deedseal/deedseal/security/advisories/new) and read [SECURITY.md](SECURITY.md). Questions and corrections are welcome under [CONTRIBUTING.md](CONTRIBUTING.md). Documentation is licensed under [CC BY 4.0](LICENSE); executable files declare their own SPDX license, and the private product source is not covered. See [NOTICE.md](NOTICE.md).
 
+## Product framing
+
+Category: Deedseal is an owner-governed AI business platform for deploying and operating a business.
+
+Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner. Visit [deedseal.com](https://deedseal.com).
+
+## For owners and operators
+
+Deedseal is for people who want AI workers without giving a model provider the final decision or the owner-held business memory.
+
+## Platform direction
+
+The wider product is intended to use modules, bounded adapters and bounded AI workers to move accepted work into owner-held business memory. This is product direction, not a claim that the wider platform is implemented today. West Coast KBP ADU / Construction OS is the Owner-operated first reference use and product direction only. No trademark-clearance claim is made.
+
+## Current availability
+
+- **PUBLISHED PROOF:** two real run passports and their one-byte tampered twins, an offline verifier, 48 conformance vectors, Python/Go verdict agreement, and a limited replay of the recorded Linux write boundary.
+- **IN DEVELOPMENT:** the authorization, signing, quarantine, custody, and verification chain; resource and egress bounds remain open.
+- **PRODUCT DIRECTION:** the wider business platform, Cockpit, accepted memory, and external-system modules.
+- **AVAILABILITY:** prerelease / design-partner stage; not generally available and not represented as production-qualified.
+
+## What is published today
+
+This repository is the public documentation and machine-validated evidence record. It proves only the properties bound by its checked-in artifacts; it does not prove the wider business-platform capability, a customer outcome, or private implementation. The engineering repositories remain private.
+
+## Verify it yourself
+
+Return to [Verify the published proof](#verify-the-published-proof) for the browser, AI-assistant, and terminal paths.
+
 <details>
 <summary><strong>Complete machine-validated claim index</strong></summary>
 
-The table is derived from the public evidence ledger and checked for exact agreement on every change. `internally-verified` is not independent certification; `public-reproducible` identifies the bounded claims a reader can reproduce from public bytes.
+The table is derived from the public evidence ledger and checked for exact agreement on every change. It preserves five ledger rows marked `public-reproducible`, while the linked publication policy currently classifies only `CLM-0008` and `CLM-0010` that way. This README therefore treats `CLM-0011` through `CLM-0013` as supporting public records pending policy reconciliation. `internally-verified` is not independent certification.
 
 | Claim | Statement | Evidence | Status |
 |---|---|---|---|
