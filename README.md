@@ -2,48 +2,30 @@
 
 [![Public record validation](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml/badge.svg)](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml)
 
-**Deedseal is an owner-governed AI business platform for deploying and operating a business.**
+**Deedseal is an owner-controlled system for sending work to AI, reviewing the result, and deciding what may become durable business memory.**
 
-Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner.
+> - **PUBLISHED PROOF:** two run passports, tampered twins, an offline verifier, and 48 conformance vectors.
+> - **IN DEVELOPMENT:** the controlled-execution chain; resource and egress bounds remain open.
+> - **PRODUCT DIRECTION:** the wider platform, Cockpit, accepted memory, and external-system modules.
+> - **AVAILABILITY:** prerelease / design-partner stage; not generally available or production-qualified.
 
-Visit [deedseal.com](https://deedseal.com).
+## Verify the published proof
 
-## For owners and operators
+Try the proof now in the way that suits you. All three paths use the same published passport and tampered twin.
 
-Deedseal is intended for business owners and operators who want to use AI without handing a model provider the enduring operating record, accumulated context or final judgement of the business. The problem is both custody and proof: business memory should remain with the owner, and the owner should be able to establish what a machine was permitted to do and what it actually did.
+1. **Browser.** Open the latest [Actions runs](https://github.com/deedseal/deedseal/actions/workflows/validate-public-record.yml), then inspect `Re-prove the published demonstration`. To test it under your account, fork the repository, change one character in `examples/verified/run-passport.json`, and watch that step fail.
+2. **AI assistant.** Ask it:
 
-## Platform direction
+   > Clone https://github.com/deedseal/deedseal and run `python3 tools/check_demonstration.py` from the repository root. Report the verdict lines verbatim. Then copy `examples/verified/run-passport.json`, change one byte of the copy, run `python3 tools/verify_run_passport.py` on it, and report what happens.
 
-Deedseal is being built as one platform configured for each business through modules, bounded adapters and bounded AI workers — not client-specific forks. Work moves as bounded packets under owner authority, admitted work runs inside a controlled operating boundary, and each closed run is intended to compile its accepted record back into owner-held business memory. The category is hardware-neutral; an operating boundary would be agreed with its owner.
-
-This is product direction, not a claim that the wider platform is implemented today. West Coast KBP ADU / Construction OS is the Owner-operated first reference use and product direction only. It is not presented as a customer, sale, completed integration, deployment or outcome.
-
-## Current availability
-
-Deedseal is at the **prerelease / design-partner stage**. It is not generally available and is not represented as production-qualified. No price, savings, service level, business outcome or customer adoption is claimed.
-
-## What is published today
-
-This public repository proves only the execution-control, owner-grant, run-passport, verifier and evidence-record properties its checked-in record actually carries. In plain terms: before a supervised AI coding run, the owner signs a permission slip naming exactly which files it may change. The published design applies that boundary while work runs, then records what was permitted and what happened in a signed passport that can be checked offline.
-
-The independently checkable public surface includes two real run passports and their one-byte tampered twins, a single-file standard-library verifier, a frozen `deedseal-run-passport/1.0` envelope exercised by 48 conformance vectors, Python/Go verdict agreement across that corpus, and the recorded Linux filesystem-write boundary. The claim table below preserves the exact status and evidence coordinate for every published property.
-
-This repository does not prove the wider business-platform capability, general deployment availability, all-business automation, business outcomes, customer adoption, price, savings, service level or partner status. It also makes no trademark-clearance claim and does not change the existing patent disclosures.
-
-## Verify it yourself
-
-Two real run passports, their one-byte tampered twins, and the offline verifier are published in this repository ([run index](examples/verified/runs.md)). The quick check below uses the first published run: its passport verifies `PASS`, while its twin verifies `BLOCK`. Pick the path that fits you:
-
-- **Browser only.** Watch the [Actions tab](https://github.com/deedseal/deedseal/actions) re-prove both verdicts on every change — or fork the repository, change one character of the passport in the web editor of your fork, and watch the proof break — the check named `Re-prove the published demonstration` fails within about two minutes of your edit.
-- **Ask your AI assistant** to clone the repository and run `python3 tools/check_demonstration.py`, then to tamper one byte of a passport copy and verify it again — it should report `PASS`, then `BLOCK` with a named reason for your tampered copy.
-- **Terminal**, offline, standard Python only:
+3. **Terminal.** From a checkout, with standard Python and no network:
 
 ```
 python3 tools/verify_run_passport.py examples/verified/run-passport.json
 python3 tools/verify_run_passport.py examples/verified/run-passport.tampered.json
 ```
 
-The command against `examples/verified/run-passport.json` must end with:
+The first command must end with:
 
 ```
 RUN_PASSPORT_VERDICT: PASS
@@ -55,67 +37,102 @@ and exit `0`. The second must end with:
 RUN_PASSPORT_VERDICT: BLOCK block_owner_authorization_signature_invalid
 ```
 
-and exit `1`. One byte of difference between the two files is the entire reason for the different verdicts.
+and exit `1`. The files differ by one byte. For the full byte-level walkthrough, see [Verify the demonstration](docs/verify.md).
 
-What a PASS proves, what it does not, and how to check the changed file's bytes against the passport's signed digests: [docs/verify.md](docs/verify.md).
+## The controlled-work loop
 
-## This repository
+**Product direction:** intent → bounded work → worker/model → independent review → Owner decision → accepted memory.
 
-This repository is the public documentation and machine-validated evidence record for Deedseal. The engineering repositories stay private — what is published here is the record, not the source.
+Intent is recorded before work begins. The task names its allowed boundary. A worker or model produces a candidate; a separate reviewer checks the exact candidate. Checks and reviews provide evidence, while the Owner alone accepts or refuses the result. Only accepted work is intended to enter durable memory.
 
-One deliberate exception: the offline run-passport verifier is published in full, so that checking a passport never requires trusting us. The reasoning is recorded in [decision 0006](docs/decisions/0006-publish-the-verifier-under-apache-2.md).
+## GitHub is the first work plane
 
-In depth: [architecture](docs/architecture.md) (how the pieces fit), [trust model](docs/trust-model.md) (what is assumed, threatened, and out of scope), [system boundary](docs/system-boundary.md) (the engineering lifecycle around a run).
+GitHub is where this loop is first made visible: [Issues](https://github.com/deedseal/deedseal/issues) hold bounded intent, Draft pull requests hold candidate work, [Actions](https://github.com/deedseal/deedseal/actions) hold rerunnable checks, and exact commits keep review tied to the bytes inspected. GitHub remains authoritative for its Issues, pull requests, reviews, and checks. Deedseal is intended to add authority, evidence, and accepted-memory boundaries around that work; it does not replace GitHub or let automation approve itself.
 
-## Published execution-control properties
+## Proof Check — planned first free entry
 
-The current public record carries four execution-control properties. Each is enforced by the published design and recorded in the run passport — none is a promise about the wider platform.
+**PLANNED / IN DEVELOPMENT — not available today.** Proof Check is intended to be a free standalone Action and CLI for one narrow question: does one pull request's complete changed-path set fit an explicit path scope bound to that exact head? It is intended to return `PASS`, `FAIL`, or `INDETERMINATE` with a portable receipt and visible provenance. It will not review code, approve a merge, or turn missing evidence into PASS. Its public planning status is included in [Issue #78](https://github.com/deedseal/deedseal/issues/78); no Action, CLI, receipt, release, or Marketplace listing is claimed.
 
-- **Deny-by-default authority.** Every action is matched against explicitly enumerated allow paths; anything unmatched — an unknown action type, an ambiguous scope, a self-approval attempt — is blocked and recorded.
-- **One canonical path.** A signed work grant, checked at a single authorization gate, executed through a single effect broker. There is no second door.
-- **A signed passport for every run.** Each supervised run closes into a single evidence record binding the grant, the execution, and the complete resulting changeset — verifiable offline by anyone holding the verifier.
-- **The owner decides.** Automation and AI tooling implement and propose; approval, merge, and signature stay with one human. Self-approval is rejected outright.
+## Architecture at a glance
 
-## Trust audience for the published proof
+| Part | Role | Current public status |
+|---|---|---|
+| **Deedseal** | Authority and orchestration boundary: grants, bounded execution, evidence, Owner decision, and accepted-memory direction. | Execution-control evidence is published; the wider platform is product direction. |
+| **Models** | Replaceable workers that propose results inside a declared boundary; never the accepting authority. | A model-provider boundary is evidenced internally; cross-provider portability is not public proof. |
+| **GitHub** | First work plane and source of truth for Issues, pull requests, reviews, checks, and commits. | In use for this public repository; wider Deedseal integration remains product direction. |
+| **Cockpit** | Intended Owner interface for seeing work, evidence, and decisions. | In development / product direction; no production iPad or local-inference capability is claimed. |
+| **External systems** | Documents, email, calendars, CRM, social, and other business tools reached through bounded adapters. | Product direction unless a public evidence record says otherwise. |
 
-- Engineers who let AI coding agents change real repositories and want the allowed scope enforced and recorded rather than assumed.
-- Reviewers and auditors who are handed machine-made changes and need an answer to "what else could it have touched?" that does not depend on the agent's own account.
-- Anyone evaluating this project: every claim in the table below is labelled with exactly what you can and cannot reproduce yourself.
+Technical detail: [architecture](docs/architecture.md), [trust model](docs/trust-model.md), and [method](docs/method.md).
 
-## What the published execution-control layer is not
+## Strongest current public evidence
 
-- **Not an agent framework.** The published layer does not run, prompt, or orchestrate agents; it is the authority layer an agent runs under.
-- **Not a sandbox.** The published layer governs what a run is allowed to change and proves what it did change. To contain hostile code, compose it with a sandbox or a virtual machine (gVisor, Firecracker, or similar).
-- **Not an audit log or a SIEM.** A log is trusted because of where it sits. A run passport carries its own verifiability wherever it travels.
-- **Not a policy linter.** The gate does not advise; it decides, and its default is no.
+The current [publication policy](docs/publication-policy.md) classifies only `CLM-0008` and `CLM-0010` as `public-reproducible`. The other entries below are observable supporting public records, not additional policy-classified claims.
 
-## How a permitted action runs
+| Public evidence | What a visitor can check | Exact coordinate |
+|---|---|---|
+| Published demonstration — policy-classified `CLM-0008` | The first real passport returns PASS; its one-byte twin returns BLOCK. | [Published run index in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/runs.md) |
+| Refusal corpus — policy-classified `CLM-0010` | Published mutations reproduce 35 exact refusal verdicts; four declared reasons are classified as unreachable from published bytes. | [Refusal corpus in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/demo/refusals/README.md) |
+| Offline verifier — supporting public artifact | One standard-library Python file verifies against pinned public keys without a service or network. | [`verify_run_passport.py` in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/tools/verify_run_passport.py) |
+| Second supervised run — supporting public record | The second real passport returns PASS; its one-byte twin returns BLOCK. | [Published run index in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/runs.md) |
+| Two implementations — supporting public record | Python and Go agree on verdict and exit code across all 48 published vectors. Both implementations come from this project. | [Conformance corpus in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/examples/verified/conformance/README.md) |
+| Recorded write boundary — supporting public observation | A local Linux probe can replay the recorded rules and observe the bounded filesystem operations. | [Boundary walkthrough in `v0.2.0`](https://github.com/deedseal/deedseal/blob/v0.2.0/docs/verify.md#demonstrate-the-recorded-write-boundary-on-your-kernel) |
+| Continuous validation — supporting public observation | GitHub Actions re-ran the public record and browser-verifier checks successfully on the prepared `main`. | [Public record run `33295394495`](https://github.com/deedseal/deedseal/actions/runs/33295394495) · [browser run `33295394478`](https://github.com/deedseal/deedseal/actions/runs/33295394478) |
+| Prerelease bundle — supporting public artifact | Release assets inventory the bounded distributable surface and publish checksums; checksums are not signatures. | [`v0.2.0` prerelease](https://github.com/deedseal/deedseal/releases/tag/v0.2.0) |
 
-One path, five stations, no second door:
+## What this does not prove
 
-An agent's requested action reaches the authorization gate. The gate checks it against a signed work grant, issued and signed offline by the owner, which pins the repository state, a short validity window, and the exact set of files the run may change. Anything outside an enumerated allow path is denied and recorded. Permitted work executes in a disposable quarantine under a separate operating-system principal; the result is observed byte for byte, and only the observed bytes are staged, all or nothing. The run then closes into a signed passport.
+- A passport PASS does not prove code quality, semantic or business correctness, security certification, availability, or anything about another run.
+- The public record does not prove a live Proof Check product, autonomous scheduling, the wider platform, Cockpit deployment, connector effects, or accepted business memory.
+- No GitHub Marketplace availability or partnership, live LinkedIn effect, Face ID acceptance, production iPad/local inference, customer deployment, revenue, certification, or production qualification is claimed.
+- Private implementation is not public proof. `internally-verified` means checked against a fixed private-source snapshot, not independently certified or publicly reproducible.
 
-```mermaid
-flowchart LR
-    A["Requested action"] --> G{"Authorization gate"}
-    G -->|"default: no matching grant"| X["Denied and recorded"]
-    G -->|"valid owner-signed grant"| B["Effect broker"]
-    B --> Q["Quarantined execution"]
-    Q --> S["Observation and all-or-nothing staging"]
-    S --> P["Run passport: signed, offline-verifiable"]
-```
+## Choose your path
 
-## The run passport
+| Visitor | Start here | Then go deeper |
+|---|---|---|
+| **User** | [Verify the published proof](#verify-the-published-proof) and read [current status](docs/status.md). | [Verification limits](docs/verify.md) and [deedseal.com](https://deedseal.com) |
+| **Engineer** | [Architecture](docs/architecture.md) and [passport specification](docs/passport-spec-v1.md). | [Conformance vectors](examples/verified/conformance/README.md) and [method](docs/method.md) |
+| **Reviewer** | [Verification walkthrough](docs/verify.md) and [run index](examples/verified/runs.md). | [Trust model](docs/trust-model.md) and [evidence model](evidence/README.md) |
+| **Potential partner** | Read the [availability boundary](docs/status.md) and verify one public artifact. | Use the design-partner path on [deedseal.com](https://deedseal.com) only if the current limits fit. |
 
-A run passport is one JSON record per supervised run, binding what was requested, what was granted, and what actually changed — including the complete changeset of the resulting commit, which must exactly equal the granted file set. It is signed twice on the way through: by a dedicated service key before and after execution, and by the owner as closure.
+## Security, contributions, and license
 
-**Offline verification.** Checking a passport requires the verifier — a single standard-library Python file with its trust anchors baked in — and the passport itself. No network, no running service, no access to the machine that produced it. See [docs/passport.md](docs/passport.md) and a [synthetic example passport](examples/passport.example.json). To run the checks yourself, see [Verify it yourself](#verify-it-yourself) above.
+Report vulnerabilities through [private vulnerability reporting](https://github.com/deedseal/deedseal/security/advisories/new) and read [SECURITY.md](SECURITY.md). Questions and corrections are welcome under [CONTRIBUTING.md](CONTRIBUTING.md). Documentation is licensed under [CC BY 4.0](LICENSE); executable files declare their own SPDX license, and the private product source is not covered. See [NOTICE.md](NOTICE.md).
 
-## Verified claims
+## Product framing
 
-Beyond documentation, this repository maintains a machine-validated public record: bounded claims tied to a dated snapshot, each backed by a sanitized evidence record, with statuses that say exactly what a public reader can and cannot reproduce. Structure, cross-references, artifact digests, and disclosure rules are checked by CI on every change.
+Category: Deedseal is an owner-governed AI business platform for deploying and operating a business.
 
-`internally-verified` means the property was checked against a fixed private-source snapshot; it is evidence of internal verification, not independent certification.
+Deploy an AI office for your business while keeping authority, business memory and the final decision with the owner. Visit [deedseal.com](https://deedseal.com).
+
+## For owners and operators
+
+Deedseal is for people who want AI workers without giving a model provider the final decision or the owner-held business memory.
+
+## Platform direction
+
+The wider product is intended to use modules, bounded adapters and bounded AI workers to move accepted work into owner-held business memory. This is product direction, not a claim that the wider platform is implemented today. West Coast KBP ADU / Construction OS is the Owner-operated first reference use and product direction only. No trademark-clearance claim is made.
+
+## Current availability
+
+- **PUBLISHED PROOF:** two real run passports and their one-byte tampered twins, an offline verifier, 48 conformance vectors, Python/Go verdict agreement, and a limited replay of the recorded Linux write boundary.
+- **IN DEVELOPMENT:** the authorization, signing, quarantine, custody, and verification chain; resource and egress bounds remain open.
+- **PRODUCT DIRECTION:** the wider business platform, Cockpit, accepted memory, and external-system modules.
+- **AVAILABILITY:** prerelease / design-partner stage; not generally available and not represented as production-qualified.
+
+## What is published today
+
+This repository is the public documentation and machine-validated evidence record. It proves only the properties bound by its checked-in artifacts; it does not prove the wider business-platform capability, a customer outcome, or private implementation. The engineering repositories remain private.
+
+## Verify it yourself
+
+Return to [Verify the published proof](#verify-the-published-proof) for the browser, AI-assistant, and terminal paths.
+
+<details>
+<summary><strong>Complete machine-validated claim index</strong></summary>
+
+The table is derived from the public evidence ledger and checked for exact agreement on every change. It preserves five ledger rows marked `public-reproducible`, while the linked publication policy currently classifies only `CLM-0008` and `CLM-0010` that way. This README therefore treats `CLM-0011` through `CLM-0013` as supporting public records pending policy reconciliation. `internally-verified` is not independent certification.
 
 | Claim | Statement | Evidence | Status |
 |---|---|---|---|
@@ -140,54 +157,6 @@ Beyond documentation, this repository maintains a machine-validated public recor
 | `CLM-0019` | The retrieval boundary can extract one balanced JSON object without editing its contents and refuses truncated objects or unstructured prose; the focused source-snapshot suite passed 17/17. | `EVD-OFFICE-0007` | `internally-verified` |
 | `CLM-0020` | A structured live answer that exceeded the admitted output bound was refused rather than guessed complete; the request envelope was narrowed to fit the bound. No later successful accepted candidate set is claimed. | `EVD-OFFICE-0008` | `internally-verified` |
 
-Claim boundaries and non-claims: [docs/engineering-properties.md](docs/engineering-properties.md). Evidence model and what the hashes prove: [evidence/README.md](evidence/README.md). What may be published at all: [docs/publication-policy.md](docs/publication-policy.md).
+Claim boundaries: [engineering properties and non-claims](docs/engineering-properties.md), [evidence model](evidence/README.md), and [publication policy](docs/publication-policy.md).
 
-## Principles
-
-- **Deny by default.** Every allow path is enumerated; the fallthrough is a block.
-- **One path for authority.** All effects go through the gate and the broker — no bypass path, no override channel, no route by which automation can sign.
-- **Machines implement; the owner decides.** AI workers author and propose; approval, merge, and signature stay with one human.
-- **Prefer sealed evidence to inference.** Claims about a run are read from signed records, never from the run's own account of itself.
-- **Verification must not require trusting us.** The verifier is one auditable file with its keys baked in; nothing in the input can substitute a trust anchor.
-
-## Current boundary limits
-
-The published execution-control layer does not sandbox the workload itself. To run possibly-malicious code, pair it with an appropriate sandbox or virtual machine. It does not protect against a compromised kernel or a compromised owner key. Grant-derived filesystem confinement of the agent process is applied by the kernel and recorded in the published passport ([docs/verify.md](docs/verify.md)); resource and egress bounds remain open objectives tracked in [docs/status.md](docs/status.md).
-
-## Status
-
-Deedseal is in active development. The authorization, signing, quarantine, custody, and offline-verification chain is implemented and has been exercised end to end in development. The published passport envelope is frozen under a stated compatibility commitment ([specification](docs/passport-spec-v1.md)); Deedseal is not yet available for production use. Current workstreams and their state are tracked in [docs/status.md](docs/status.md).
-
-## How Deedseal is built
-
-The discipline that governs runs also governs the codebase: AI workers implement inside bounded task packets with pinned scope, acceptance is an ordered suite of deterministic checks — about half of them hostile probes that must fail for the right reason — and only the owner merges. The method is documented in [docs/method.md](docs/method.md). Significant decisions about this public repository are recorded in [docs/decisions/](docs/decisions/README.md). This public repository is itself young — published 2026-08-01 — and much of it was authored by AI workers under the method it documents; the commit history shows which commits were machine-authored and that every merge is the owner's.
-
-## FAQ
-
-Short answers to the questions readers actually ask — "Why not just seccomp?", "How is a passport different from an audit log?", "Can I use it today?" — are in [docs/faq.md](docs/faq.md).
-
-## Security
-
-Report vulnerabilities through GitHub private vulnerability reporting on this repository. Details: [SECURITY.md](SECURITY.md).
-
-## Questions and contributions
-
-Questions are welcome as GitHub issues. Pull requests are accepted for corrections and clarity only; feature and design proposals cannot be accepted here, because the engineering repositories are private. This repository operates under the same model as the product: automation may propose; only the owner reviews, approves, and merges. See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Brand
-
-[Brand Identity v1.0](assets/BRAND-IDENTITY-v1.0.md) is a mechanically qualified review candidate and engineering design study, not an Owner-selected, adopted, deployed or current public identity. Its generated assets remain bound by digest in [assets/brand-manifest.v1.json](assets/brand-manifest.v1.json), and `python3 tools/check_brand_identity.py` re-proves those files against the manifest offline. The packet authorizes no downstream placement.
-
-The public release surface continues to use the existing Deedseal wordmark and one green point, pending a later Owner brand decision. This repository does not specify, version or publish an asset for that lockup.
-
-## License
-
-Documentation in this repository is licensed under [CC BY 4.0](LICENSE); executable files declare their own license with an SPDX identifier. The underlying product source is private and not covered by that license; see [NOTICE.md](NOTICE.md).
-
-## Where to go next
-
-- [docs/verify.md](docs/verify.md) — run the verification yourself, three ways, with expected outputs.
-- [docs/passport.md](docs/passport.md) — what a run passport binds and what the verifier checks.
-- [docs/trust-model.md](docs/trust-model.md) — what is assumed, what is threatened, what is out of scope.
-- [docs/status.md](docs/status.md) — what is shipped, what is open, dated updates.
-- [docs/faq.md](docs/faq.md) — the obvious questions, answered plainly.
+</details>
